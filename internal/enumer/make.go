@@ -21,3 +21,10 @@ func (g *Generator) makeText() {
 	}
 	g.data.Text = true
 }
+
+func (g *Generator) makeSQL() {
+	if !g.flags.sql {
+		return
+	}
+	g.data.Sql = true
+}

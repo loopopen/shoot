@@ -10,7 +10,7 @@ BETA VERSION. USE WITH CAUTION!
 Usage: shoot <subcommand> [options]
 These are all the sub commands supported as of now:
 new [-opt] [-getset] [-json] [-exp] [-tagcase=<case>] [-type=<Type> | -file=<GoFile>] [dir] [-s] [-v]
-enum [-json] [-text] -[bit] [-json][-type=<Type> | -file=<GoFile>] [dir] [-v]
+enum [-bit] [-json] [-text] -[sql] [-type=<Type> | -file=<GoFile>] [dir] [-v]
 rest [-type=<Type> | -file=<GoFile>] [dir] [-v]
 map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-type=<SrcType> | -file=<GoFile>] [dir] [-s] [-v]
 ```

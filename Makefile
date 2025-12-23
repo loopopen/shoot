@@ -15,5 +15,5 @@ test:
 release: test
 	sed -i '' "s/Version = \"v[^\"]*\"/Version = \"${tag}\"/" ./internal/shoot/consts.go
 	git add -A
-	git commit -m"tag: ${tag}"
+	git commit -m"chore: ${tag}"
 	git tag ${tag}

@@ -35,6 +35,7 @@ func (g *Generator) ParseFlags() {
 	bitwise := sub.Bool("bitwise", false, "generate bitwise enumerations")
 	json := sub.Bool("json", false, "generate MarshalJSON/UnmarshalJSON method for the type")
 	text := sub.Bool("text", false, "generate MarshaText/UnmarshalText method for the type")
+	sql := sub.Bool("sql", false, "generate Value/Scan method for the type")
 
 	g.ParseCommonFlags(sub)
 
@@ -42,6 +43,7 @@ func (g *Generator) ParseFlags() {
 		bitwise: *bitwise || *bit,
 		json:    *json,
 		text:    *text,
+		sql:     *sql,
 	}
 }
 
@@ -54,6 +56,7 @@ func (g *Generator) MakeData(typeName string) any {
 	g.makeBitwize()
 	g.makeJson()
 	g.makeText()
+	g.makeSQL()
 
 	if len(g.data.NameList) == 0 {
 		return nil

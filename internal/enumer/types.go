@@ -10,6 +10,7 @@ type TmplData struct {
 	Bitwise  bool
 	Json     bool
 	Text     bool
+	Sql      bool
 }
 
 func NewTmplData(cmdline, version string) *TmplData {
@@ -22,4 +23,5 @@ type Flags struct {
 	bitwise bool
 	json    bool
 	text    bool
+	sql     bool
 }

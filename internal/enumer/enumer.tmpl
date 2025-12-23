@@ -5,10 +5,13 @@
 package {{.PackageName}}
 
 {{if .Json -}}
-import "encoding/json"
-{{- end}}
-{{if or .Json .Text -}}
-import "github.com/lopolopen/shoot"
+import "encoding/json" {{"\n"}}
+{{- end -}}
+{{- if .Sql -}}
+import "database/sql/driver" {{"\n"}}
+{{- end -}}
+{{- if or .Json .Text .Sql -}}
+import "github.com/lopolopen/shoot" {{"\n"}}
 {{- end}}
 
 func _() {
@@ -120,6 +123,27 @@ func ({{$this}} *{{.TypeName}}) UnmarshalText(text []byte) error {
 		return err
 	}
 	*{{$this}} = v_
+	return nil
+}
+{{end}}
+
+{{if .Sql}}
+//Value implements the driver.Valuer interface for {{.TypeName}}
+func ({{$this}} {{.TypeName}}) Value() (driver.Value, error) {
+	return {{$this}}.String(), nil
+}
+
+//Scan implements the driver.Scanner interface for {{.TypeName}}
+func ({{$this}} *{{.TypeName}}) Scan(value interface{}) error {
+	data, ok := value.([]byte)
+	if !ok {
+		return errors.New("bad enum type")
+	}
+	e_, err := shoot.ParseEnum[{{.TypeName}}](string(data))
+	if err != nil {
+		return err
+	}
+	*{{$this}}  = e_
 	return nil
 }
 {{end}}
