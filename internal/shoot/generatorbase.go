@@ -86,7 +86,7 @@ func (d *GeneratorBase) RegisterTransfer(key string, transfer any) {
 }
 
 func (g *GeneratorBase) ParseCommonFlags(sub *flag.FlagSet) {
-	typeNames := sub.String("type", "*", "comma-separated list of type names")
+	typeNames := sub.String("type", "", "comma-separated list of type names")
 	filename := sub.String("file", "", "the targe go file to generate, typical value: $GOFILE")
 	separate := sub.Bool("separate", false, "each type has its own go file")
 	sep := sub.Bool("sep", false, "each type has its own go file (alias for separate)")
@@ -97,8 +97,14 @@ func (g *GeneratorBase) ParseCommonFlags(sub *flag.FlagSet) {
 	version := sub.String("version", "", "pin version")
 	ver := sub.String("ver", "", "pin version (alias for version)")
 
-	cmdline := Shoot + " " + strings.Join(flag.Args(), " ") //e.g.: enum -bit type=YourType ./testdata
-	sub.Parse(flag.Args()[1:])
+	args := flag.Args()
+	if len(args) <= 1 {
+		sub.Usage()
+		os.Exit(2)
+	}
+
+	cmdline := Shoot + " " + strings.Join(args, " ") //e.g.: shoot enum -bit type=YourType ./testdata
+	sub.Parse(args[1:])
 	if *typeNames == "" && *filename == "" {
 		sub.Usage()
 		os.Exit(2)
