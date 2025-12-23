@@ -103,3 +103,19 @@ func (r *RestConf) SetDefaultHeaders(defaultHeaders_ map[string]string) {
 
 // ShootNew exists solely to fulfill the NewShooter interface contract
 func (r RestConf) ShootNew() { /*noop*/ }
+
+// RestConfGetter is read-only interface for RestConf type
+type RestConfGetter interface {
+	BaseURL() string
+	Timeout() time.Duration
+	EnableLogging() bool
+	DefaultHeaders() map[string]string
+}
+
+// RestConfSetter is write-only interface for RestConf type
+type RestConfSetter interface {
+	SetBaseURL(string)
+	SetTimeout(time.Duration)
+	SetEnableLogging(bool)
+	SetDefaultHeaders(map[string]string)
+}

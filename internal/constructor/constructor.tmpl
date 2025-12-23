@@ -182,3 +182,19 @@ func ({{$this}} *{{.TypeName}})UnmarshalJSON(data []byte) error {
 
 // ShootNew exists solely to fulfill the NewShooter interface contract
 func ({{$this}} {{.TypeName}}) ShootNew() { /*noop*/ }
+
+{{if .GetSet -}}
+// {{.TypeName}}Getter is read-only interface for {{.TypeName}} type
+type {{.TypeName}}Getter interface { {{"\n"}}
+{{- range .GetterList -}}
+	{{pascalCase .}}() {{typeof .}} {{"\n"}}
+{{- end -}}
+} 
+
+// {{.TypeName}}Setter is write-only interface for {{.TypeName}} type
+type {{.TypeName}}Setter interface { {{"\n"}}
+{{- range .GetterList -}}
+	Set{{pascalCase .}}({{typeof .}}) {{"\n"}}
+{{- end -}}
+}
+{{- end -}}

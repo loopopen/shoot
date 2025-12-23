@@ -54,3 +54,19 @@ func (u *User) SetAvatarUrl(avatar_url_ string) {
 
 // ShootNew exists solely to fulfill the NewShooter interface contract
 func (u User) ShootNew() { /*noop*/ }
+
+// UserGetter is read-only interface for User type
+type UserGetter interface {
+	Id() int
+	Name() string
+	Age() int
+	AvatarUrl() string
+}
+
+// UserSetter is write-only interface for User type
+type UserSetter interface {
+	SetId(int)
+	SetName(string)
+	SetAge(int)
+	SetAvatarUrl(string)
+}

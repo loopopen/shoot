@@ -62,7 +62,7 @@ func (g *Generator) makeGetSet(typeName string) {
 	g.data.GetterList = getList
 	g.data.SetterList = setList
 
-	g.data.GetSet = true
+	g.data.GetSet = len(getList) > 0 || len(setList) > 0
 }
 
 func parseGetSet(doc string) (bool, bool) {

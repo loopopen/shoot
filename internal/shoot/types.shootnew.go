@@ -2,9 +2,12 @@
 
 package shoot
 
-import "go/ast"
-import "go/types"
-import "golang.org/x/tools/go/packages"
+import (
+	"go/ast"
+	"go/types"
+
+	"golang.org/x/tools/go/packages"
+)
 
 // NewValue constructs a new instance of type Value
 func NewValue(originalName string, name string, value uint64, signed bool, str string) *Value {
@@ -69,6 +72,24 @@ func (v *Value) SetStr(str_ string) {
 
 // ShootNew exists solely to fulfill the NewShooter interface contract
 func (v Value) ShootNew() { /*noop*/ }
+
+// ValueGetter is read-only interface for Value type
+type ValueGetter interface {
+	OriginalName() string
+	Name() string
+	Value() uint64
+	Signed() bool
+	Str() string
+}
+
+// ValueSetter is write-only interface for Value type
+type ValueSetter interface {
+	SetOriginalName(string)
+	SetName(string)
+	SetValue(uint64)
+	SetSigned(bool)
+	SetStr(string)
+}
 
 // NewFile constructs a new instance of type File
 func NewFile(pkg *Package, file *ast.File, typeName string, values []Value, trimPrefix string, lineComment bool) *File {
@@ -145,6 +166,26 @@ func (f *File) SetLineComment(lineComment_ bool) {
 // ShootNew exists solely to fulfill the NewShooter interface contract
 func (f File) ShootNew() { /*noop*/ }
 
+// FileGetter is read-only interface for File type
+type FileGetter interface {
+	Pkg() *Package
+	File() *ast.File
+	TypeName() string
+	Values() []Value
+	TrimPrefix() string
+	LineComment() bool
+}
+
+// FileSetter is write-only interface for File type
+type FileSetter interface {
+	SetPkg(*Package)
+	SetFile(*ast.File)
+	SetTypeName(string)
+	SetValues([]Value)
+	SetTrimPrefix(string)
+	SetLineComment(bool)
+}
+
 // NewPackage constructs a new instance of type Package
 func NewPackage(pkg *packages.Package, dir string, name string, defs map[*ast.Ident]types.Object, files []*File, typesPkg *types.Package) *Package {
 	return &Package{
@@ -219,3 +260,23 @@ func (p *Package) SetTypesPkg(typesPkg_ *types.Package) {
 
 // ShootNew exists solely to fulfill the NewShooter interface contract
 func (p Package) ShootNew() { /*noop*/ }
+
+// PackageGetter is read-only interface for Package type
+type PackageGetter interface {
+	Pkg() *packages.Package
+	Dir() string
+	Name() string
+	Defs() map[*ast.Ident]types.Object
+	Files() []*File
+	TypesPkg() *types.Package
+}
+
+// PackageSetter is write-only interface for Package type
+type PackageSetter interface {
+	SetPkg(*packages.Package)
+	SetDir(string)
+	SetName(string)
+	SetDefs(map[*ast.Ident]types.Object)
+	SetFiles([]*File)
+	SetTypesPkg(*types.Package)
+}

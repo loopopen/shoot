@@ -82,7 +82,7 @@ func MergeSources(sources ...[]byte) ([]byte, error) {
 		fmt.Fprintln(&buf)
 	}
 
-	out, err := format.Source(buf.Bytes())
+	out, err := FormatSrc(buf.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("format merged source: %w", err)
 	}
