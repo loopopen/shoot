@@ -25,14 +25,14 @@ func (g *Generator) makeNew(typeName string) {
 	typeMap := make(map[string]string)
 	xMap := make(map[string]string)
 
-	pkgPath := g.Package().Pkg().PkgPath
+	pkgPath := g.Pkg().PkgPath
 	if pkgPath == shoot.SelfPkgPath {
 		g.data.Self = true
 	}
 
 	typeExists := false
-	for _, f := range g.Package().Files() {
-		ast.Inspect(f.File(), func(n ast.Node) bool {
+	for _, f := range g.Pkg().Syntax {
+		ast.Inspect(f, func(n ast.Node) bool {
 			ts, ok := n.(*ast.TypeSpec)
 			if !ok {
 				return true
@@ -85,7 +85,7 @@ func (g *Generator) makeNew(typeName string) {
 				}
 			}
 
-			imports = buildImports(f.File().Imports)
+			imports = buildImports(f.Imports)
 			return false
 		})
 	}

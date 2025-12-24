@@ -8,14 +8,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/shoot"
 	"github.com/lopolopen/shoot/internal/tools/logx"
 )
 
 func (g *Generator) makeStr(typeName string) {
-	var values []shoot.Value
-	for _, f := range g.Package().Files() {
-		ast.Inspect(f.File(), func(n ast.Node) bool {
+	var values []Value
+	for _, f := range g.pkg.files {
+		ast.Inspect(f.file, func(n ast.Node) bool {
 			decl, ok := n.(*ast.GenDecl)
 			if !ok {
 				return true
@@ -80,7 +79,7 @@ func (g *Generator) makeStr(typeName string) {
 					// This dance lets the type checker find the values for us. It's a
 					// bit tricky: look up the object declared by the n, find its
 					// types.Const, and extract its value.
-					obj, ok := f.Pkg().Defs()[n]
+					obj, ok := f.pkg.defs[n]
 					if !ok {
 						logx.Fatalf("no value for constant %s", n)
 					}
@@ -100,10 +99,16 @@ func (g *Generator) makeStr(typeName string) {
 					if !isInt {
 						u64 = uint64(i64)
 					}
-					v := *shoot.NewValue(n.Name, n.Name, u64, info&types.IsUnsigned == 0, value.String())
+					v := Value{
+						originalName: n.Name,
+						name:         n.Name,
+						value:        u64,
+						signed:       info&types.IsUnsigned == 0,
+						str:          value.String(),
+					}
 
-					if c := vspec.Comment; f.LineComment() && c != nil && len(c.List) == 1 {
-						v.SetName(strings.TrimSpace(c.Text()))
+					if c := vspec.Comment; f.lineComment && c != nil && len(c.List) == 1 {
+						v.name = strings.TrimSpace(c.Text())
 					}
 					values = append(values, v)
 				}
@@ -116,13 +121,14 @@ func (g *Generator) makeStr(typeName string) {
 	valueMap := make(map[string]int64)
 	strMap := make(map[string]string)
 	sort.Slice(values, func(i, j int) bool {
-		return values[i].Value() < values[j].Value()
+		return values[i].value < values[j].value
 	})
+	logx.Pin(values)
 	for _, v := range values {
-		nameList = append(nameList, v.Name())
-		valueMap[v.Name()] = int64(v.Value())
-		shortName := strings.TrimPrefix(v.Name(), typeName)
-		strMap[v.Name()] = shortName
+		nameList = append(nameList, v.name)
+		valueMap[v.name] = int64(v.value)
+		shortName := strings.TrimPrefix(v.name, typeName)
+		strMap[v.name] = shortName
 	}
 
 	g.data.NameList = nameList

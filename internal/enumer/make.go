@@ -12,7 +12,7 @@ func (g *Generator) makeJson() {
 	if !g.flags.json {
 		return
 	}
-	g.data.Json = true
+	g.data.JSON = true
 }
 
 func (g *Generator) makeText() {
@@ -26,5 +26,5 @@ func (g *Generator) makeSQL() {
 	if !g.flags.sql {
 		return
 	}
-	g.data.Sql = true
+	g.data.SQL = true
 }

@@ -4,13 +4,13 @@
 
 package {{.PackageName}}
 
-{{if .Json -}}
+{{if .JSON -}}
 import "encoding/json" {{"\n"}}
 {{- end -}}
-{{- if .Sql -}}
+{{- if .SQL -}}
 import "database/sql/driver" {{"\n"}}
 {{- end -}}
-{{- if or .Json .Text .Sql -}}
+{{- if or .JSON .Text .SQL -}}
 import "github.com/lopolopen/shoot" {{"\n"}}
 {{- end}}
 
@@ -87,7 +87,7 @@ func ({{$this}} {{.TypeName}}) StringMap() map[{{.TypeName}}]string {
 	return _{{camelCase .TypeName}}_string_map
 }
 
-{{if .Json}}
+{{if .JSON}}
 // MarshalJSON implements the json.Marshaler interface for {{.TypeName}}
 func ({{$this}} {{.TypeName}}) MarshalJSON() ([]byte, error) {
 	return json.Marshal({{$this}}.String())
@@ -127,7 +127,7 @@ func ({{$this}} *{{.TypeName}}) UnmarshalText(text []byte) error {
 }
 {{end}}
 
-{{if .Sql}}
+{{if .SQL}}
 //Value implements the driver.Valuer interface for {{.TypeName}}
 func ({{$this}} {{.TypeName}}) Value() (driver.Value, error) {
 	return {{$this}}.String(), nil

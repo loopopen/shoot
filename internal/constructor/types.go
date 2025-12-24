@@ -34,7 +34,7 @@ type TmplData struct {
 	SetterList  []string
 	Option      bool
 	DefaultList []string
-	Json        bool
+	JSON        bool
 	//Marshal: Getteer + Exported
 	//Unmarshal: Setter + Exported
 	ExportedList []string

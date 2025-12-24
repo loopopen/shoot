@@ -18,7 +18,6 @@ import (
 
 type GeneratorBase struct {
 	commonFlags  *CommonFlags
-	_pkg         *Package //todo: refactor
 	subCmd       string
 	tmplTxt      string
 	tmp          *template.Template
@@ -49,10 +48,6 @@ func (g *GeneratorBase) tmpl() *template.Template {
 
 func (g *GeneratorBase) CommonFlags() *CommonFlags {
 	return g.commonFlags
-}
-
-func (g *GeneratorBase) Package() *Package {
-	return g._pkg
 }
 
 func (g *GeneratorBase) Pkg() *packages.Package {
@@ -228,8 +223,6 @@ func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Pac
 	}
 
 	g.SetPkg(primaryPkg)
-
-	g.addPackage(g.pkg) //for backward compatibility
 	return pkgs
 }
 
@@ -268,23 +261,6 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 	return result, nil
 }
 
-// addPackage adds a type checked Package and its syntax files to the generator.
-func (g *GeneratorBase) addPackage(pkg *packages.Package) {
-	g._pkg = &Package{
-		pkg:   pkg,
-		name:  pkg.Name,
-		defs:  pkg.TypesInfo.Defs,
-		files: make([]*File, len(pkg.Syntax)),
-	}
-
-	for i, file := range pkg.Syntax {
-		g._pkg.files[i] = &File{
-			file: file,
-			pkg:  g._pkg,
-		}
-	}
-}
-
 func getGoFile(pkg *packages.Package, typeName string) string {
 	for _, obj := range pkg.TypesInfo.Defs {
 		if obj != nil && obj.Name() == typeName {
@@ -299,7 +275,7 @@ func (g *GeneratorBase) confirmTypes(typeLister TypeLister) {
 	typeNames := g.commonFlags.TypeNames
 	if len(typeNames) > 0 && typeNames[0] != "*" {
 		for _, typName := range typeNames {
-			gofile := getGoFile(g._pkg.pkg, typName)
+			gofile := getGoFile(g.pkg, typName)
 			if g.commonFlags.FileName == "" {
 				g.commonFlags.FileName = gofile
 			} else if g.commonFlags.FileName != gofile {
@@ -316,9 +292,6 @@ func (g *GeneratorBase) Generate(
 		TypeLister
 		DataMaker
 	}) map[string][]byte {
-	if g._pkg == nil {
-		logx.Fatal("pkg is nil, may forget to call LoadPackage")
-	}
 	if g.pkg == nil {
 		logx.Fatal("primary pkg is nil, may forget to call LoadPackage")
 	}
