@@ -7,6 +7,7 @@ import (
 	"go/ast"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -16,14 +17,14 @@ import (
 )
 
 type GeneratorBase struct {
-	commonFlags *CommonFlags
-	_pkg        *Package //todo: refactor
-	subCmd      string
-	tmplTxt     string
-	tmp         *template.Template
-	transfers   template.FuncMap
-	pkg         *packages.Package
-	AllInOne    string
+	commonFlags  *CommonFlags
+	_pkg         *Package //todo: refactor
+	subCmd       string
+	tmplTxt      string
+	tmp          *template.Template
+	transfers    template.FuncMap
+	pkg          *packages.Package
+	allInOneFile string
 }
 
 func NewGeneratorBase(subCmd string, tmplTxt string) *GeneratorBase {
@@ -120,18 +121,21 @@ func (g *GeneratorBase) ParseCommonFlags(sub *flag.FlagSet) {
 		sep_ = true
 	}
 
-	dir := sub.Arg(0) //e.g. ./testdata
-	if dir == "" {
-		dir = "."
+	dir := FixPath(sub.Arg(0)) //e.g. ./testdata
+	if dir != dot {
+		_, err := os.Stat(dir)
+		if err != nil && !os.IsExist(err) {
+			logx.Fatalf("working dir not exists: %s", dir)
+		}
 	}
 
 	if *filename != "" {
-		if !strings.HasSuffix(*filename, ".go") {
-			logx.Fatal("file must be a go file")
+		if filepath.Ext(*filename) != ".go" {
+			logx.Fatalf("file must be a go file: %s", *filename)
 		}
 		fp := filepath.Join(dir, *filename)
 		_, err := os.Stat(fp)
-		if !(err == nil || os.IsExist(err)) {
+		if err != nil && !os.IsExist(err) {
 			logx.Fatalf("file not exists: %s", fp)
 		}
 	}
@@ -161,7 +165,7 @@ func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
 	}
 	fileName := g.commonFlags.FileName
 	if fileName == "" {
-		fileName = g.AllInOne
+		fileName = g.allInOneFile
 	}
 	gofile := strings.TrimSuffix(fileName, ".go")
 	if typeName == "" {
@@ -173,32 +177,95 @@ func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
 	return fmt.Sprintf("%s.%s.%s.go", gofile, cmd, strings.ToLower(typeName))
 }
 
-func (g *GeneratorBase) LoadPackage() {
-	if g.pkg == nil {
-		pat := g.commonFlags.Dir
-		if g.commonFlags.FileName != "" {
-			pat = filepath.Join(pat, g.commonFlags.FileName)
-		}
+func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Package {
+	patterns = append(patterns, dot)
 
-		cfg := &packages.Config{
-			Mode: packages.NeedName |
-				packages.NeedFiles |
-				packages.NeedSyntax |
-				packages.NeedTypes |
-				packages.NeedTypesInfo,
-			Tests: false,
-		}
-		pkgs, err := packages.Load(cfg, pat)
-		if err != nil {
-			logx.Fatalf("%s", err)
-		}
-		if len(pkgs) != 1 {
-			logx.Fatalf("error: %d packages found", len(pkgs))
-		}
-		g.SetPkg(pkgs[0])
+	cfg := &packages.Config{
+		Mode: packages.NeedName |
+			packages.NeedFiles |
+			packages.NeedSyntax |
+			packages.NeedTypes |
+			packages.NeedTypesInfo,
+		Tests: false,
+		Dir:   g.commonFlags.Dir,
+	}
+	pkgs, err := loadPkgs(cfg, patterns...)
+	if err != nil {
+		logx.Fatalf("%s", err)
 	}
 
+	for _, pat := range patterns {
+		if _, ok := pkgs[pat]; !ok {
+			logx.Fatalf("no package found with pattern %s", pat)
+		}
+	}
+
+	primaryPkg := pkgs[dot]
+	if g.commonFlags.FileName != "" {
+		var fs []*ast.File
+		for _, f := range primaryPkg.Syntax {
+			filename := primaryPkg.Fset.File(f.Pos()).Name()
+			if filepath.Base(filename) == g.CommonFlags().FileName {
+				fs = append(fs, f)
+				break
+			}
+		}
+		primaryPkg.Syntax = fs
+	} else if Contains(g.commonFlags.TypeNames, "*") { //todo
+	end:
+		for i, f := range primaryPkg.Syntax {
+			for _, cg := range f.Comments {
+				for _, c := range cg.List {
+					if !findCmdLine(c.Text, g.CommonFlags().CmdLine) {
+						continue
+					}
+					filename := filepath.Base(primaryPkg.GoFiles[i])
+					g.allInOneFile = filename
+					break end
+				}
+			}
+		}
+	}
+
+	g.SetPkg(primaryPkg)
+
 	g.addPackage(g.pkg) //for backward compatibility
+	return pkgs
+}
+
+func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Package, error) {
+	pkgs, err := packages.Load(cfg, patterns...)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]*packages.Package, len(patterns))
+	for _, pat := range patterns {
+		for _, pkg := range pkgs {
+			if hasMultiPkgs(pkg) {
+				logx.Fatalf("multiple packages found in %s", pkg.Dir)
+			}
+
+			if pkg.PkgPath == pat {
+				result[pat] = pkg
+				break
+			}
+
+			isPath := strings.HasPrefix(pat, ".") || strings.HasPrefix(pat, "/")
+			if isPath {
+				absPat, _ := filepath.Abs(filepath.Join(cfg.Dir, pat))
+				if pkg.Dir == absPat {
+					_, ok := result[pat]
+					if ok {
+						logx.Fatalf("multiple packages found in %s", pat)
+					}
+					result[pat] = pkg
+				}
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // addPackage adds a type checked Package and its syntax files to the generator.
@@ -228,7 +295,7 @@ func getGoFile(pkg *packages.Package, typeName string) string {
 	return ""
 }
 
-func (g *GeneratorBase) ParsePackage(typeLister TypeLister) {
+func (g *GeneratorBase) confirmTypes(typeLister TypeLister) {
 	typeNames := g.commonFlags.TypeNames
 	if len(typeNames) > 0 && typeNames[0] != "*" {
 		for _, typName := range typeNames {
@@ -244,17 +311,24 @@ func (g *GeneratorBase) ParsePackage(typeLister TypeLister) {
 	}
 }
 
-func (g *GeneratorBase) Generate(dataMaker DataMaker) map[string][]byte {
+func (g *GeneratorBase) Generate(
+	gen interface {
+		TypeLister
+		DataMaker
+	}) map[string][]byte {
 	if g._pkg == nil {
-		logx.Fatal("pkg is nil, may forget to call ParsePackage")
+		logx.Fatal("pkg is nil, may forget to call LoadPackage")
 	}
 	if g.pkg == nil {
-		logx.Fatal("pkg is nil, may forget to call ParsePackage")
+		logx.Fatal("primary pkg is nil, may forget to call LoadPackage")
 	}
+
+	g.confirmTypes(gen)
+
 	srcMap := make(map[string][]byte)
 	var srcList [][]byte
 	for _, typName := range g.commonFlags.TypeNames {
-		data := dataMaker.MakeData(typName)
+		data := gen.MakeData(typName)
 		if data == nil {
 			continue
 		}
@@ -306,4 +380,20 @@ func (g *GeneratorBase) generateOne(data any) []byte {
 		logx.Fatalf("format source: %s", err)
 	}
 	return src
+}
+
+func hasMultiPkgs(pkg *packages.Package) bool {
+	for _, e := range pkg.Errors {
+		if strings.Contains(e.Msg, "found packages") {
+			return true
+		}
+	}
+	return false
+}
+
+func findCmdLine(doc string, cmdline string) bool {
+	pat := fmt.Sprintf("(?im)^//go:generate.*%s$", regexp.QuoteMeta(cmdline))
+	regAll := regexp.MustCompile(pat)
+	new := regAll.Match([]byte(doc))
+	return new
 }

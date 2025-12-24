@@ -8,8 +8,8 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func (g *Generator) parseSrcFields(srcTypeName string) bool {
-	srcExists := false
+func (g *Generator) parseSrcFields(srcTypeName string) types.Type {
+	var typ types.Type
 	g.tagMap = make(map[string]string)
 
 	ptrTypeMap := make(map[string]string)
@@ -28,25 +28,28 @@ func (g *Generator) parseSrcFields(srcTypeName string) bool {
 			if !ok {
 				return true
 			}
+			obj := g.Pkg().TypesInfo.Defs[ts.Name]
+			if obj != nil {
+				typ = obj.Type()
+			}
 
-			srcExists = true
 			g.extractExportedTopFiels(g.Pkg(), st, ptrTypeMap, &exportedFields)
 			return false
 		})
 	}
-	if !srcExists {
-		return false
+	if typ == nil {
+		return nil
 	}
 	g.srcPtrTypeMap = ptrTypeMap
 	g.exportedFields = exportedFields
 	for _, f := range exportedFields {
 		g.data.SrcFieldList = append(g.data.SrcFieldList, f.name)
 	}
-	return true
+	return typ
 }
 
-func (g *Generator) parseDestFields(destTypeName string) bool {
-	destExists := false
+func (g *Generator) parseDestFields(destTypeName string) types.Type {
+	var typ types.Type
 
 	ptrTypeMap := make(map[string]string)
 	var exportedFields []Field
@@ -64,18 +67,21 @@ func (g *Generator) parseDestFields(destTypeName string) bool {
 			if !ok {
 				return true
 			}
+			obj := g.destPkg.TypesInfo.Defs[ts.Name]
+			if obj != nil {
+				typ = obj.Type()
+			}
 
-			destExists = true
 			g.extractExportedTopFiels(g.destPkg, st, ptrTypeMap, &exportedFields)
 			return false
 		})
 	}
-	if !destExists {
-		return false
+	if typ == nil {
+		return nil
 	}
 	g.destExportedFields = exportedFields
 	g.destPtrTypeMap = ptrTypeMap
-	return true
+	return typ
 }
 
 func getMapTag(tag string) string {

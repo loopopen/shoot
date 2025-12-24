@@ -19,13 +19,9 @@ func (Mapper) DecimalToString(d dest.Decimal) string {
 }
 
 func (Mapper) StringToTime(s string) time.Time {
-	t, err := time.ParseInLocation(time.DateTime, s, time.Local)
-	if err != nil {
-		panic(err)
-	}
-	return t
+	return time.Time{}
 }
 
 func (Mapper) TimeToString(t time.Time) string {
-	return t.Format(time.DateTime)
+	return ""
 }

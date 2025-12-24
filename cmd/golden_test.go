@@ -200,7 +200,6 @@ func generate(test Golden, g shoot.Generator, dir string) map[string][]byte {
 
 	g.ParseFlags()
 	g.LoadPackage()
-	g.ParsePackage(g)
 	srcMap := g.Generate(g)
 	return srcMap
 }

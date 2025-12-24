@@ -71,7 +71,6 @@ func main() {
 
 	g.ParseFlags()
 	g.LoadPackage()
-	g.ParsePackage(g)
 	srcMap := g.Generate(g)
 	var fileNames []string
 	for fname, src := range srcMap {

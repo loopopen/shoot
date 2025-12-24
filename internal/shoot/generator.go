@@ -1,16 +1,19 @@
 package shoot
 
+import "golang.org/x/tools/go/packages"
+
 type Generator interface {
 	DataMaker
 	TypeLister
 
 	ParseFlags()
 
-	LoadPackage()
+	LoadPackage(patterns ...string) map[string]*packages.Package
 
-	ParsePackage(typeLister TypeLister)
-
-	Generate(dataMaker DataMaker) map[string][]byte
+	Generate(gen interface {
+		TypeLister
+		DataMaker
+	}) map[string][]byte
 }
 
 type DataMaker interface {

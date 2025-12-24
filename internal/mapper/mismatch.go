@@ -5,9 +5,6 @@ import (
 	"go/types"
 	"path/filepath"
 	"strings"
-
-	"github.com/lopolopen/shoot/internal/tools/logx"
-	"golang.org/x/tools/go/packages"
 )
 
 func (g *Generator) loadTypeMapperPkg(typeName string) string {
@@ -54,17 +51,17 @@ func (g *Generator) loadTypeMapperPkg(typeName string) string {
 					continue
 				}
 				impPath := strings.Trim(imp.Path.Value, `"`)
-				cfg := &packages.Config{
-					Mode: packages.NeedName |
-						packages.NeedFiles |
-						packages.NeedSyntax |
-						packages.NeedTypes |
-						packages.NeedTypesInfo,
-				}
-				pkgs, err := loadPkgs(cfg, impPath)
-				if err != nil {
-					logx.Fatalf("%s", err)
-				}
+				// cfg := &packages.Config{
+				// 	Mode: packages.NeedName |
+				// 		packages.NeedFiles |
+				// 		packages.NeedSyntax |
+				// 		packages.NeedTypes |
+				// 		packages.NeedTypesInfo,
+				// }
+				pkgs := g.LoadPackage(impPath)
+				// if err != nil {
+				// 	logx.Fatalf("%s", err)
+				// }
 				g.mapperpkg = pkgs[impPath]
 				mappers = sel.Sel.Name
 			}
@@ -156,7 +153,8 @@ func (g *Generator) makeMismatch() {
 				continue
 			}
 
-			if f1.typ.String() == f2.typ.String() {
+			same, conv := matchType(f1.typ, f2.typ)
+			if same || conv {
 				continue
 			}
 
