@@ -123,7 +123,6 @@ func (g *Generator) makeStr(typeName string) {
 	sort.Slice(values, func(i, j int) bool {
 		return values[i].value < values[j].value
 	})
-	logx.Pin(values)
 	for _, v := range values {
 		nameList = append(nameList, v.name)
 		valueMap[v.name] = int64(v.value)

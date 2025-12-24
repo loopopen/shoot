@@ -184,33 +184,3 @@ func hasFields(t types.Type) bool {
 	}
 	return false
 }
-
-// func stripPkgPrefix(t types.Type) string {
-// 	switch tt := t.(type) {
-// 	case *types.Named:
-// 		return tt.Obj().Name()
-// 	case *types.Pointer:
-// 		return "*" + stripPkgPrefix(tt.Elem())
-// 	case *types.Slice:
-// 		return "[]" + stripPkgPrefix(tt.Elem())
-// 	case *types.Array:
-// 		return fmt.Sprintf("[%d]%s", tt.Len(), stripPkgPrefix(tt.Elem()))
-// 	case *types.Map:
-// 		return fmt.Sprintf("map[%s]%s",
-// 			stripPkgPrefix(tt.Key()), stripPkgPrefix(tt.Elem()))
-// 	case *types.Chan:
-// 		dir := ""
-// 		if tt.Dir() == types.SendOnly {
-// 			dir = "chan<- "
-// 		} else if tt.Dir() == types.RecvOnly {
-// 			dir = "<-chan "
-// 		} else {
-// 			dir = "chan "
-// 		}
-// 		return dir + stripPkgPrefix(tt.Elem())
-// 	case *types.Basic:
-// 		return tt.Name()
-// 	default:
-// 		return t.String()
-// 	}
-// }

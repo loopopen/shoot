@@ -45,7 +45,7 @@ func (g *Generator) parseManual(srcTypeName, destTypeName string) []string {
 						if ident, ok := expr.X.(*ast.Ident); ok && ident.Name != srcTypeName {
 							continue
 						}
-						recvTypeName = "*" + srcTypeName
+						recvTypeName = star + srcTypeName
 					}
 
 					if fn.Type.Params == nil || len(fn.Type.Params.List) != 1 {
@@ -64,7 +64,7 @@ func (g *Generator) parseManual(srcTypeName, destTypeName string) []string {
 						if isWrite {
 							logx.Fatalf("method (%s).%s must has a pointer parameter", recvTypeName, fn.Name.Name)
 						} else {
-							g.data.ReadParamPrefix = "*"
+							g.data.ReadParamPrefix = star
 						}
 					case *ast.StarExpr: //pointer dest param
 						paramTypeExpr = expr.X

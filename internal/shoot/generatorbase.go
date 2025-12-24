@@ -17,19 +17,22 @@ import (
 )
 
 type GeneratorBase struct {
-	commonFlags  *CommonFlags
-	subCmd       string
-	tmplTxt      string
-	tmp          *template.Template
-	transfers    template.FuncMap
-	pkg          *packages.Package
-	allInOneFile string
+	commonFlags     *CommonFlags
+	subCmd          string
+	tmplTxt         string
+	tmp             *template.Template
+	transfers       template.FuncMap
+	pkg             *packages.Package
+	allInOneFile    string
+	fileNameMap     map[string]string
+	isTypeSpecified bool
 }
 
 func NewGeneratorBase(subCmd string, tmplTxt string) *GeneratorBase {
 	g := &GeneratorBase{
-		subCmd:  subCmd,
-		tmplTxt: tmplTxt,
+		subCmd:      subCmd,
+		tmplTxt:     tmplTxt,
+		fileNameMap: make(map[string]string),
 	}
 	g.preRegister()
 	return g
@@ -56,6 +59,10 @@ func (g *GeneratorBase) Pkg() *packages.Package {
 
 func (g *GeneratorBase) SetPkg(pkg *packages.Package) {
 	g.pkg = pkg
+}
+
+func (g *GeneratorBase) IsTypeSpecified() bool {
+	return g.isTypeSpecified
 }
 
 func (d *GeneratorBase) preRegister() {
@@ -111,10 +118,8 @@ func (g *GeneratorBase) ParseCommonFlags(sub *flag.FlagSet) {
 		types = strings.Split(*typeNames, ",")
 	}
 
-	sep_ := *sep || *separate
-	if *typeNames != "*" && *filename == "" { //basic case: -type=Order,Address
-		sep_ = true
-	}
+	g.isTypeSpecified = *typeNames != "" && *typeNames != star
+	sep_ := g.isTypeSpecified || *sep || *separate
 
 	dir := FixPath(sub.Arg(0)) //e.g. ./testdata
 	if dir != dot {
@@ -162,6 +167,10 @@ func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
 	if fileName == "" {
 		fileName = g.allInOneFile
 	}
+	if fileName == "" {
+		fileName = g.fileNameMap[typeName]
+	}
+
 	gofile := strings.TrimSuffix(fileName, ".go")
 	if typeName == "" {
 		return fmt.Sprintf("%s.%s.go", gofile, cmd)
@@ -197,21 +206,23 @@ func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Pac
 
 	primaryPkg := pkgs[dot]
 	if g.commonFlags.FileName != "" {
+		//only keep the specified file
 		var fs []*ast.File
 		for _, f := range primaryPkg.Syntax {
 			filename := primaryPkg.Fset.File(f.Pos()).Name()
-			if filepath.Base(filename) == g.CommonFlags().FileName {
+			if filepath.Base(filename) == g.commonFlags.FileName {
 				fs = append(fs, f)
 				break
 			}
 		}
 		primaryPkg.Syntax = fs
-	} else if Contains(g.commonFlags.TypeNames, "*") { //todo
+	} else if Contains(g.commonFlags.TypeNames, star) {
+		//find the file in which "-type=*" is used
 	end:
 		for i, f := range primaryPkg.Syntax {
 			for _, cg := range f.Comments {
 				for _, c := range cg.List {
-					if !findCmdLine(c.Text, g.CommonFlags().CmdLine) {
+					if !findCmdLine(c.Text, g.commonFlags.CmdLine) {
 						continue
 					}
 					filename := filepath.Base(primaryPkg.GoFiles[i])
@@ -273,13 +284,13 @@ func getGoFile(pkg *packages.Package, typeName string) string {
 
 func (g *GeneratorBase) confirmTypes(typeLister TypeLister) {
 	typeNames := g.commonFlags.TypeNames
-	if len(typeNames) > 0 && typeNames[0] != "*" {
+	if g.isTypeSpecified {
 		for _, typName := range typeNames {
 			gofile := getGoFile(g.pkg, typName)
 			if g.commonFlags.FileName == "" {
-				g.commonFlags.FileName = gofile
+				g.fileNameMap[typName] = gofile
 			} else if g.commonFlags.FileName != gofile {
-				logx.Fatalf("types are not in the same file")
+				logx.Fatalf("type %s is not in the specified file", typName)
 			}
 		}
 	} else {
@@ -369,4 +380,30 @@ func findCmdLine(doc string, cmdline string) bool {
 	regAll := regexp.MustCompile(pat)
 	new := regAll.Match([]byte(doc))
 	return new
+}
+
+func (g *GeneratorBase) Clean() error {
+	if g.commonFlags.Separate {
+		return nil
+	}
+	if g.allInOneFile == "" {
+		return nil
+	}
+
+	genfile := g.fileName("", false)
+	pattern := fmt.Sprintf("*.%s%s*.go", Shoot, g.subCmd)
+	glob := filepath.Join(g.commonFlags.Dir, pattern)
+	matches, err := filepath.Glob(glob)
+	if err != nil {
+		return err
+	}
+	for _, file := range matches {
+		if file == genfile {
+			continue
+		}
+		if err := os.Remove(file); err != nil {
+			return err
+		}
+	}
+	return nil
 }

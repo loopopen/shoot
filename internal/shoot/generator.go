@@ -14,6 +14,8 @@ type Generator interface {
 		TypeLister
 		DataMaker
 	}) map[string][]byte
+
+	Clean() error
 }
 
 type DataMaker interface {

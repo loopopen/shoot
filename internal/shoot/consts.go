@@ -1,9 +1,12 @@
 package shoot
 
-const Shoot = "shoot"
+const (
+	Shoot       = "shoot"
+	Version     = "v0.3.2-beta.5"
+	SelfPkgPath = "github.com/lopolopen/shoot"
+)
 
-const Version = "v0.3.2-beta.5"
-
-const SelfPkgPath = "github.com/lopolopen/shoot"
-
-const dot = "."
+const (
+	dot  = "."
+	star = "*"
+)

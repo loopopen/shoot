@@ -87,6 +87,11 @@ func main() {
 	for _, fn := range fileNames {
 		log.Printf("\t%s\n", fn)
 	}
+
+	err := g.Clean()
+	if err != nil {
+		logx.Fatal(err)
+	}
 }
 
 func notedownSrc(fileName string, src []byte) {

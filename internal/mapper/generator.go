@@ -16,6 +16,11 @@ import (
 
 const SubCmd = "map"
 
+const (
+	dot  = "."
+	star = "*"
+)
+
 //go:embed mapper.tmpl
 var tmplTxt string
 
@@ -148,7 +153,11 @@ func (g *Generator) MakeData(srcTypeName string) any {
 	}
 	destTyp := g.parseDestFields(destTypeName)
 	if destTyp == nil {
-		logx.Fatalf("dest type not exists: %s", destTypeName)
+		if g.IsTypeSpecified() {
+			logx.Fatalf("dest type not exists: %s", destTypeName)
+		} else {
+			return nil
+		}
 	}
 	g.parseManual(srcTypeName, destTypeName)
 

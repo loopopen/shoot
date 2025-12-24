@@ -12,5 +12,6 @@ type Order struct {
 	Amount    decimal.Decimal
 	Status    enums.OrderStatus
 	OrderTime time.Time
-	Address   OrderAddress
+	// OrderTime *time.Time
+	Address OrderAddress
 }
