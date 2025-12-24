@@ -13,7 +13,7 @@ test:
 	go test ./...
 
 release: test
-	sed -i '' "s/Version = \"v[^\"]*\"/Version = \"${tag}\"/" ./internal/shoot/consts.go
+	sed -i '' "s/= \"v[^\"]*\"/= \"${tag}\"/" ./internal/shoot/consts.go
 	git add -A
 	git commit -m"chore: ${tag}"
 	git tag ${tag}

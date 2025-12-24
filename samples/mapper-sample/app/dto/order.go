@@ -6,16 +6,7 @@ import (
 	"mappersample/infra/mapper"
 )
 
-// type inMapper struct {
-// 	//shoot: map
-// }
-
-// func (inMapper) StringToDecimal(s string) decimal.Decimal {
-// 	return decimal.RequireFromString(s)
-// }
-
 type Order struct {
-	// inMapper
 	mapper.Mapper
 
 	ID           string            `json:"id"`

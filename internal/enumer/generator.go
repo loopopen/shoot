@@ -9,6 +9,7 @@ import (
 
 	"github.com/lopolopen/shoot/internal/shoot"
 	"github.com/lopolopen/shoot/internal/tools/logx"
+	"golang.org/x/tools/go/packages"
 )
 
 const SubCmd = "enum"
@@ -21,6 +22,7 @@ type Generator struct {
 	*shoot.GeneratorBase
 	flags *Flags
 	data  *TmplData
+	pkg   *Package
 }
 
 func New() *Generator {
@@ -47,6 +49,29 @@ func (g *Generator) ParseFlags() {
 	}
 }
 
+func (g *Generator) LoadPackage(patterns ...string) map[string]*packages.Package {
+	pkgs := g.GeneratorBase.LoadPackage(patterns...)
+	g.addPackage(g.Pkg())
+	return pkgs
+}
+
+// addPackage adds a type checked Package and its syntax files to the generator.
+func (g *Generator) addPackage(pkg *packages.Package) {
+	g.pkg = &Package{
+		pkg:   pkg,
+		name:  pkg.Name,
+		defs:  pkg.TypesInfo.Defs,
+		files: make([]*File, len(pkg.Syntax)),
+	}
+
+	for i, file := range pkg.Syntax {
+		g.pkg.files[i] = &File{
+			file: file,
+			pkg:  g.pkg,
+		}
+	}
+}
+
 func (g *Generator) MakeData(typeName string) any {
 	g.data = NewTmplData(
 		g.CommonFlags().CmdLine,
@@ -63,15 +88,15 @@ func (g *Generator) MakeData(typeName string) any {
 	}
 
 	g.data.SetTypeName(typeName)
-	g.data.SetPackageName(g.Package().Name())
+	g.data.SetPackageName(g.Pkg().Name)
 	return g.data
 }
 
 func (g *Generator) ListTypes() []string {
 	var typeNames []string
-	pkg := g.Package()
-	for _, f := range pkg.Files() {
-		ast.Inspect(f.File(), func(n ast.Node) bool {
+	pkg := g.Pkg()
+	for _, f := range pkg.Syntax {
+		ast.Inspect(f, func(n ast.Node) bool {
 			decl, ok := n.(*ast.GenDecl)
 			if !ok {
 				return true
@@ -84,7 +109,7 @@ func (g *Generator) ListTypes() []string {
 						continue
 					}
 
-					obj := pkg.Pkg().TypesInfo.Defs[ts.Name]
+					obj := pkg.TypesInfo.Defs[ts.Name]
 					if obj == nil {
 						continue
 					}

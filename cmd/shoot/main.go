@@ -71,7 +71,6 @@ func main() {
 
 	g.ParseFlags()
 	g.LoadPackage()
-	g.ParsePackage(g)
 	srcMap := g.Generate(g)
 	var fileNames []string
 	for fname, src := range srcMap {
@@ -87,6 +86,11 @@ func main() {
 	log.Printf("🎉 go generate successfully: [%s]\n", strings.Join(flag.Args(), " "))
 	for _, fn := range fileNames {
 		log.Printf("\t%s\n", fn)
+	}
+
+	err := g.Clean()
+	if err != nil {
+		logx.Fatal(err)
 	}
 }
 

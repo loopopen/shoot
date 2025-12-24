@@ -13,7 +13,7 @@ import (
 	{{.Imports}}
 ) {{"\n"}}
 {{- end -}}
-{{- if .Json -}}
+{{- if .JSON -}}
 import "encoding/json" {{"\n"}}
 {{- end -}}
 {{- if and .Option (not .Self) -}}
@@ -80,7 +80,7 @@ func ({{$this}} *{{$.TypeName}})Set{{pascalCase .}}({{.}}_ {{typeof .}}) {
 {{- end -}}
 {{- end -}}
 
-{{- if .Json -}}
+{{- if .JSON -}}
 type _{{.TypeName}}_marshal struct { {{"\n"}}
 	{{- range .GetterList -}}
 	{{pascalCase .}} {{typeof .}}{{if (jsontagof .)}}`json:"{{jsontagof .}}"`{{end}} {{"\n"}}

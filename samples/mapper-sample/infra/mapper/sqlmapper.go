@@ -5,9 +5,13 @@ import (
 	"time"
 )
 
-type SQLMapper struct{}
+type SQLMapper struct {
+	//shoot: mapper
+}
 
-func (m *SQLMapper) TimePtrToNullTime(t *time.Time) sql.Null[time.Time] {
+//todo: receiver must be pointer type
+
+func (*SQLMapper) TimePtrToNullTime(t *time.Time) sql.Null[time.Time] {
 	if t == nil {
 		return sql.Null[time.Time]{}
 	}

@@ -61,14 +61,14 @@ func (g *Generator) MakeData(typeName string) any {
 	g.makeGetSet(typeName)
 	g.makeJson(typeName)
 	g.data.SetTypeName(typeName)
-	g.data.SetPackageName(g.Package().Name())
+	g.data.SetPackageName(g.Pkg().Name)
 	return g.data
 }
 
 func (g *Generator) ListTypes() []string {
 	var typeNames []string
-	for _, f := range g.Package().Files() {
-		ast.Inspect(f.File(), func(n ast.Node) bool {
+	for _, f := range g.Pkg().Syntax {
+		ast.Inspect(f, func(n ast.Node) bool {
 			ts, ok := n.(*ast.TypeSpec)
 			if !ok {
 				return true

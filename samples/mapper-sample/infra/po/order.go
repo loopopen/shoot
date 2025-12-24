@@ -20,6 +20,7 @@ type Order struct {
 	Street    string
 	Room      string
 	OrderTime time.Time
+	// OrderTime sql.Null[time.Time]
 }
 
 func (po *Order) readDomain(model.Order) {

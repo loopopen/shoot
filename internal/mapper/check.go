@@ -11,8 +11,6 @@ import (
 
 //tips: write src means read rest, and vice versa
 
-const dot = "."
-
 func (g *Generator) makeReadWriteCheck() {
 	g.makeReadCond()
 	g.nilCheckRead()

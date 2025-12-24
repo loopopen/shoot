@@ -52,8 +52,8 @@ func (g *Generator) cookClient(typeName string) {
 	}
 	g.data.BodyHTTPMethods = []string{http.MethodPost, http.MethodPut, http.MethodPatch}
 
-	for _, f := range g.Package().Files() {
-		ast.Inspect(f.File(), func(n ast.Node) bool {
+	for _, f := range g.Pkg().Syntax {
+		ast.Inspect(f, func(n ast.Node) bool {
 			if !g.testNode(typeName, n) {
 				return true
 			}
@@ -122,7 +122,7 @@ func (g *Generator) cookClient(typeName string) {
 					if ftype.Params != nil {
 						for _, param := range ftype.Params.List {
 							for _, name := range param.Names {
-								g.handleExpr(param.Type, name, f.File(), methodName, httpMethod)
+								g.handleExpr(param.Type, name, f, methodName, httpMethod)
 								if _, ok := param.Type.(*ast.StarExpr); ok {
 									g.data.IsParamPtrMap[methodName][name.Name] = true
 								}

@@ -5,9 +5,6 @@ import (
 	"go/types"
 	"path/filepath"
 	"strings"
-
-	"github.com/lopolopen/shoot/internal/tools/logx"
-	"golang.org/x/tools/go/packages"
 )
 
 func (g *Generator) loadTypeMapperPkg(typeName string) string {
@@ -22,6 +19,7 @@ func (g *Generator) loadTypeMapperPkg(typeName string) string {
 			ts, _ := n.(*ast.TypeSpec)
 			st, _ := ts.Type.(*ast.StructType)
 			for _, field := range st.Fields.List {
+				//mapper must be an embedded field type
 				if len(field.Names) > 0 {
 					continue
 				}
@@ -39,14 +37,19 @@ func (g *Generator) loadTypeMapperPkg(typeName string) string {
 					x = star.X
 				}
 
-				_, ok := x.(*ast.Ident) //todo: !!!!!
-				if ok {
-					g.mapperpkg = g.Pkg()
-					return false
+				if ident, ok := x.(*ast.Ident); ok {
+					if isMapperCandidate(ident, g.Pkg().TypesInfo) {
+						g.mapperpkg = g.Pkg()
+						mappers = ident.Name
+						return false
+					}
 				}
 
-				sel, ok := x.(*ast.SelectorExpr) //
+				sel, ok := x.(*ast.SelectorExpr)
 				if !ok {
+					continue
+				}
+				if !isMapperCandidate(sel.Sel, g.Pkg().TypesInfo) {
 					continue
 				}
 				imp := findImportForSelector(f, sel)
@@ -54,17 +57,7 @@ func (g *Generator) loadTypeMapperPkg(typeName string) string {
 					continue
 				}
 				impPath := strings.Trim(imp.Path.Value, `"`)
-				cfg := &packages.Config{
-					Mode: packages.NeedName |
-						packages.NeedFiles |
-						packages.NeedSyntax |
-						packages.NeedTypes |
-						packages.NeedTypesInfo,
-				}
-				pkgs, err := loadPkgs(cfg, impPath)
-				if err != nil {
-					logx.Fatalf("%s", err)
-				}
+				pkgs := g.LoadPackage(impPath)
 				g.mapperpkg = pkgs[impPath]
 				mappers = sel.Sel.Name
 			}
@@ -72,6 +65,28 @@ func (g *Generator) loadTypeMapperPkg(typeName string) string {
 		})
 	}
 	return mappers
+}
+
+func isMapperCandidate(id *ast.Ident, info *types.Info) bool {
+	//a struct with no fields
+	obj := info.Uses[id]
+	if obj == nil {
+		obj = info.Defs[id]
+	}
+	if obj == nil {
+		return false
+	}
+
+	t := obj.Type()
+	if t == nil {
+		return false
+	}
+
+	st, ok := t.Underlying().(*types.Struct)
+	if !ok {
+		return false
+	}
+	return st.NumFields() == 0
 }
 
 func (g *Generator) parseMapper(mapperTypeName string) {
@@ -156,7 +171,8 @@ func (g *Generator) makeMismatch() {
 				continue
 			}
 
-			if f1.typ.String() == f2.typ.String() {
+			same, conv := matchType(f1.typ, f2.typ)
+			if same || conv {
 				continue
 			}
 

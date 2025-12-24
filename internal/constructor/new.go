@@ -25,14 +25,14 @@ func (g *Generator) makeNew(typeName string) {
 	typeMap := make(map[string]string)
 	xMap := make(map[string]string)
 
-	pkgPath := g.Package().Pkg().PkgPath
+	pkgPath := g.Pkg().PkgPath
 	if pkgPath == shoot.SelfPkgPath {
 		g.data.Self = true
 	}
 
 	typeExists := false
-	for _, f := range g.Package().Files() {
-		ast.Inspect(f.File(), func(n ast.Node) bool {
+	for _, f := range g.Pkg().Syntax {
+		ast.Inspect(f, func(n ast.Node) bool {
 			ts, ok := n.(*ast.TypeSpec)
 			if !ok {
 				return true
@@ -85,7 +85,7 @@ func (g *Generator) makeNew(typeName string) {
 				}
 			}
 
-			imports = buildImports(f.File().Imports)
+			imports = buildImports(f.Imports)
 			return false
 		})
 	}
@@ -184,33 +184,3 @@ func hasFields(t types.Type) bool {
 	}
 	return false
 }
-
-// func stripPkgPrefix(t types.Type) string {
-// 	switch tt := t.(type) {
-// 	case *types.Named:
-// 		return tt.Obj().Name()
-// 	case *types.Pointer:
-// 		return "*" + stripPkgPrefix(tt.Elem())
-// 	case *types.Slice:
-// 		return "[]" + stripPkgPrefix(tt.Elem())
-// 	case *types.Array:
-// 		return fmt.Sprintf("[%d]%s", tt.Len(), stripPkgPrefix(tt.Elem()))
-// 	case *types.Map:
-// 		return fmt.Sprintf("map[%s]%s",
-// 			stripPkgPrefix(tt.Key()), stripPkgPrefix(tt.Elem()))
-// 	case *types.Chan:
-// 		dir := ""
-// 		if tt.Dir() == types.SendOnly {
-// 			dir = "chan<- "
-// 		} else if tt.Dir() == types.RecvOnly {
-// 			dir = "<-chan "
-// 		} else {
-// 			dir = "chan "
-// 		}
-// 		return dir + stripPkgPrefix(tt.Elem())
-// 	case *types.Basic:
-// 		return tt.Name()
-// 	default:
-// 		return t.String()
-// 	}
-// }

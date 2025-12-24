@@ -31,7 +31,7 @@ func (g *Generator) handleExpr(paramType ast.Expr, name *ast.Ident, file *ast.Fi
 }
 
 func (g *Generator) handleSelectorExpr(paramType *ast.SelectorExpr, name *ast.Ident, methodName string) {
-	typ := g.Package().Pkg().TypesInfo.Types[paramType].Type
+	typ := g.Pkg().TypesInfo.Types[paramType].Type
 	named, ok := typ.(*types.Named)
 	if !ok {
 		return
@@ -47,7 +47,7 @@ func (g *Generator) handleSelectorExpr(paramType *ast.SelectorExpr, name *ast.Id
 }
 
 func (g *Generator) handleStruct(paramType ast.Expr, paramTypeName string, name *ast.Ident, methodName string) {
-	typ := g.Package().Pkg().TypesInfo.Types[paramType].Type
+	typ := g.Pkg().TypesInfo.Types[paramType].Type
 	named, ok := typ.(*types.Named)
 	if !ok {
 		return

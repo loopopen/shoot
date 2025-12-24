@@ -16,8 +16,8 @@ func (g *Generator) makeOpt(typeName string) {
 	var defList []string
 	defMap := make(map[string]string)
 
-	for _, f := range g.Package().Files() {
-		ast.Inspect(f.File(), func(n ast.Node) bool {
+	for _, f := range g.Pkg().Syntax {
+		ast.Inspect(f, func(n ast.Node) bool {
 			ts, ok := n.(*ast.TypeSpec)
 			if !ok {
 				return true
