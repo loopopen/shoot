@@ -13,14 +13,14 @@ func (g *Generator) makeMatch() {
 
 	for _, f1 := range g.exportedFields {
 		for _, f2 := range g.destExportedFields {
-			if !canNameMatch(f1.name, f2.name, g.tagMap) {
+			if !canNameMatch(f1, f2, g.tagMap) {
 				continue
 			}
 
 			same, conv := matchType(f1.typ, f2.typ)
-			if !g.writeDestSet[f2.name] {
+			if !g.writeDestSet[f2.name] && !f2.isGet {
 				if same {
-					g.data.DestEqMatchMap[f1.name] = f2.name //dest =
+					g.data.DestEqMatchMap[f1.name] = f2.name //dest= or dest.Set
 				} else if conv {
 					g.data.ConvMatchMap[f1.name] = f2.name
 					//in ToXxx, type converter needs desc type
@@ -32,9 +32,9 @@ func (g *Generator) makeMatch() {
 				}
 			}
 
-			if !g.writeSrcSet[f1.name] {
+			if !g.writeSrcSet[f1.name] && !f1.isGet {
 				if same {
-					g.data.SrcEqMatchMap[f1.name] = f2.name //src =
+					g.data.SrcEqMatchMap[f1.name] = f2.name //src= or src.Set
 				} else if conv {
 					g.data.ConvMatchMap[f1.name] = f2.name
 					//in FromXxx, type converter needs src type
@@ -62,17 +62,17 @@ func qualifiedTypeName(t types.Type, alias string) string {
 	return types.TypeString(t, qualifier)
 }
 
-func canNameMatch(name1, name2 string, tagMap map[string]string) bool {
+func canNameMatch(f1, f2 Field, tagMap map[string]string) bool {
 	if tagMap == nil {
 		tagMap = make(map[string]string)
 	}
 
-	n, ok := tagMap[name1]
+	name, ok := tagMap[f1.MatchingName()]
 	if !ok {
-		n = name1
+		name = f1.MatchingName()
 	}
 
-	return n == name2
+	return name == f2.MatchingName()
 }
 
 func matchType(type1, type2 types.Type) (bool, bool) {

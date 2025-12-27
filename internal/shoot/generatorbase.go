@@ -77,6 +77,12 @@ func (d *GeneratorBase) preRegister() {
 		}
 		return false
 	})
+	d.RegisterTransfer("cond", func(cond bool, a, b string) string {
+		if cond {
+			return a
+		}
+		return b
+	})
 }
 
 func (d *GeneratorBase) RegisterTransfer(key string, transfer any) {

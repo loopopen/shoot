@@ -5,6 +5,7 @@ import (
 	"go/types"
 	"regexp"
 
+	"github.com/lopolopen/shoot/internal/transfer"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -13,7 +14,7 @@ func (g *Generator) parseSrcFields(srcTypeName string) types.Type {
 	g.tagMap = make(map[string]string)
 
 	ptrTypeMap := make(map[string]string)
-	var exportedFields []Field
+	var fields []Field
 	for _, f := range g.Pkg().Syntax {
 		ast.Inspect(f, func(n ast.Node) bool {
 			if !g.testNode(srcTypeName, n) {
@@ -33,7 +34,7 @@ func (g *Generator) parseSrcFields(srcTypeName string) types.Type {
 				typ = obj.Type()
 			}
 
-			g.extractExportedTopFiels(g.Pkg(), st, ptrTypeMap, &exportedFields)
+			g.extractExportedTopFiels(g.Pkg(), st, ptrTypeMap, &fields)
 			return false
 		})
 	}
@@ -41,9 +42,13 @@ func (g *Generator) parseSrcFields(srcTypeName string) types.Type {
 		return nil
 	}
 	g.srcPtrTypeMap = ptrTypeMap
-	g.exportedFields = exportedFields
-	for _, f := range exportedFields {
-		g.data.SrcFieldList = append(g.data.SrcFieldList, f.name)
+	for _, f := range fields {
+		if ast.IsExported(f.name) {
+			g.exportedFields = append(g.exportedFields, f)
+			g.data.SrcFieldList = append(g.data.SrcFieldList, f.name)
+		} else {
+			g.unexportedFields = append(g.unexportedFields, f)
+		}
 	}
 	return typ
 }
@@ -79,7 +84,13 @@ func (g *Generator) parseDestFields(destTypeName string) types.Type {
 	if typ == nil {
 		return nil
 	}
-	g.destExportedFields = exportedFields
+	for _, f := range exportedFields {
+		if ast.IsExported(f.name) {
+			g.destExportedFields = append(g.destExportedFields, f)
+		} else {
+			g.destUnexportedFields = append(g.destUnexportedFields, f)
+		}
+	}
 	g.destPtrTypeMap = ptrTypeMap
 	return typ
 }
@@ -99,27 +110,29 @@ func (g *Generator) extractExportedTopFiels(pkg *packages.Package, st *ast.Struc
 			//embedded: gorm.Model
 			typ := pkg.TypesInfo.TypeOf(f.Type)
 			name := typeName(typ)
-			if !ast.IsExported(name) {
-				continue
-			}
+			// if !ast.IsExported(name) {
+			// 	continue
+			// }
 			expandIfStruct(pkg, g.qualifier, name, 1, typ, ptrTypeMap, fields)
 			continue
 		}
 		//named:
-		name := f.Names[0]
+		name := f.Names[0].Name
 		if f.Tag != nil {
 			tag := getMapTag(f.Tag.Value)
 			if tag == "-" {
 				continue
 			}
 			if tag != "" {
-				g.tagMap[name.Name] = tag
+				name = transfer.ToPascalCase(name)
+				tag = transfer.ToPascalCase(tag)
+				g.tagMap[name] = tag
 			}
 		}
 		for _, name := range f.Names {
-			if !ast.IsExported(name.Name) {
-				continue
-			}
+			// if !ast.IsExported(name.Name) {
+			// 	continue
+			// }
 
 			if obj, ok := pkg.TypesInfo.Defs[name].(*types.Var); ok {
 				appendOrReplace(fields, Field{
@@ -156,9 +169,9 @@ func expandIfStruct(pkg *packages.Package, qf types.Qualifier, pre string, depth
 func extractStructFields(pkg *packages.Package, qf types.Qualifier, pre string, depth int32, st *types.Struct, ptrSet map[string]string, fields *[]Field) {
 	for i := 0; i < st.NumFields(); i++ {
 		f := st.Field(i)
-		if !ast.IsExported(f.Name()) {
-			continue
-		}
+		// if !ast.IsExported(f.Name()) {
+		// 	continue
+		// }
 
 		if f.Embedded() {
 			name := typeName(f.Type())

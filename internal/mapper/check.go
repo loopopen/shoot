@@ -43,13 +43,13 @@ func (g *Generator) nilCheckRead() {
 }
 
 func (g *Generator) neverWriteCheck() {
-	var neverWriteSrc []string
-	var neverWriteDest []string
+	var neverWriteSrc []Field
+	var neverWriteDest []Field
 
 	for _, f := range g.exportedFields {
 		s := f.name
 
-		if g.writeSrcSet[s] {
+		if g.writeSrcSet[s] || f.isGet {
 			continue
 		}
 		c := false
@@ -62,13 +62,13 @@ func (g *Generator) neverWriteCheck() {
 		if c {
 			continue
 		}
-		neverWriteSrc = append(neverWriteSrc, f.path)
+		neverWriteSrc = append(neverWriteSrc, f)
 	}
 
 	for _, f := range g.destExportedFields {
 		d := f.name
 
-		if g.writeDestSet[d] {
+		if g.writeDestSet[d] || f.isGet {
 			continue
 		}
 		c := false
@@ -82,21 +82,28 @@ func (g *Generator) neverWriteCheck() {
 			continue
 		}
 
-		neverWriteDest = append(neverWriteDest, f.path)
+		neverWriteDest = append(neverWriteDest, f)
 	}
 
-	if len(neverWriteSrc) > 0 {
-		names := strings.Join(neverWriteSrc, ", ")
-		reportWarn(g.data.PackageName+"."+g.data.TypeName, names)
-	}
-	if len(neverWriteDest) > 0 {
-		names := strings.Join(neverWriteDest, ", ")
-		reportWarn(g.data.QualifiedDestTypeName, names)
-	}
+	reportWarn(g.data.PackageName+"."+g.data.TypeName, neverWriteSrc)
+	reportWarn(g.data.QualifiedDestTypeName, neverWriteDest)
 }
 
-func reportWarn(typename, fields string) {
-	logx.Warnf("%s: these fields are never assigned:\n\t%s", typename, fields)
+func reportWarn(typename string, fields []Field) {
+	var fnames, mnames []string
+	for _, f := range fields {
+		if f.isSet {
+			mnames = append(mnames, f.path)
+		} else {
+			fnames = append(fnames, f.path)
+		}
+	}
+	if len(fnames) > 0 {
+		logx.Warnf("%s: these fields are never assigned:\n\t🌱 %s", typename, strings.Join(fnames, ", "))
+	}
+	if len(mnames) > 0 {
+		logx.Warnf("%s: these setting methods are never called:\n\t🔧 %s", typename, strings.Join(mnames, ", "))
+	}
 }
 
 func (g *Generator) makeReadCond() {

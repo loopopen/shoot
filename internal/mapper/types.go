@@ -58,6 +58,8 @@ func NewTmplData(cmdline, version string) *TmplData {
 	}
 }
 
+// func (d *TmplData) SetDestMap() map[string]string
+
 type Flags struct {
 	destDir   string
 	destTypes map[string]string
@@ -65,10 +67,13 @@ type Flags struct {
 }
 
 type Field struct {
-	name  string //ID
-	path  string //Model.ID
-	typ   types.Type
-	depth int32
+	name        string //ID
+	path        string //Model.ID
+	typ         types.Type
+	depth       int32
+	backingName string
+	isGet       bool
+	isSet       bool
 }
 
 func (f Field) IsEmbeded() bool {
@@ -86,8 +91,16 @@ func (f Field) CoveredBy(path string) bool {
 	return strings.HasSuffix(f.path, dot+xs[len(xs)-1]) //.ID
 }
 
+func (f Field) MatchingName() string {
+	if f.backingName != "" {
+		return f.backingName
+	}
+	return f.name
+}
+
 type Func struct {
 	name   string
+	path   string
 	param  types.Type
 	result types.Type
 }

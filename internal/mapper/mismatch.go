@@ -167,7 +167,7 @@ func (g *Generator) makeMismatch() {
 
 	for _, f1 := range g.exportedFields {
 		for _, f2 := range g.destExportedFields {
-			if !canNameMatch(f1.name, f2.name, g.tagMap) {
+			if !canNameMatch(f1, f2, g.tagMap) {
 				continue
 			}
 
@@ -185,7 +185,7 @@ func (g *Generator) makeMismatch() {
 
 func (g *Generator) makeFuncMap(f1, f2 Field) {
 	for _, fn := range g.mappingFuncList {
-		if !g.writeDestSet[f2.name] {
+		if !g.writeDestSet[f2.name] && !f2.isGet {
 			//in ToXxx, mapping func's param type is src field type
 			if fn.param.String() == f1.typ.String() && fn.result.String() == f2.typ.String() {
 				g.data.SrcToDestFuncMap[f1.name] = fn.name
@@ -195,7 +195,7 @@ func (g *Generator) makeFuncMap(f1, f2 Field) {
 			}
 		}
 
-		if !g.writeSrcSet[f1.name] {
+		if !g.writeSrcSet[f1.name] && !f1.isGet {
 			//in FromXxx, mapping func's param type is dest field type
 			if fn.param.String() == f2.typ.String() && fn.result.String() == f1.typ.String() {
 				g.data.DestToSrcFuncMap[f1.name] = fn.name
@@ -229,12 +229,12 @@ func (g *Generator) makeSubMap(sub1, sub2 Field) {
 			g.data.DestSubTypeMap[sub2.name] = qualifiedTypeName(typ2, g.flags.alias)
 
 			if pkgpath1 == g.Pkg().PkgPath && pkgpath2 == g.destPkg.PkgPath {
-				if !g.writeSrcSet[sub1.name] {
+				if !g.writeSrcSet[sub1.name] && !sub1.isGet {
 					g.data.MismatchSubMap[sub1.name] = sub2.name
 					g.writeSrcSet[sub1.name] = true
 					g.writeSrcMap[sub1.name] = sub2.name
 				}
-				if !g.writeDestSet[sub2.name] {
+				if !g.writeDestSet[sub2.name] && !sub2.isGet {
 					g.data.DestMismatchSubMap[sub1.name] = sub2.name
 					g.writeDestSet[sub2.name] = true
 					g.readSrcMap[sub1.name] = sub2.name
@@ -274,12 +274,12 @@ func (g *Generator) makeSubListMap(subs1, subs2 Field) {
 			g.data.DestSubTypeMap[subs2.name] = qualifiedTypeName(typ2, g.flags.alias)
 
 			if pkgpath1 == g.Pkg().PkgPath && pkgpath2 == g.destPkg.PkgPath {
-				if !g.writeSrcSet[subs1.name] {
+				if !g.writeSrcSet[subs1.name] && !subs1.isGet {
 					g.data.MismatchSubListMap[subs1.name] = subs2.name
 					g.writeSrcSet[subs1.name] = true
 					g.writeSrcMap[subs1.name] = subs2.name
 				}
-				if !g.writeDestSet[subs2.name] {
+				if !g.writeDestSet[subs2.name] && !subs2.isGet {
 					g.data.DestMismatchSubListMap[subs1.name] = subs2.name
 					g.writeDestSet[subs2.name] = true
 					g.readSrcMap[subs1.name] = subs2.name
