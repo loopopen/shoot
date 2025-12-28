@@ -13,17 +13,12 @@ func (g *Generator) makeGetSet(typeName string) {
 
 	for _, f := range g.Pkg().Syntax {
 		ast.Inspect(f, func(n ast.Node) bool {
-			ts, ok := n.(*ast.TypeSpec)
-			if !ok {
+			if !g.testNode(typeName, n) {
 				return true
 			}
-			if ts.Name.Name != typeName {
-				return true
-			}
-			st, ok := ts.Type.(*ast.StructType)
-			if !ok {
-				return true
-			}
+
+			ts, _ := n.(*ast.TypeSpec)
+			st, _ := ts.Type.(*ast.StructType)
 
 			for _, field := range st.Fields.List {
 				for _, name := range field.Names {

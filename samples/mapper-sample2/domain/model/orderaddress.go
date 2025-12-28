@@ -1,6 +1,4 @@
-package model2
-
-//go:generate go tool shoot new -getset -type=OrderAddress
+package model
 
 type OrderAddress struct { //Value object
 	city   string

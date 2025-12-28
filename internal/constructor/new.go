@@ -33,19 +33,12 @@ func (g *Generator) makeNew(typeName string) {
 	typeExists := false
 	for _, f := range g.Pkg().Syntax {
 		ast.Inspect(f, func(n ast.Node) bool {
-			ts, ok := n.(*ast.TypeSpec)
-			if !ok {
+			if !g.testNode(typeName, n) {
 				return true
 			}
 
-			if ts.Name.Name != typeName {
-				return true
-			}
-
-			st, ok := ts.Type.(*ast.StructType)
-			if !ok {
-				logx.Fatalf("type %s is not a struct type", ts.Name.Name)
-			}
+			ts, _ := n.(*ast.TypeSpec)
+			st, _ := ts.Type.(*ast.StructType)
 
 			typeExists = true
 			for _, field := range st.Fields.List {
@@ -60,11 +53,6 @@ func (g *Generator) makeNew(typeName string) {
 					if name.Obj.Kind != ast.Var {
 						continue
 					}
-
-					// r := g.pkg.defs[name].(*types.Var)
-					// if r != nil {
-					// 	typeMap[name.Name] = stripPkgPrefix(r.Type())
-					// }
 
 					fs := token.NewFileSet()
 					typeMap[name.Name] = exprString(fs, field.Type)

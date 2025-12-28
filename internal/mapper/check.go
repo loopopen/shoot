@@ -23,7 +23,7 @@ func (g *Generator) nilCheckRead() {
 	g.data.SrcNeedReadCheckMap = make(map[string]string)
 
 	for _, f := range g.exportedFields {
-		s := f.name
+		s := f.Name
 
 		d, ok := g.readSrcMap[s]
 		if ok {
@@ -35,7 +35,7 @@ func (g *Generator) nilCheckRead() {
 		d, ok = g.readDestMap()[s]
 		if ok {
 			if _, ok := g.destPathsMap[d]; ok {
-				g.data.DestNeedReadCheckMap[f.name] = d
+				g.data.DestNeedReadCheckMap[f.Name] = d
 			}
 		}
 	}
@@ -43,13 +43,13 @@ func (g *Generator) nilCheckRead() {
 }
 
 func (g *Generator) neverWriteCheck() {
-	var neverWriteSrc []Field
-	var neverWriteDest []Field
+	var neverWriteSrc []*Field
+	var neverWriteDest []*Field
 
 	for _, f := range g.exportedFields {
-		s := f.name
+		s := f.Name
 
-		if g.writeSrcSet[s] || f.isGet {
+		if g.writeSrcSet[s] || f.IsGet {
 			continue
 		}
 		c := false
@@ -66,9 +66,9 @@ func (g *Generator) neverWriteCheck() {
 	}
 
 	for _, f := range g.destExportedFields {
-		d := f.name
+		d := f.Name
 
-		if g.writeDestSet[d] || f.isGet {
+		if g.writeDestSet[d] || f.IsGet {
 			continue
 		}
 		c := false
@@ -85,14 +85,14 @@ func (g *Generator) neverWriteCheck() {
 		neverWriteDest = append(neverWriteDest, f)
 	}
 
-	reportWarn(g.data.PackageName+"."+g.data.TypeName, neverWriteSrc)
+	reportWarn(g.data.PackageName+dot+g.data.TypeName, neverWriteSrc)
 	reportWarn(g.data.QualifiedDestTypeName, neverWriteDest)
 }
 
-func reportWarn(typename string, fields []Field) {
+func reportWarn(typename string, fields []*Field) {
 	var fnames, mnames []string
 	for _, f := range fields {
-		if f.isSet {
+		if f.IsSet {
 			mnames = append(mnames, f.path)
 		} else {
 			fnames = append(fnames, f.path)
@@ -102,7 +102,7 @@ func reportWarn(typename string, fields []Field) {
 		logx.Warnf("%s: these fields are never assigned:\n\t🌱 %s", typename, strings.Join(fnames, ", "))
 	}
 	if len(mnames) > 0 {
-		logx.Warnf("%s: these setting methods are never called:\n\t🔧 %s", typename, strings.Join(mnames, ", "))
+		logx.Warnf("%s: these setter methods are never called:\n\t🔧 %s", typename, strings.Join(mnames, ", "))
 	}
 }
 
@@ -131,7 +131,7 @@ func (g *Generator) makeReadCond() {
 	})
 }
 
-func prepareReadPaths(fields []Field, ptrTypeMap map[string]string, readPathsMap map[string][]string) {
+func prepareReadPaths(fields []*Field, ptrTypeMap map[string]string, readPathsMap map[string][]string) {
 	for _, f := range fields {
 		if !f.IsEmbeded() {
 			continue
@@ -147,7 +147,7 @@ func prepareReadPaths(fields []Field, ptrTypeMap map[string]string, readPathsMap
 			}
 			readPaths = append(readPaths, path)
 		}
-		readPathsMap[f.name] = readPaths
+		readPathsMap[f.Name] = readPaths
 	}
 }
 
@@ -158,7 +158,7 @@ func (g *Generator) nilCheckWrite() {
 	var srcPtrPathList []string
 	var destPtrPathList []string
 	for _, f := range g.exportedFields {
-		s := f.name
+		s := f.Name
 
 		_, ok := g.writeSrcMap[s]
 		if ok && f.IsEmbeded() {
@@ -177,7 +177,7 @@ func (g *Generator) nilCheckWrite() {
 
 	for _, f := range g.destExportedFields {
 		for _, d := range g.writeDestMap() {
-			if f.name != d {
+			if f.Name != d {
 				continue
 			}
 

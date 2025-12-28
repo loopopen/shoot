@@ -11,15 +11,15 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func (g *Generator) parseGetSetMethods(pkg *packages.Package, stTyp types.Type, unexportedFields []Field, funcs *[]Func) {
+func (g *Generator) parseGetSetMethods(pkg *packages.Package, stTyp types.Type, unexportedFields []*Field, funcs *[]Func) {
 	if len(unexportedFields) == 0 {
 		return
 	}
 
-	super := make(map[string]Field)
+	super := make(map[string]*Field)
 	for _, field := range unexportedFields {
-		super[transfer.ToPascalCase(field.name)] = field
-		super[set+transfer.ToPascalCase(field.name)] = field
+		super[transfer.ToPascalCase(field.Name)] = field
+		super[set+transfer.ToPascalCase(field.Name)] = field
 	}
 
 	for _, f := range pkg.Syntax {
@@ -91,120 +91,68 @@ func (g *Generator) parseGetSetMethods(pkg *packages.Package, stTyp types.Type, 
 }
 
 func (g *Generator) parseSrcGetSetMethods(srcTyp types.Type) {
-	var methods []Func
-	g.parseGetSetMethods(g.Pkg(), srcTyp, g.unexportedFields, &methods)
-	for _, m := range methods {
-		g.getsetMethods = append(g.getsetMethods, m)
-	}
+	g.getsetMethods = nil
+	g.parseGetSetMethods(g.Pkg(), srcTyp, g.unexportedFields, &g.getsetMethods)
 }
 
 func (g *Generator) parseDestGetSetMethods(destTyp types.Type) {
-	var methods []Func
-	g.parseGetSetMethods(g.destPkg, destTyp, g.destUnexportedFields, &methods)
+	g.destGetSetMethods = nil
+	g.parseGetSetMethods(g.destPkg, destTyp, g.destUnexportedFields, &g.destGetSetMethods)
+}
+
+func compatlize(fields *[]*Field, methods []Func) {
 	for _, m := range methods {
-		g.destGetSetMethods = append(g.destGetSetMethods, m)
+		if m.param != nil { //set
+			*fields = append(*fields, &Field{
+				Name:        m.name,
+				path:        m.path,
+				typ:         m.param,
+				backingName: trimLeftOnce(m.name, set),
+				IsSet:       true,
+			})
+		} else if m.result != nil { //get
+			*fields = append(*fields, &Field{
+				Name:        m.name,
+				path:        m.path,
+				typ:         m.result,
+				backingName: m.name,
+				IsGet:       true,
+			})
+		}
 	}
 }
 
 func (g *Generator) makeCompatible() {
+	g.RegisterTransfer("dot", transfer.ID)
 	g.RegisterTransfer("assign", transfer.ID)
 	g.RegisterTransfer("evaluate", transfer.ID)
-	g.getSrcSet = make(map[string]bool)
-	g.setSrcSet = make(map[string]bool)
-	g.getDestSet = make(map[string]bool)
-	g.setDestSet = make(map[string]bool)
 
-	for _, m := range g.getsetMethods {
-		if m.param != nil { //set
-			g.exportedFields = append(g.exportedFields, Field{
-				name:        m.name,
-				path:        m.path,
-				typ:         m.param,
-				backingName: trimLeftOnce(m.name, set),
-				isSet:       true,
-			})
-			g.setSrcSet[m.name] = true
-		} else if m.result != nil { //get
-			g.exportedFields = append(g.exportedFields, Field{
-				name:        m.name,
-				path:        m.path,
-				typ:         m.result,
-				backingName: m.name,
-				isGet:       true,
-			})
-			g.getSrcSet[m.name] = true
-		}
-		g.data.SrcFieldList = append(g.data.SrcFieldList, m.name)
-	}
+	compatlize(&g.exportedFields, g.getsetMethods)
+	compatlize(&g.destExportedFields, g.destGetSetMethods)
+	g.data.SrcFieldList = g.exportedFields
+	g.data.DestFieldList = g.destExportedFields
 
-	for _, m := range g.destGetSetMethods {
-		if m.param != nil { //set
-			g.destExportedFields = append(g.destExportedFields, Field{
-				name:        m.name,
-				path:        m.path,
-				typ:         m.param,
-				backingName: trimLeftOnce(m.name, set),
-				isSet:       true,
-			})
-			g.setDestSet[m.name] = true
-		} else if m.result != nil { //get
-			g.destExportedFields = append(g.destExportedFields, Field{
-				name:        m.name,
-				path:        m.path,
-				typ:         m.result,
-				backingName: m.name,
-				isGet:       true,
-			})
-			g.getDestSet[m.name] = true
-		}
-	}
-
-	if g.CommonFlags().Verbose {
-		logx.DebugJSON("Get of Src:\n", g.getSrcSet)
-		logx.DebugJSON("Set of Src:\n", g.setSrcSet)
-		logx.DebugJSON("Get of Dest:\n", g.getDestSet)
-		logx.DebugJSON("Set of Dest:\n", g.setDestSet)
-	}
-	g.RegisterTransfer("assign", func(lSel, lX, right string, isLeftSrc bool, lfmt, rfmt string) string {
+	g.RegisterTransfer("assign", func(left, right string, isSet bool) string {
 		//left ~ set
 		//right ~ get
 
-		// if g.CommonFlags().Verbose {
-		// 	logx.Debug(fmt.Sprintf("%s.%s", l, lname))
-		// 	logx.Debug(fmt.Sprintf("%s.%s", r, rname))
-		// }
-
-		assertArgs(lSel, "lSel")
-		assertArgs(lX, "lX")
+		assertArgs(left, "left")
 		assertArgs(right, "right")
-		assertArgs(lfmt, "lfmt")
-		assertArgs(rfmt, "rfmt")
 
-		var setSet map[string]bool
-		if isLeftSrc {
-			setSet = g.setSrcSet
-		} else {
-			setSet = g.setDestSet
-		}
-
-		left := fmt.Sprintf(lfmt, lSel, lX)
-		right = fmt.Sprintf(rfmt, right)
-		if setSet[lX] {
+		if isSet {
 			return fmt.Sprintf("%s(%s)", left, right)
 		} else {
 			return fmt.Sprintf("%s = %s", left, right)
 		}
 	})
 
+	g.RegisterTransfer("dot", func(sel, x string) string {
+		return fmt.Sprintf("%s.%s", sel, x)
+	})
+
 	//evaluation always happens on the right side
-	g.RegisterTransfer("evaluate", func(rSel, rX string, isSrc bool) string {
-		var getSet map[string]bool
-		if isSrc {
-			getSet = g.getSrcSet
-		} else {
-			getSet = g.getDestSet
-		}
-		if getSet[rX] {
+	g.RegisterTransfer("evaluate", func(rSel, rX string, isGet bool) string {
+		if isGet {
 			rX = rX + "()"
 		}
 		return fmt.Sprintf("%s.%s", rSel, rX)

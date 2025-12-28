@@ -33,17 +33,13 @@ type Generator struct {
 	data                 *TmplData
 	destPkg              *packages.Package
 	mapperpkg            *packages.Package
-	exportedFields       []Field
-	unexportedFields     []Field
-	destExportedFields   []Field
-	destUnexportedFields []Field
+	exportedFields       []*Field
+	unexportedFields     []*Field
+	destExportedFields   []*Field
+	destUnexportedFields []*Field
 
 	getsetMethods     []Func
 	destGetSetMethods []Func
-	getSrcSet         map[string]bool
-	setSrcSet         map[string]bool
-	getDestSet        map[string]bool
-	setDestSet        map[string]bool
 
 	srcPtrTypeMap   map[string]string
 	destPtrTypeMap  map[string]string
@@ -56,7 +52,7 @@ type Generator struct {
 	readSrcMap   map[string]string
 	writeSrcMap  map[string]string
 
-	tagMap map[string]string
+	srcTagMap map[string]string
 }
 
 func New() *Generator {

@@ -1,4 +1,4 @@
-package model2
+package model
 
 import (
 	"mappersample/domain/enums"
@@ -7,17 +7,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-//go:generate go tool shoot new -getset -type=Order
-
 type Order struct {
 	id        string
 	amount    decimal.Decimal
 	status    enums.OrderStatus
 	orderTime time.Time
-	// OrderTime *time.Time
 	address   OrderAddress
-	address2  OrderAddress
-	addrList  []*OrderAddress
-	AddrList2 []*OrderAddress
-	X         int
 }

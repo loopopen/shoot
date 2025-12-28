@@ -4,8 +4,10 @@ import (
 	_ "embed"
 	"flag"
 	"go/ast"
+	"strings"
 
 	"github.com/lopolopen/shoot/internal/shoot"
+	"github.com/lopolopen/shoot/internal/tools/logx"
 )
 
 const SubCmd = "new"
@@ -69,19 +71,41 @@ func (g *Generator) ListTypes() []string {
 	var typeNames []string
 	for _, f := range g.Pkg().Syntax {
 		ast.Inspect(f, func(n ast.Node) bool {
-			ts, ok := n.(*ast.TypeSpec)
-			if !ok {
+			if !g.testNode("", n) {
 				return true
 			}
 
-			_, ok = ts.Type.(*ast.StructType)
-			if !ok {
-				return true
-			}
-
+			ts, _ := n.(*ast.TypeSpec)
 			typeNames = append(typeNames, ts.Name.Name)
 			return false
 		})
 	}
 	return typeNames
+}
+
+func (g *Generator) testNode(typename string, node ast.Node) bool {
+	ts, ok := node.(*ast.TypeSpec)
+	if !ok {
+		return false
+	}
+
+	if typename != "" {
+		if ts.Name.Name != typename {
+			return false
+		}
+
+		if _, ok = ts.Type.(*ast.StructType); !ok {
+			logx.Fatalf("type %s is not a struct type", typename)
+		}
+	}
+
+	if strings.HasPrefix(ts.Name.Name, "_") {
+		return false
+	}
+
+	if _, ok = ts.Type.(*ast.StructType); !ok {
+		return false
+	}
+
+	return true
 }
