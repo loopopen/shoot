@@ -21,7 +21,7 @@ func (s *Src) ToTarget() *target.Dest {
 // FromTarget reads from type target.Dest, then writes back to receiver and returns it
 func (s *Src) FromTarget(dest_ *target.Dest) *Src {
 	if dest_ == nil {
-		return s
+		return nil
 	}
 	if s == nil {
 		s = new(Src)
@@ -33,8 +33,8 @@ func (s *Src) FromTarget(dest_ *target.Dest) *Src {
 		s.Embed.EmbedEmbed = new(EmbedEmbed)
 	}
 	s.ID = dest_.ID
-	s.X = dest_.X
 	s.SrcName = dest_.DestName
+	s.X = dest_.X
 	return s
 }
 

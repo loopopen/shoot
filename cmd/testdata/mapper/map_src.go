@@ -28,11 +28,13 @@ func (Mapper) TimeToString(t time.Time) string {
 
 type Order struct {
 	Mapper
-	// *testmapper.Mapper
 	ID           string
 	Amount       string
 	OrderingTime string `map:"OrderTime"`
-	Address      *OrderAddress
+	Addr0        OrderAddress
+	Addr1        *OrderAddress
+	Addr2        OrderAddress
+	Addr3        *OrderAddress
 }
 
 type OrderAddress struct {

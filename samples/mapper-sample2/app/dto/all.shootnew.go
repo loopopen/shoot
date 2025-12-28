@@ -72,15 +72,15 @@ type _Order_marshal struct {
 	Id           string            `json:"id"`
 	Amount       string            `json:"amount"`
 	Status       enums.OrderStatus `json:"status"`
-	OrderingTime string
-	Address      *OrderAddress `json:"address"`
+	OrderingTime string            `json:"orderingTime"`
+	Address      *OrderAddress     `json:"address"`
 }
 type _Order_unmarshal struct {
 	Id           string            `json:"id"`
 	Amount       string            `json:"amount"`
 	Status       enums.OrderStatus `json:"status"`
-	OrderingTime string
-	Address      *OrderAddress `json:"address"`
+	OrderingTime string            `json:"orderingTime"`
+	Address      *OrderAddress     `json:"address"`
 }
 
 // MarshalJSON serializes type Order to json bytes
@@ -172,12 +172,12 @@ func (o *OrderAddress) SetRoomNum(roomNum_ string) {
 type _OrderAddress_marshal struct {
 	City    string `json:"city"`
 	Street  string `json:"street"`
-	RoomNum string
+	RoomNum string `json:"roomNum"`
 }
 type _OrderAddress_unmarshal struct {
 	City    string `json:"city"`
 	Street  string `json:"street"`
-	RoomNum string
+	RoomNum string `json:"roomNum"`
 }
 
 // MarshalJSON serializes type OrderAddress to json bytes

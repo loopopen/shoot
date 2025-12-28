@@ -58,14 +58,17 @@ func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
     {{- end -}}
 
     {{- if $df.CanMap -}}
-    {{- $right := "" -}}
+    {{- $x := $evalue -}}
     {{- if $sf.IsGet -}}
-    {{print $s $sf.Name}} := {{$evalue}} {{"\n"}}
-    {{- $right = printf "%s%s.%s()" $deref (print $s $sf.Name) $ToDest -}}
-    {{- else -}}
-    {{- $right = printf "%s%s.%s()" $deref $evalue $ToDest -}}
+    {{- $x = print $s $sf.Name -}}
+    {{$x}} := {{$evalue}} {{"\n"}}
+    {{- end -}}
+    {{- $right := printf "%s%s.%s()" $deref $x $ToDest -}}
+    {{- if and $sf.IsPtr (not $df.IsPtr) -}}
+    if {{$x}} != nil { {{"\n"}}
     {{- end -}}
     {{assign (dot $d $df.Name) $right $df.IsSet}} {{"\n"}}
+    {{- cond (and $sf.IsPtr (not $df.IsPtr)) "}\n" "" -}}
     {{- end -}}
 
     {{- if $df.CanEachMap -}}
@@ -105,7 +108,7 @@ func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
 // {{$FromDest}} reads from type {{.QualifiedDestTypeName}}, then writes back to receiver and returns it
 func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *{{.TypeName}} {
     if {{$d}} == nil {
-        return {{$s}}
+        return nil
     }
     if {{$s}} == nil {
         {{$s}} = new({{.TypeName}})
@@ -146,14 +149,17 @@ func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *
     {{- end -}}
 
     {{- if $sf.CanMap -}}
-    {{- $right := "" -}}
+    {{- $x := $evalue -}}
     {{- if $df.IsGet -}}
-    {{print $d $df.Name}} := {{$evalue}} {{"\n"}}
-    {{- $right = printf "%snew(%s).%s(%s%s)" $deref $sf.Type $FromDest $ref (print $d $df.Name) -}}
-    {{- else -}}
-    {{- $right = printf "%snew(%s).%s(%s%s)" $deref $sf.Type $FromDest $ref $evalue -}}
+    {{- $x = print $d $df.Name -}}
+    {{$x}} := {{$evalue}} {{"\n"}}
+    {{- end -}}
+    {{- $right := printf "%snew(%s).%s(%s%s)" $deref $sf.Type $FromDest $ref $x -}}
+    {{- if and $df.IsPtr (not $sf.IsPtr) -}}
+    if {{$x}} != nil { {{"\n"}}
     {{- end -}}
     {{assign (dot $s $sf.Name) $right $sf.IsSet}} {{"\n"}}
+    {{- cond (and $df.IsPtr (not $sf.IsPtr)) "}\n" "" -}}
     {{- end -}}
 
     {{- if $sf.CanEachMap -}}

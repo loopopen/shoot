@@ -13,16 +13,19 @@ func (o *Order) ToDest() *dest.Order {
 	order_.ID = o.ID
 	order_.Amount = o.StringToDecimal(o.Amount)
 	order_.OrderTime = o.StringToTime(o.OrderingTime)
-	if o.Address != nil {
-		order_.Address = *o.Address.ToDest()
+	order_.Addr0 = *o.Addr0.ToDest()
+	if o.Addr1 != nil {
+		order_.Addr1 = *o.Addr1.ToDest()
 	}
+	order_.Addr2 = o.Addr2.ToDest()
+	order_.Addr3 = o.Addr3.ToDest()
 	return order_
 }
 
 // FromDest reads from type dest.Order, then writes back to receiver and returns it
 func (o *Order) FromDest(order_ *dest.Order) *Order {
 	if order_ == nil {
-		return o
+		return nil
 	}
 	if o == nil {
 		o = new(Order)
@@ -30,7 +33,12 @@ func (o *Order) FromDest(order_ *dest.Order) *Order {
 	o.ID = order_.ID
 	o.Amount = o.DecimalToString(order_.Amount)
 	o.OrderingTime = o.TimeToString(order_.OrderTime)
-	o.Address = new(OrderAddress).FromDest(&order_.Address)
+	o.Addr0 = *new(OrderAddress).FromDest(&order_.Addr0)
+	o.Addr1 = new(OrderAddress).FromDest(&order_.Addr1)
+	if order_.Addr2 != nil {
+		o.Addr2 = *new(OrderAddress).FromDest(order_.Addr2)
+	}
+	o.Addr3 = new(OrderAddress).FromDest(order_.Addr3)
 	return o
 }
 

@@ -45,14 +45,14 @@ func (g *Generator) makeJson(typeName string) {
 						continue
 					}
 
-					var tag string
+					tag := name.Name
 					if field.Tag != nil {
-						tag = jsonTag(field.Tag.Value)
-						//todo: tag == "" ?
-						tagMap[name.Name] = tag
-					} else {
-						tagMap[name.Name] = trans(name.Name)
+						jtag := jsonTag(field.Tag.Value)
+						if jtag != "" {
+							tag = jtag
+						}
 					}
+					tagMap[name.Name] = trans(tag)
 
 					if ast.IsExported(name.Name) {
 						exportedList = append(exportedList, name.Name)
