@@ -4,15 +4,11 @@ import (
 	"constructorsample/model"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/lopolopen/shoot"
 )
 
 func main() {
-	model.Test()
-	os.Exit(0)
-
 	user := model.NewUser("11", "Tom", 0, 21, "123456")
 	fmt.Printf("%+v\n", user)
 

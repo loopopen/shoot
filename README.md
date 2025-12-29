@@ -217,7 +217,7 @@ func (o *Order) ToDomain() *domain.Order {
 // FromDomain reads from type domain.Order, then writes back to receiver and returns it
 func (o *Order) FromDomain(order_ *domain.Order) *Order {
 	if order_ == nil {
-		return o
+		return nil
 	}
 	if o == nil {
 		o = new(Order)

@@ -8,12 +8,12 @@ import (
 
 type Order struct {
 	mapper.Mapper
-
 	ID           string            `json:"id"`
 	Amount       string            `json:"amount"`
 	Status       enums.OrderStatus `json:"status"`
 	OrderingTime string            `json:"orderingTime" map:"OrderTime"`
 	Address      *OrderAddress     `json:"address"`
+	Addr         OrderAddress      `json:"addr"`
 }
 
 func (o *Order) writeDomain(dest *model.Order) {

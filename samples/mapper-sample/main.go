@@ -1,5 +1,11 @@
 package main
 
+import (
+	"fmt"
+	"mappersample/app/dto"
+	"mappersample/domain/model"
+)
+
 func main() {
 	// orderDto := dto.NewOrder("1", "99", enums.OrderStatusCompleted)
 	// order := orderDto.ToModel()
@@ -15,4 +21,12 @@ func main() {
 	// userDto2 := &dto.User{}
 	// userDto2.FromModel(user)
 	// fmt.Println("DTO dto.User: ", userDto2)
+
+	// o := dto.Order{}
+	// x := o.ToDomain()
+	// fmt.Println(x)
+
+	o := model.Order{}
+	x := new(dto.Order).FromDomain(&o)
+	fmt.Println(x)
 }

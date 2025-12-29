@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"os"
 	"path/filepath"
@@ -19,6 +20,7 @@ const SubCmd = "map"
 const (
 	dot  = "."
 	star = "*"
+	set  = "Set"
 )
 
 //go:embed mapper.tmpl
@@ -27,24 +29,30 @@ var tmplTxt string
 // Generator holds the state of the analysis.
 type Generator struct {
 	*shoot.GeneratorBase
-	flags              *Flags
-	data               *TmplData
-	destPkg            *packages.Package
-	mapperpkg          *packages.Package
-	exportedFields     []Field
-	destExportedFields []Field
-	srcPtrTypeMap      map[string]string
-	destPtrTypeMap     map[string]string
-	srcPathsMap        map[string][]string
-	destPathsMap       map[string][]string
-	mappingFuncList    []Func
+	flags                *Flags
+	data                 *TmplData
+	destPkg              *packages.Package
+	mapperpkg            *packages.Package
+	exportedFields       []*Field
+	unexportedFields     []*Field
+	destExportedFields   []*Field
+	destUnexportedFields []*Field
+
+	getsetMethods     []Func
+	destGetSetMethods []Func
+
+	srcPtrTypeMap   map[string]string
+	destPtrTypeMap  map[string]string
+	srcPathsMap     map[string][]string
+	destPathsMap    map[string][]string
+	mappingFuncList []Func
 
 	writeSrcSet  map[string]bool
 	writeDestSet map[string]bool
 	readSrcMap   map[string]string
 	writeSrcMap  map[string]string
 
-	tagMap map[string]string
+	srcTagMap map[string]string
 }
 
 func New() *Generator {
@@ -147,7 +155,11 @@ func (g *Generator) MakeData(srcTypeName string) any {
 	}
 	g.data.DestTypeName = destTypeName
 
+	shootnewIfac := makeNewShooterIfac()
 	srcTyp := g.parseSrcFields(srcTypeName)
+	if types.AssignableTo(srcTyp, shootnewIfac) {
+		g.parseSrcGetSetMethods(srcTyp)
+	}
 	if srcTyp == nil {
 		logx.Fatalf("src type not exists: %s", srcTypeName)
 	}
@@ -159,8 +171,12 @@ func (g *Generator) MakeData(srcTypeName string) any {
 			return nil
 		}
 	}
-	g.parseManual(srcTypeName, destTypeName)
+	if types.AssignableTo(destTyp, shootnewIfac) {
+		g.parseDestGetSetMethods(destTyp)
+	}
 
+	g.parseManual(srcTyp, destTyp)
+	g.makeCompatible()
 	g.makeMismatch() //priority: makeMismatch > makeMatch
 	g.makeMatch()
 
@@ -219,4 +235,19 @@ func (g *Generator) readDestMap() map[string]string {
 
 func (g *Generator) writeDestMap() map[string]string {
 	return g.readSrcMap
+}
+
+func makeNewShooterIfac() types.Type {
+	iface := types.NewInterfaceType(
+		[]*types.Func{
+			types.NewFunc(
+				token.NoPos,
+				nil,
+				"ShootNew",
+				types.NewSignatureType(nil, nil, nil, nil, nil, false),
+			),
+		},
+		nil,
+	).Complete()
+	return iface
 }

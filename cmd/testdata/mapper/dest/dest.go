@@ -10,11 +10,15 @@ type Order struct {
 	ID        string
 	Amount    Decimal
 	OrderTime time.Time
-	Address   OrderAddress
+	Addr0     OrderAddress
+	Addr1     OrderAddress
+	Addr2     *OrderAddress
+	Addr3     *OrderAddress
 }
 
 type OrderAddress struct {
-	City string
+	City  string
+	Other string
 }
 
 type Dest struct {

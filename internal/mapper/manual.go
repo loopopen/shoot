@@ -1,25 +1,22 @@
 package mapper
 
 import (
-	"fmt"
 	"go/ast"
+	"go/types"
 	"strings"
 
 	"github.com/lopolopen/shoot/internal/tools/logx"
 	"github.com/lopolopen/shoot/internal/transfer"
 )
 
-func (g *Generator) parseManual(srcTypeName, destTypeName string) []string {
+func (g *Generator) parseManual(srcType, destType types.Type) []string {
 	g.writeSrcSet = make(map[string]bool)
 	g.writeDestSet = make(map[string]bool)
 
 	pkg := g.Pkg()
+	shootnewIfac := makeNewShooterIfac()
 	for _, f := range pkg.Syntax {
 		ast.Inspect(f, func(n ast.Node) bool {
-			if !g.testNode(srcTypeName, n) {
-				return true
-			}
-
 			for _, decl := range f.Decls {
 				if fn, ok := decl.(*ast.FuncDecl); ok && fn.Recv != nil {
 					if len(fn.Recv.List) == 0 {
@@ -33,61 +30,85 @@ func (g *Generator) parseManual(srcTypeName, destTypeName string) []string {
 						continue
 					}
 
-					var recvTypeName string
+					const fmtIncorrectSig = "(%s).%s: signature of reserved func is incorrect, rename it or fix the signature"
 					recv := fn.Recv.List[0]
+					recvTypeExpr := recv.Type
+					isRecvPtr := false
 					switch expr := recv.Type.(type) {
-					case *ast.Ident: //value receiver
-						if expr.Name != srcTypeName {
-							continue
-						}
-						recvTypeName = srcTypeName
+					// case *ast.Ident: //value receiver
 					case *ast.StarExpr: //pointer receiver
-						if ident, ok := expr.X.(*ast.Ident); ok && ident.Name != srcTypeName {
-							continue
-						}
-						recvTypeName = star + srcTypeName
+						recvTypeExpr = expr.X
+						isRecvPtr = true
+					default:
+						panic("can never happen")
 					}
 
+					recvType := pkg.TypesInfo.TypeOf(recvTypeExpr)
+					var recvTypeName string = types.TypeString(recvType, g.qualifier)
+					if isRecvPtr {
+						recvTypeName = star + recvTypeName
+					}
+					if !types.Identical(recvType, srcType) {
+						continue
+					}
 					if fn.Type.Params == nil || len(fn.Type.Params.List) != 1 {
+						logx.Warnf(fmtIncorrectSig, recvTypeName, fn.Name.Name)
 						continue
 					}
 					if fn.Type.Results != nil && len(fn.Type.Results.List) != 0 {
+						logx.Warnf(fmtIncorrectSig, recvTypeName, fn.Name.Name)
 						continue
 					}
 
-					paramTypeExpr := fn.Type.Params.List[0].Type
+					param := fn.Type.Params.List[0]
+					paramTypeExpr := param.Type
+					isParamPtr := false
 					switch expr := paramTypeExpr.(type) {
-					case *ast.Ident:
-						//todo:
+					// case *ast.Ident:
 					case *ast.SelectorExpr: //value dest param
 						paramTypeExpr = expr.Sel
-						if isWrite {
-							logx.Fatalf("method (%s).%s must has a pointer parameter", recvTypeName, fn.Name.Name)
-						} else {
-							g.data.ReadParamPrefix = star
-						}
 					case *ast.StarExpr: //pointer dest param
 						paramTypeExpr = expr.X
+						isParamPtr = true
 					}
 
-					//checking param type needs full type name
-					destFullName := fmt.Sprintf("%s.%s", g.destPkg.PkgPath, destTypeName)
 					paramType := pkg.TypesInfo.TypeOf(paramTypeExpr)
-					if paramType.String() != destFullName {
-						continue
+					var isSame, isGetter, isSetter bool
+					if types.Identical(paramType, destType) {
+						isSame = true
+					} else {
+						if n, ok := paramType.(*types.Named); ok {
+							if ifac, ok := n.Underlying().(*types.Interface); ok {
+								if types.ConvertibleTo(types.NewPointer(destType), ifac) {
+									name := n.Obj().Name()
+									isGetter = strings.HasSuffix(name, "Getter")
+									isSetter = strings.HasSuffix(name, "Setter")
+								}
+							}
+						}
 					}
 
+					srcTypeName := types.TypeString(srcType, g.qualifier)
 					if isWrite {
+						if !(isSame && isParamPtr) && !isSetter {
+							logx.Fatalf("(%s).%s: parameter of write method must be a pointer or a setter of %s", recvTypeName, fn.Name.Name, srcTypeName)
+						}
+
 						if g.data.WriteMethodName == "" {
 							g.data.WriteMethodName = fn.Name.Name
 						} else {
 							logx.Fatalf("found more than one manual write method: (%s).%s", recvTypeName, fn.Name.Name)
 						}
-						names := findAssignedFieldPaths(fn, fn.Type.Params.List[0].Names[0].Name)
+						names := findAssignedFieldPaths(fn, param.Names[0].Name)
 						for _, n := range names {
 							g.writeDestSet[n] = true
 						}
-					} else if isRead {
+					} else if isRead { //write src
+						if !isSame && !isGetter {
+							logx.Fatalf("(%s).%s: parameter of read method must be a value or a getter of %s", recvTypeName, fn.Name.Name, srcTypeName)
+						}
+						g.data.IsReadParamPtr = isParamPtr || isGetter
+
 						if g.data.ReadMethodName == "" {
 							g.data.ReadMethodName = fn.Name.Name
 						} else {
@@ -95,6 +116,9 @@ func (g *Generator) parseManual(srcTypeName, destTypeName string) []string {
 						}
 						names := findAssignedFieldPaths(fn, recv.Names[0].Name)
 						for _, n := range names {
+							if types.ConvertibleTo(srcType, shootnewIfac) && !ast.IsExported(n) {
+								n = set + transfer.ToPascalCase(n)
+							}
 							g.writeSrcSet[n] = true
 						}
 					}
@@ -137,14 +161,19 @@ func isReadMethod(methodName string, destPkgName string) bool {
 func findAssignedFieldPaths(funcDecl *ast.FuncDecl, v string) []string {
 	var fieldPath []string
 	ast.Inspect(funcDecl.Body, func(n ast.Node) bool {
-		assign, ok := n.(*ast.AssignStmt)
-		if !ok {
-			return true
-		}
-		for _, lhs := range assign.Lhs {
-			path := findPath(lhs, v)
-			if path != "" {
-				fieldPath = append(fieldPath, path)
+		if assign, ok := n.(*ast.AssignStmt); ok {
+			for _, lhs := range assign.Lhs {
+				path := findPath(lhs, v)
+				if path != "" {
+					fieldPath = append(fieldPath, path)
+				}
+			}
+		} else if call, ok := n.(*ast.CallExpr); ok {
+			if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
+				if strings.HasPrefix(sel.Sel.Name, set) {
+					path := findPath(sel, v)
+					fieldPath = append(fieldPath, path)
+				}
 			}
 		}
 		return true

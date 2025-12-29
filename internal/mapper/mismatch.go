@@ -150,24 +150,12 @@ func (g *Generator) parseMapper(mapperTypeName string) {
 }
 
 func (g *Generator) makeMismatch() {
-	g.data.SrcToDestFuncMap = make(map[string]string)
-	g.data.DestToSrcFuncMap = make(map[string]string)
-	g.data.MismatchFuncMap = make(map[string]string)
-	g.data.MismatchSubMap = make(map[string]string)
-	g.data.DestMismatchSubMap = make(map[string]string)
-	g.data.SrcPtrSet = make(map[string]bool)
-	g.data.DestPtrSet = make(map[string]bool)
-	g.data.SrcSubTypeMap = make(map[string]string)
-	g.data.DestSubTypeMap = make(map[string]string) //qualified
-	g.data.MismatchSubListMap = make(map[string]string)
-	g.data.DestMismatchSubListMap = make(map[string]string)
-
 	g.writeSrcMap = make(map[string]string)
 	g.readSrcMap = make(map[string]string)
 
 	for _, f1 := range g.exportedFields {
 		for _, f2 := range g.destExportedFields {
-			if !canNameMatch(f1.name, f2.name, g.tagMap) {
+			if !canNameMatch(f1, f2, g.srcTagMap) {
 				continue
 			}
 
@@ -177,116 +165,99 @@ func (g *Generator) makeMismatch() {
 			}
 
 			g.makeFuncMap(f1, f2)
-			g.makeSubMap(f1, f2)
+			g.makeSubMap(f1, f2, f1.typ, f2.typ, false)
 			g.makeSubListMap(f1, f2)
 		}
 	}
 }
 
-func (g *Generator) makeFuncMap(f1, f2 Field) {
+func (g *Generator) makeFuncMap(f1, f2 *Field) {
 	for _, fn := range g.mappingFuncList {
-		if !g.writeDestSet[f2.name] {
+		if !g.writeDestSet[f2.Name] && !f2.IsGet {
 			//in ToXxx, mapping func's param type is src field type
-			if fn.param.String() == f1.typ.String() && fn.result.String() == f2.typ.String() {
-				g.data.SrcToDestFuncMap[f1.name] = fn.name
-				g.data.MismatchFuncMap[f1.name] = f2.name
-				g.writeDestSet[f2.name] = true
-				g.readSrcMap[f1.name] = f2.name
+			// if fn.param.String() == f1.typ.String() && fn.result.String() == f2.typ.String() {
+			if types.Identical(fn.param, f1.typ) && types.Identical(fn.result, f2.typ) {
+				f1.Target = f2
+				f2.Func = fn.name
+				g.writeDestSet[f2.Name] = true
+				g.readSrcMap[f1.Name] = f2.Name
 			}
 		}
 
-		if !g.writeSrcSet[f1.name] {
+		if !g.writeSrcSet[f1.Name] && !f1.IsGet {
 			//in FromXxx, mapping func's param type is dest field type
-			if fn.param.String() == f2.typ.String() && fn.result.String() == f1.typ.String() {
-				g.data.DestToSrcFuncMap[f1.name] = fn.name
-				g.data.MismatchFuncMap[f1.name] = f2.name
-				g.writeSrcSet[f1.name] = true
-				g.writeSrcMap[f1.name] = f2.name
+			// if fn.param.String() == f2.typ.String() && fn.result.String() == f1.typ.String() {
+			if types.Identical(fn.param, f2.typ) && types.Identical(fn.result, f1.typ) {
+				f2.Target = f1
+				f1.Func = fn.name
+				g.writeSrcSet[f1.Name] = true
+				g.writeSrcMap[f1.Name] = f2.Name
 			}
 		}
 	}
 }
 
-func (g *Generator) makeSubMap(sub1, sub2 Field) {
-	typ1 := sub1.typ
-	typ2 := sub2.typ
+func (g *Generator) makeSubMap(f1, f2 *Field, typ1, typ2 types.Type, isSlice bool) {
+	var isPtr1, isPtr2 bool
 	if p, ok := typ1.(*types.Pointer); ok {
-		g.data.SrcPtrSet[sub1.name] = true
+		isPtr1 = true
 		typ1 = p.Elem()
 	}
 
 	if p, ok := typ2.(*types.Pointer); ok {
-		g.data.DestPtrSet[sub2.name] = true
+		isPtr2 = true
 		typ2 = p.Elem()
 	}
 
 	if n1, ok := typ1.(*types.Named); ok {
 		pkgpath1 := n1.Obj().Pkg().Path()
-		g.data.SrcSubTypeMap[sub1.name] = n1.Obj().Name()
 
 		if n2, ok := typ2.(*types.Named); ok {
 			pkgpath2 := n2.Obj().Pkg().Path()
-			g.data.DestSubTypeMap[sub2.name] = qualifiedTypeName(typ2, g.flags.alias)
 
 			if pkgpath1 == g.Pkg().PkgPath && pkgpath2 == g.destPkg.PkgPath {
-				if !g.writeSrcSet[sub1.name] {
-					g.data.MismatchSubMap[sub1.name] = sub2.name
-					g.writeSrcSet[sub1.name] = true
-					g.writeSrcMap[sub1.name] = sub2.name
+				if !g.writeDestSet[f2.Name] && !f2.IsGet {
+					//f2 = f1.ToDest()
+					f1.Target = f2
+					if isSlice {
+						f2.CanEachMap = true
+					} else {
+						f2.CanMap = true
+					}
+					f2.Type = qualifiedTypeName(typ2, g.flags.alias)
+					f1.IsPtr = isPtr1
+					f2.IsPtr = isPtr2
+					g.writeDestSet[f2.Name] = true
+					g.readSrcMap[f1.Name] = f2.Name
 				}
-				if !g.writeDestSet[sub2.name] {
-					g.data.DestMismatchSubMap[sub1.name] = sub2.name
-					g.writeDestSet[sub2.name] = true
-					g.readSrcMap[sub1.name] = sub2.name
+				if !g.writeSrcSet[f1.Name] && !f1.IsGet {
+					f2.Target = f1
+					if isSlice {
+						f1.CanEachMap = true
+					} else {
+						f1.CanMap = true
+					}
+					f1.Type = n1.Obj().Name()
+					f1.IsPtr = isPtr1
+					f2.IsPtr = isPtr2
+					g.writeSrcSet[f1.Name] = true
+					g.writeSrcMap[f1.Name] = f2.Name
 				}
 			}
 		}
 	}
 }
 
-func (g *Generator) makeSubListMap(subs1, subs2 Field) {
-	var typ1, typ2 types.Type
-	if s, ok := subs1.typ.(*types.Slice); ok {
-		typ1 = s.Elem()
-		if p, ok := typ1.(*types.Pointer); ok {
-			g.data.SrcPtrSet[subs1.name] = true
-			typ1 = p.Elem()
-		}
-	} else {
+func (g *Generator) makeSubListMap(f1, f2 *Field) {
+	s1, ok := f1.typ.(*types.Slice)
+	if !ok {
 		return
 	}
-	if s, ok := subs2.typ.(*types.Slice); ok {
-		typ2 = s.Elem()
-		if p, ok := typ2.(*types.Pointer); ok {
-			g.data.DestPtrSet[subs2.name] = true
-			typ2 = p.Elem()
-		}
-	} else {
+	s2, ok := f2.typ.(*types.Slice)
+	if !ok {
 		return
 	}
-
-	if n1, ok := typ1.(*types.Named); ok {
-		pkgpath1 := n1.Obj().Pkg().Path()
-		g.data.SrcSubTypeMap[subs1.name] = n1.Obj().Name()
-
-		if named2, ok := typ2.(*types.Named); ok {
-			pkgpath2 := named2.Obj().Pkg().Path()
-			g.data.DestSubTypeMap[subs2.name] = qualifiedTypeName(typ2, g.flags.alias)
-
-			if pkgpath1 == g.Pkg().PkgPath && pkgpath2 == g.destPkg.PkgPath {
-				if !g.writeSrcSet[subs1.name] {
-					g.data.MismatchSubListMap[subs1.name] = subs2.name
-					g.writeSrcSet[subs1.name] = true
-					g.writeSrcMap[subs1.name] = subs2.name
-				}
-				if !g.writeDestSet[subs2.name] {
-					g.data.DestMismatchSubListMap[subs1.name] = subs2.name
-					g.writeDestSet[subs2.name] = true
-					g.readSrcMap[subs1.name] = subs2.name
-				}
-			}
-		}
-	}
+	g.makeSubMap(f1, f2, s1.Elem(), s2.Elem(), true)
 }
 
 func findImportForSelector(file *ast.File, sel *ast.SelectorExpr) *ast.ImportSpec {

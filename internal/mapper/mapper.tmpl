@@ -1,5 +1,5 @@
-{{- $src := firstLower .TypeName -}}
-{{- $dest := printf "%s_" (camelCase .DestTypeName) -}}
+{{- $s := firstLower .TypeName -}}
+{{- $d := printf "%s_" (camelCase .DestTypeName) -}}
 {{- $ToDest := printf "To%s" (pascalCase .DestPkgName) -}}
 {{- $FromDest := printf "From%s" (pascalCase .DestPkgName) -}}
 {{- if .DestPkgAlias -}}
@@ -18,64 +18,76 @@ import "{{.DestPkgPath}}"
 {{end}}
 
 // {{$ToDest}} converts receiver to type {{.QualifiedDestTypeName}}
-func ({{$src}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
-    if {{$src}} == nil {
+func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
+    if {{$s}} == nil {
         return nil
     }
-    {{$dest}} := new({{.QualifiedDestTypeName}}) {{"\n"}}
+    {{$d}} := new({{.QualifiedDestTypeName}}) {{"\n"}}
     {{- range $p := $.DestPtrPathList -}}
-    if {{$dest}}.{{$p}} == nil {
-        {{$dest}}.{{$p}} = new({{index $.DestPtrTypeMap $p}})
+    if {{$d}}.{{$p}} == nil {
+        {{$d}}.{{$p}} = new({{index $.DestPtrTypeMap $p}})
     } {{"\n"}}
     {{- end -}}
 
     {{- /* ----------------- */ -}}
-    {{- range $s := $.SrcFieldList -}}
+    {{- range $sf := $.SrcFieldList -}}
+    {{- $df := $sf.Target -}}
+    {{- if $df -}}
+    {{- $deref := cond $df.IsPtr "" "*" -}}
+    {{- $star := cond $df.IsPtr "*" "" -}}
+    {{- $evalue := evaluate $s $sf.Name $sf.IsGet -}}
 
-    {{- $d := index $.SrcNeedReadCheckMap $s -}}
     {{- $close := false -}}
-    {{- if $d -}}
-    if {{condofread $src $s true}} { {{"\n"}}
+    {{- if index $.SrcNeedReadCheckMap $sf.Name -}}
+    if {{condofread $s $sf.Name true}} { {{"\n"}}
     {{- $close = true -}}
     {{- end -}}
 
-    {{- $d := index $.DestEqMatchMap $s -}}
-    {{- if $d -}}
-    {{$dest}}.{{$d}} = {{$src}}.{{$s}}{{"\n"}}
+    {{- if $df.IsSame -}}
+    {{assign (dot $d $df.Name) $evalue $df.IsSet}} {{"\n"}} 
     {{- end -}}
 
-    {{- $type := index $.SrcToDestTypeMap $s -}}
-    {{- if $type -}}
-    {{$dest}}.{{index $.ConvMatchMap $s}} = {{$type}}({{$src}}.{{$s}}) {{"\n"}}
+    {{- if $df.IsConv -}}
+    {{- $right := printf "%s(%s)" $df.Type $evalue -}}
+    {{assign (dot $d $df.Name) $right $df.IsSet}} {{"\n"}} 
     {{- end -}}
 
-    {{- $func := index $.SrcToDestFuncMap $s -}}
-    {{- if $func -}}
-    {{$dest}}.{{index $.MismatchFuncMap $s}} = {{$src}}.{{$func}}({{$src}}.{{$s}}) {{"\n"}}
+    {{- if $df.Func -}}
+    {{- $right := printf "%s.%s(%s)" $s $df.Func $evalue -}}
+    {{assign (dot $d $df.Name) $right $df.IsSet}} {{"\n"}} 
     {{- end -}}
 
-    {{- $d := index $.DestMismatchSubMap $s -}}
-    {{- if $d -}}
-    {{- $starS := index $.SrcPtrSet $s -}}
-    {{- $starD := index $.DestPtrSet $d -}}
-    {{- if $starS -}}
-    if {{$src}}.{{$s}} != nil {
-        {{$dest}}.{{$d}} = {{if not $starD}}*{{end}}{{$src}}.{{$s}}.{{$ToDest}}()
-    } {{"\n"}}
-    {{- else -}}
-    {{$dest}}.{{$d}} = {{if not $starD}}*{{end}}{{$src}}.{{$s}}.{{$ToDest}}() {{"\n"}}
+    {{- if $df.CanMap -}}
+    {{- $x := $evalue -}}
+    {{- if $sf.IsGet -}}
+    {{- $x = print $s $sf.Name -}}
+    {{$x}} := {{$evalue}} {{"\n"}}
     {{- end -}}
+    {{- $right := printf "%s%s.%s()" $deref $x $ToDest -}}
+    {{- if and $sf.IsPtr (not $df.IsPtr) -}}
+    if {{$x}} != nil { {{"\n"}}
+    {{- end -}}
+    {{assign (dot $d $df.Name) $right $df.IsSet}} {{"\n"}}
+    {{- cond (and $sf.IsPtr (not $df.IsPtr)) "}\n" "" -}}
     {{- end -}}
 
-    {{- $d := index $.DestMismatchSubListMap $s -}}
-    {{- if $d -}}
-    {{- $starS := index $.SrcPtrSet $s -}}
-    {{- $starD := index $.DestPtrSet $d -}}
-    if {{$src}}.{{$s}} != nil {
-        {{$dest}}.{{$d}} = make([]{{if $starD}}*{{end}}{{index $.DestSubTypeMap $d}}, len({{$src}}.{{$s}}))
-        for _i, _x := range {{$src}}.{{$s}} {
-            {{$dest}}.{{$d}}[_i] = {{if not $starD}}*{{end}}_x.{{$ToDest}}()
+    {{- if $df.CanEachMap -}}
+    {{- $xs := $evalue -}}
+    {{- if $sf.IsGet -}}
+    {{- $xs = print $s $sf.Name -}}
+    {{$xs}} := {{$evalue}} {{"\n"}}
+    {{- end -}}
+    if {{$xs}} != nil {
+        _ys := make([]{{$star}}{{$df.Type}}, len({{$xs}}))
+        for _i, _x := range {{$xs}} { {{"\n"}}
+            {{- if and $sf.IsPtr (not $df.IsPtr) -}}
+            if _x == nil {
+                continue
+            } {{"\n"}}
+            {{- end -}}
+            _ys[_i] = {{$deref}}_x.{{$ToDest}}()
         }
+        {{assign (dot $d $df.Name) "_ys" $df.IsSet}}
     } {{"\n"}}
     {{- end -}}
 
@@ -84,69 +96,89 @@ func ({{$src}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
     {{- end -}}
 
     {{- end -}} 
+    {{- end -}}
     {{- /* ----------------- */ -}}
 
     {{- if $.WriteMethodName -}}
-    {{$src}}.{{$.WriteMethodName}}({{$dest}}) {{"\n"}}
+    {{$s}}.{{$.WriteMethodName}}({{$d}}) {{"\n"}}
     {{- end -}}
-    return {{$dest}}
+    return {{$d}}
 }
 
 // {{$FromDest}} reads from type {{.QualifiedDestTypeName}}, then writes back to receiver and returns it
-func ({{$src}} *{{.TypeName}}) {{$FromDest}}({{$dest}} *{{.QualifiedDestTypeName}}) *{{.TypeName}} {
-    if {{$dest}} == nil {
-        return {{$src}}
+func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *{{.TypeName}} {
+    if {{$d}} == nil {
+        return nil
     }
-    if {{$src}} == nil {
-        {{$src}} = new({{.TypeName}})
+    if {{$s}} == nil {
+        {{$s}} = new({{.TypeName}})
     } {{"\n"}}
     {{- range $p := $.SrcPtrPathList -}}
-    if {{$src}}.{{$p}} == nil {
-        {{$src}}.{{$p}} = new({{index $.SrcPtrTypeMap $p}})
+    if {{$s}}.{{$p}} == nil {
+        {{$s}}.{{$p}} = new({{index $.SrcPtrTypeMap $p}})
     } {{"\n"}}
     {{- end -}}
 
     {{- /* ----------------- */ -}}
-    {{- range $s := $.SrcFieldList -}}
+    {{- range $df := $.DestFieldList -}}
+    {{- $sf := $df.Target -}}
+    {{- if $sf -}}
+    {{- $deref := cond $sf.IsPtr "" "*" -}}
+    {{- $star := cond $sf.IsPtr "*" "" -}}
+    {{- $evalue := evaluate $d $df.Name $df.IsGet -}}
+    {{- $ref := cond $df.IsPtr "" "&" -}}
 
-    {{- $d := index $.DestNeedReadCheckMap $s -}}
     {{- $close := false -}}
-    {{- if $d -}}
-    if {{condofread $dest $d false}} { {{"\n"}}
+    {{- if index $.DestNeedReadCheckMap $sf.Name -}}
+    if {{condofread $d $df.Name false}} { {{"\n"}}
     {{- $close = true -}}
     {{- end -}}
 
-    {{- $d := index $.SrcEqMatchMap $s -}}
-    {{- if $d -}}
-    {{$src}}.{{$s}} = {{$dest}}.{{$d}} {{"\n"}}
+    {{- if $sf.IsSame -}} 
+    {{assign (dot $s $sf.Name) $evalue $sf.IsSet}} {{"\n"}}
     {{- end -}}
 
-    {{- $type := index $.DestToSrcTypeMap $s -}}
-    {{- if $type -}}
-    {{$src}}.{{$s}} = {{$type}}({{$dest}}.{{index $.ConvMatchMap $s}}) {{"\n"}}
+    {{- if $sf.IsConv -}}
+    {{- $right := printf "%s(%s)" $sf.Type (evaluate $d $df.Name  $df.IsGet) -}}
+    {{assign (dot $s $sf.Name) $right $sf.IsSet}} {{"\n"}} 
     {{- end -}}
 
-    {{- $func := index $.DestToSrcFuncMap $s -}}
-    {{- if $func -}}
-    {{$src}}.{{$s}} = {{$src}}.{{$func}}({{$dest}}.{{index $.MismatchFuncMap $s}}) {{"\n"}}
-    {{- end -}}
-    
-    {{- $d := index $.MismatchSubMap $s -}}
-    {{- if $d -}}
-    {{- $starS := index $.SrcPtrSet $s -}}
-    {{- $starD := index $.DestPtrSet $s -}}
-    {{$src}}.{{$s}} = {{if not $starS}}*{{end}}new({{index $.SrcSubTypeMap $s}}).{{$FromDest}}({{if not $starD}}&{{end}}{{$dest}}.{{$d}}) {{"\n"}}
+    {{- if $sf.Func -}}
+    {{- $right := printf "%s.%s(%s)" $s $sf.Func $evalue -}}
+    {{assign (dot $s $sf.Name) $right $sf.IsSet}} {{"\n"}} 
     {{- end -}}
 
-    {{- $d := index $.MismatchSubListMap $s -}}
-    {{- if $d -}}
-    {{- $starS := index $.SrcPtrSet $s -}}
-    {{- $starD := index $.DestPtrSet $d -}}
-    if {{$dest}}.{{$d}} != nil {
-        {{$src}}.{{$s}} = make([]{{if $starS}}*{{end}}{{index $.SrcSubTypeMap $s}}, len({{$dest}}.{{$d}}))
-        for _i, _x := range {{$dest}}.{{$d}} {
-            {{$src}}.{{$s}}[_i] = {{if not $starS}}*{{end}}new({{index $.SrcSubTypeMap $s}}).{{$FromDest}}({{if not $starD}}&{{end}}_x)
+    {{- if $sf.CanMap -}}
+    {{- $x := $evalue -}}
+    {{- if $df.IsGet -}}
+    {{- $x = print $d $df.Name -}}
+    {{$x}} := {{$evalue}} {{"\n"}}
+    {{- end -}}
+    {{- $right := printf "%snew(%s).%s(%s%s)" $deref $sf.Type $FromDest $ref $x -}}
+    {{- if and $df.IsPtr (not $sf.IsPtr) -}}
+    if {{$x}} != nil { {{"\n"}}
+    {{- end -}}
+    {{assign (dot $s $sf.Name) $right $sf.IsSet}} {{"\n"}}
+    {{- cond (and $df.IsPtr (not $sf.IsPtr)) "}\n" "" -}}
+    {{- end -}}
+
+    {{- if $sf.CanEachMap -}}
+    {{- $xs := $evalue -}}
+    {{- if $df.IsGet -}}
+    {{- $xs = print $d $df.Name -}}
+    {{$xs}} := {{$evalue}} {{"\n"}}
+    {{- end -}}
+    if {{$xs}} != nil {
+        _ys := make([]{{$star}}{{$sf.Type}}, len({{$xs}}))
+        for _i, _x := range {{$xs}} { {{"\n"}}
+            {{- if and $df.IsPtr (not $sf.IsPtr) -}}
+            if _x == nil {
+                continue
+            } {{"\n"}}
+            {{- end -}}
+            _ys[_i] = {{$deref}}new({{$sf.Type}}).{{$FromDest}}({{$ref}}_x)
         }
+        {{assign (dot $s $sf.Name) "_ys" $sf.IsSet}}
     } {{"\n"}}
     {{- end -}}
 
@@ -155,13 +187,14 @@ func ({{$src}} *{{.TypeName}}) {{$FromDest}}({{$dest}} *{{.QualifiedDestTypeName
     {{- end -}}
 
     {{- end -}}
+    {{- end -}}
     {{- /* ----------------- */ -}}
 
     {{- if $.ReadMethodName -}}
-    {{$src}}.{{$.ReadMethodName}}({{$.ReadParamPrefix}}{{$dest}}) {{"\n"}}
+    {{$s}}.{{$.ReadMethodName}}({{cond $.IsReadParamPtr "" "*"}}{{$d}}) {{"\n"}}
     {{- end -}}
-    return {{$src}}
+    return {{$s}}
 }
 
 // ShootMap exists solely to fulfill the MapShooter interface contract
-func ({{$src}} {{.TypeName}}) ShootMap() { /*noop*/ }
+func ({{$s}} {{.TypeName}}) ShootMap() { /*noop*/ }

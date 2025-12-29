@@ -1,6 +1,6 @@
 package enumer
 
-type Alias = int
+// type Alias = int
 
 const AliasX Alias = 0
 
