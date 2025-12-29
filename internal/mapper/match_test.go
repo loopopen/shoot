@@ -30,10 +30,17 @@ func Test_matchType(t *testing.T) {
 		},
 		{
 			name:  "convertible 2",
+			type1: types.Typ[types.String],
+			type2: types.NewSlice(types.Typ[types.Byte]),
+			want:  false,
+			want2: true,
+		},
+		{
+			name:  "not convertible 1",
 			type1: types.Typ[types.Int64],
 			type2: types.Typ[types.String],
 			want:  false,
-			want2: true,
+			want2: false,
 		},
 	}
 	for _, tt := range tests {
@@ -44,6 +51,82 @@ func Test_matchType(t *testing.T) {
 			}
 			if got2 != tt.want2 {
 				t.Errorf("matchType() = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
+}
+
+func Test_smartMatch(t *testing.T) {
+	type args struct {
+		a string
+		b string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "id=id",
+			args: args{
+				a: "id",
+				b: "id",
+			},
+			want: true,
+		},
+		{
+			name: "id~id+",
+			args: args{
+				a: "id",
+				b: "id+",
+			},
+			want: false,
+		},
+		{
+			name: "id~Id",
+			args: args{
+				a: "id",
+				b: "Id",
+			},
+			want: false,
+		},
+		{
+			name: "id~ID",
+			args: args{
+				a: "id",
+				b: "ID",
+			},
+			want: true,
+		},
+		{
+			name: "ID~id",
+			args: args{
+				a: "id",
+				b: "ID",
+			},
+			want: true,
+		},
+		{
+			name: "Id~ID",
+			args: args{
+				a: "id",
+				b: "ID",
+			},
+			want: true,
+		},
+		{
+			name: "LoadXml~LoadXML",
+			args: args{
+				a: "id",
+				b: "ID",
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := smartMatch(tt.args.a, tt.args.b); got != tt.want {
+				t.Errorf("smartMatch() = %v, want %v", got, tt.want)
 			}
 		})
 	}

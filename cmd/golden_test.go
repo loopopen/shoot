@@ -76,15 +76,21 @@ var goldens_rest = []Golden{
 
 var goldens_map = []Golden{
 	{
-		cmd: "shoot map -path=./dest -type=Order",
+		cmd: "shoot map -path=../dest -type=Order",
 		names: []string{
-			"map_src.shootmap.order.go",
+			"src.shootmap.order.go",
 		},
 	},
 	{
-		cmd: "shoot map -path=./dest -alias=target -to=Dest -type=Src",
+		cmd: "shoot map -path=../dest -type=Order2",
 		names: []string{
-			"map_src.shootmap.src.go",
+			"src.shootmap.order2.go",
+		},
+	},
+	{
+		cmd: "shoot map -path=../dest -alias=target -to=Dest -type=Src",
+		names: []string{
+			"src.shootmap.src.go",
 		},
 	},
 }
@@ -167,7 +173,7 @@ func TestShootRest_Golden(t *testing.T) {
 }
 
 func TestShootMap_Golden(t *testing.T) {
-	const dir = "./testdata/mapper"
+	const dir = "./testdata/mapper/src"
 	g := goldie.New(t,
 		goldie.WithFixtureDir(dir),
 	)

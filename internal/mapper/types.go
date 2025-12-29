@@ -43,7 +43,7 @@ type TmplData struct {
 	// DestMismatchSubListMap map[string]string
 
 	ReadMethodName  string //fromModel
-	ReadParamPrefix string
+	IsReadParamPtr  bool
 	WriteMethodName string //toModel
 }
 

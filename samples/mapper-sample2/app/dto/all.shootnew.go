@@ -8,13 +8,15 @@ import (
 )
 
 // NewOrder constructs a new instance of type Order
-func NewOrder(id string, amount string, status enums.OrderStatus, orderingTime string, address *OrderAddress) *Order {
+func NewOrder(id string, amount string, status enums.OrderStatus, orderingTime string, address *OrderAddress, x string, y string) *Order {
 	return &Order{
 		id:           id,
 		amount:       amount,
 		status:       status,
 		orderingTime: orderingTime,
 		address:      address,
+		x:            x,
+		y:            y,
 	}
 }
 
@@ -43,6 +45,11 @@ func (o *Order) Address() *OrderAddress {
 	return o.address
 }
 
+// X gets the value of field x
+func (o *Order) X() string {
+	return o.x
+}
+
 // SetId sets the value of field id
 func (o *Order) SetId(id_ string) {
 	o.id = id_
@@ -68,12 +75,18 @@ func (o *Order) SetAddress(address_ *OrderAddress) {
 	o.address = address_
 }
 
+// SetY sets the value of field y
+func (o *Order) SetY(y_ string) {
+	o.y = y_
+}
+
 type _Order_marshal struct {
 	Id           string            `json:"id"`
 	Amount       string            `json:"amount"`
 	Status       enums.OrderStatus `json:"status"`
 	OrderingTime string            `json:"orderingTime"`
 	Address      *OrderAddress     `json:"address"`
+	X            string            `json:"x"`
 }
 type _Order_unmarshal struct {
 	Id           string            `json:"id"`
@@ -81,6 +94,7 @@ type _Order_unmarshal struct {
 	Status       enums.OrderStatus `json:"status"`
 	OrderingTime string            `json:"orderingTime"`
 	Address      *OrderAddress     `json:"address"`
+	Y            string            `json:"y"`
 }
 
 // MarshalJSON serializes type Order to json bytes
@@ -91,6 +105,7 @@ func (o Order) MarshalJSON() ([]byte, error) {
 		Status:       o.Status(),
 		OrderingTime: o.OrderingTime(),
 		Address:      o.Address(),
+		X:            o.X(),
 	}
 	return json.Marshal(data)
 }
@@ -106,6 +121,7 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 	o.SetStatus(order_.Status)
 	o.SetOrderingTime(order_.OrderingTime)
 	o.SetAddress(order_.Address)
+	o.SetY(order_.Y)
 	return nil
 }
 
@@ -116,6 +132,7 @@ type OrderGetter interface {
 	Status() enums.OrderStatus
 	OrderingTime() string
 	Address() *OrderAddress
+	X() string
 }
 
 // OrderSetter is write-only interface for Order type
@@ -125,6 +142,7 @@ type OrderSetter interface {
 	SetStatus(enums.OrderStatus)
 	SetOrderingTime(string)
 	SetAddress(*OrderAddress)
+	SetX(string)
 }
 
 // ShootNew exists solely to fulfill the NewShooter interface contract

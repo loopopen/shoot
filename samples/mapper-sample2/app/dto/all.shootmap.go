@@ -15,7 +15,9 @@ func (o *Order) ToDomain() *domain.Order {
 	order_.SetStatus(o.Status())
 	order_.SetOrderTime(o.StringToTime(o.OrderingTime()))
 	oAddress := o.Address()
-	order_.SetAddress(*oAddress.ToDomain())
+	if oAddress != nil {
+		order_.SetAddress(*oAddress.ToDomain())
+	}
 	o.writeDomain(order_)
 	return order_
 }
@@ -23,7 +25,7 @@ func (o *Order) ToDomain() *domain.Order {
 // FromDomain reads from type domain.Order, then writes back to receiver and returns it
 func (o *Order) FromDomain(order_ *domain.Order) *Order {
 	if order_ == nil {
-		return o
+		return nil
 	}
 	if o == nil {
 		o = new(Order)
@@ -57,7 +59,7 @@ func (o *OrderAddress) ToDomain() *domain.OrderAddress {
 // FromDomain reads from type domain.OrderAddress, then writes back to receiver and returns it
 func (o *OrderAddress) FromDomain(orderAddress_ *domain.OrderAddress) *OrderAddress {
 	if orderAddress_ == nil {
-		return o
+		return nil
 	}
 	if o == nil {
 		o = new(OrderAddress)

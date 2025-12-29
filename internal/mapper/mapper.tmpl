@@ -191,7 +191,7 @@ func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *
     {{- /* ----------------- */ -}}
 
     {{- if $.ReadMethodName -}}
-    {{$s}}.{{$.ReadMethodName}}({{$.ReadParamPrefix}}{{$d}}) {{"\n"}}
+    {{$s}}.{{$.ReadMethodName}}({{cond $.IsReadParamPtr "" "*"}}{{$d}}) {{"\n"}}
     {{- end -}}
     return {{$s}}
 }

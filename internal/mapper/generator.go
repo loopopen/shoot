@@ -155,8 +155,9 @@ func (g *Generator) MakeData(srcTypeName string) any {
 	}
 	g.data.DestTypeName = destTypeName
 
+	shootnewIfac := makeNewShooterIfac()
 	srcTyp := g.parseSrcFields(srcTypeName)
-	if types.AssignableTo(srcTyp, makeNewShooterType()) {
+	if types.AssignableTo(srcTyp, shootnewIfac) {
 		g.parseSrcGetSetMethods(srcTyp)
 	}
 	if srcTyp == nil {
@@ -170,11 +171,11 @@ func (g *Generator) MakeData(srcTypeName string) any {
 			return nil
 		}
 	}
-	if types.AssignableTo(destTyp, makeNewShooterType()) {
+	if types.AssignableTo(destTyp, shootnewIfac) {
 		g.parseDestGetSetMethods(destTyp)
 	}
 
-	g.parseManual(srcTypeName, destTypeName)
+	g.parseManual(srcTyp, destTyp)
 	g.makeCompatible()
 	g.makeMismatch() //priority: makeMismatch > makeMatch
 	g.makeMatch()
@@ -236,7 +237,7 @@ func (g *Generator) writeDestMap() map[string]string {
 	return g.readSrcMap
 }
 
-func makeNewShooterType() types.Type {
+func makeNewShooterIfac() types.Type {
 	iface := types.NewInterfaceType(
 		[]*types.Func{
 			types.NewFunc(

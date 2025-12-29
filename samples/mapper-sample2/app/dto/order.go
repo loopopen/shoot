@@ -14,12 +14,17 @@ type Order struct {
 	status       enums.OrderStatus
 	orderingTime string `map:"orderTime"`
 	address      *OrderAddress
+	//shoot: get
+	x string
+	//shoot: set
+	y string
 }
 
-// todo1: model2.OrderSetter
-// todo2: int is ok?
 func (o *Order) writeDomain(dest *model.Order) {
+	// dest.SetId("...")
+	// dest.SetStatus(0)
 }
 
-func (o *Order) readDomain(dest *model.Order) {
+func (o *Order) readDomain(model.OrderGetter) {
+	o.y = ""
 }

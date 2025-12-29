@@ -2,6 +2,8 @@ package mapper
 
 import (
 	"go/types"
+	"strings"
+	"unicode"
 )
 
 func (g *Generator) makeMatch() {
@@ -77,7 +79,42 @@ func canNameMatch(f1, f2 *Field, tagMap map[string]string) bool {
 		m1 = tag
 	}
 
-	return m1 == m2
+	return smartMatch(m1, m2)
+}
+
+func smartMatch(a, b string) bool {
+	if a == b {
+		return true
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	i := len(a)
+	for i > 0 && unicode.IsUpper(rune(a[i-1])) {
+		i--
+	}
+
+	if i == len(a) {
+		i = len(b)
+		for i > 0 && unicode.IsUpper(rune(b[i-1])) {
+			i--
+		}
+	}
+
+	if i == len(b) {
+		return false
+	}
+
+	prefixA, suffixA := a[:i], a[i:]
+	prefixB, suffixB := b[:i], b[i:]
+
+	if prefixA != prefixB {
+		return false
+	}
+
+	return strings.EqualFold(suffixA, suffixB)
 }
 
 func matchType(type1, type2 types.Type) (bool, bool) {
