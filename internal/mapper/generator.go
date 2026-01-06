@@ -73,7 +73,6 @@ func (g *Generator) qualifier(pkg *types.Package) string {
 		if g.flags.alias != "" {
 			return g.flags.alias
 		}
-		return pkg.Name()
 	}
 	return pkg.Name()
 }

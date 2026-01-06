@@ -8,6 +8,7 @@ import "github.com/lopolopen/shoot"
 func NewConf(name string) *Conf {
 	return &Conf{
 		name: name,
+		port: 80,
 	}
 }
 

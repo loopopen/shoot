@@ -2,33 +2,28 @@ package constructor
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
-	"go/printer"
-	"go/token"
 	"go/types"
-	"regexp"
+	"strings"
 
 	"github.com/lopolopen/shoot/internal/shoot"
 	"github.com/lopolopen/shoot/internal/tools/logx"
 	"github.com/lopolopen/shoot/internal/transfer"
-	"golang.org/x/tools/go/packages"
 )
 
-func (g *Generator) makeNew(typeName string) {
-	g.RegisterTransfer("typeof", transfer.ID)
-
+func (g *Generator) parseFields(typeName string) {
 	var imports string
-	var allList []string
-	var unexportedList []string
-	var newList []string
-	var embedList []string
-	typeMap := make(map[string]string)
-	xMap := make(map[string]string)
+
+	var typeParams []string
+	typeParamsMap := make(map[int]string)
 
 	pkgPath := g.Pkg().PkgPath
 	if pkgPath == shoot.SelfPkgPath {
 		g.data.Self = true
 	}
+
+	var fields []*Field
 
 	typeExists := false
 	for _, f := range g.Pkg().Syntax {
@@ -37,41 +32,24 @@ func (g *Generator) makeNew(typeName string) {
 				return true
 			}
 
+			typeExists = true
 			ts, _ := n.(*ast.TypeSpec)
 			st, _ := ts.Type.(*ast.StructType)
 
-			typeExists = true
-			for _, field := range st.Fields.List {
-				if len(field.Names) == 0 {
-					xMap = parseEmbedField(g.Pkg(), field)
-					for typ := range xMap {
-						embedList = append(embedList, typ)
+			if ts.TypeParams != nil {
+				for i, p := range ts.TypeParams.List {
+					var names []string
+					for _, n := range p.Names {
+						names = append(names, n.Name)
 					}
-				}
-
-				for _, name := range field.Names {
-					if name.Obj.Kind != ast.Var {
-						continue
-					}
-
-					fs := token.NewFileSet()
-					typeMap[name.Name] = exprString(fs, field.Type)
-
-					allList = append(allList, name.Name)
-
-					if ast.IsExported(name.Name) {
-						continue
-					}
-
-					unexportedList = append(unexportedList, name.Name)
-					if field.Doc != nil {
-						n := parseNew(field.Doc.Text())
-						if n {
-							newList = append(newList, name.Name)
-						}
+					typeParamsMap[i] = strings.Join(names, ", ")
+					if ident, ok := p.Type.(*ast.Ident); ok {
+						typeParams = append(typeParams, ident.Name)
 					}
 				}
 			}
+
+			g.extractTopFiels(g.Pkg(), st, &fields)
 
 			imports = buildImports(f.Imports)
 			return false
@@ -82,19 +60,10 @@ func (g *Generator) makeNew(typeName string) {
 	}
 
 	g.data.Imports = imports
-	g.data.AllList = allList
-	if len(newList) > 0 {
-		g.data.NewList = newList
-	} else if g.flags.exp {
-		g.data.NewList = allList
-	} else {
-		g.data.NewList = unexportedList
-	}
-	g.data.EmbedList = embedList
 
-	g.RegisterTransfer("typeof", func(key string) string {
-		return typeMap[key]
-	})
+	g.typeParams = typeParams
+	g.typeParamsMap = typeParamsMap
+	g.fields = fields
 }
 
 func buildImports(imports []*ast.ImportSpec) string {
@@ -112,63 +81,122 @@ func buildImports(imports []*ast.ImportSpec) string {
 	return buff.String()
 }
 
-func parseNew(doc string) bool {
-	regNew := regexp.MustCompile(`(?im)^shoot:.*?\Wnew(;.*|\s*)$`)
-	new := regNew.MatchString(doc)
-	return new
-}
-
-func exprString(fset *token.FileSet, expr ast.Expr) string {
-	var buf bytes.Buffer
-	err := printer.Fprint(&buf, fset, expr)
-	if err != nil {
-		logx.Fatalf("print expr: %s", err)
+func (g *Generator) makeNew() {
+	var paramGroups []string
+	var nameGroups []string
+	for i, t := range g.typeParams {
+		names := g.typeParamsMap[i]
+		paramGroups = append(paramGroups, fmt.Sprintf("%s %s", names, t))
+		nameGroups = append(nameGroups, names)
 	}
-	return buf.String()
-}
+	g.data.TypeParamList = strings.Join(paramGroups, ", ")
+	g.data.TypeParamNameList = strings.Join(nameGroups, ", ")
 
-func parseEmbedField(pkg *packages.Package, field *ast.Field) map[string]string {
-	//todo: only supports 1 depth, recursively ref shoot map
-
-	if !hasFields(pkg.TypesInfo.TypeOf(field.Type)) {
-		return nil
-	}
-
-	selMap := make(map[string]string)
-	switch t := field.Type.(type) {
-	case *ast.Ident:
-		selMap[t.Name] = ""
-	case *ast.SelectorExpr:
-		if pkgIdent, ok := t.X.(*ast.Ident); ok {
-			selMap[t.Sel.Name] = pkgIdent.Name
+	var allList []string
+	var embedList []string
+	nameMap := make(map[string]string)
+	typeMap := make(map[string]string)
+	var defList []string
+	defValueMap := make(map[string]string)
+	var getterIfaces []string
+	var setterIfaces []string
+	var expList []string
+	for _, f := range g.fields {
+		if f.isShadowed {
+			continue
 		}
-	case *ast.StarExpr:
-		switch x := t.X.(type) {
-		case *ast.Ident:
-			selMap[x.Name] = ""
-		case *ast.SelectorExpr:
-			if pkgIdent, ok := x.X.(*ast.Ident); ok {
-				selMap[x.Sel.Name] = pkgIdent.Name
+		if f.isEmbeded {
+			embedList = append(embedList, f.name)
+			typ := f.typ
+			if !f.isPtr {
+				typ = types.NewPointer(typ)
 			}
+			get, set := g.findGetterSetterIfac(f.name)
+			if get != nil && types.ConvertibleTo(typ, get) {
+				getterIfaces = append(getterIfaces, types.TypeString(get, g.qualifier))
+			}
+			if set != nil && types.ConvertibleTo(typ, set) {
+				setterIfaces = append(setterIfaces, types.TypeString(set, g.qualifier))
+			}
+			continue
 		}
+
+		allList = append(allList, f.name)
+
+		if ast.IsExported(f.name) {
+			expList = append(expList, f.name)
+		}
+
+		if f.defValue != "" {
+			defList = append(defList, f.name)
+			defValueMap[f.name] = f.defValue
+		}
+
+		star := ""
+		if f.isPtr {
+			star = "*"
+		}
+		typeMap[f.name] = star + f.qualifiedType
+
+		if g.hasNew && !f.isNew {
+			continue
+		}
+		nameMap[f.name] = transfer.ToCamelCase(f.name)
 	}
 
-	return selMap
+	newlst := newParamsList(g.fields, nameMap)
+	g.data.NewParamsList = newlst
+	body := newBody(g.fields, nameMap)
+	g.data.NewBody = body
+	g.data.TypeMap = typeMap
+	g.data.AllList = allList
+	g.data.EmbedList = embedList
+	g.data.GetterIfaces = getterIfaces
+	g.data.SetterIfaces = setterIfaces
+	g.data.NewMap = nameMap
+	g.data.DefaultList = defList
+	g.data.DefaultValueMap = defValueMap
+	g.data.ExportedList = expList
+	g.data.Option = g.flags.opt
+	g.data.Short = g.flags.short
 }
 
-func hasFields(t types.Type) bool {
-	var st *types.Struct
-	switch tt := t.(type) {
-	case *types.Pointer:
-		e := tt.Elem()
-		st, _ = e.Underlying().(*types.Struct)
-	case *types.Named:
-		st, _ = tt.Underlying().(*types.Struct)
-	case *types.Struct:
-		st = tt
+func (g *Generator) findGetterSetterIfac(name string) (types.Type, types.Type) {
+	getterName := name + "Getter"
+	setterName := name + "Setter"
+	var get, set types.Type
+	for _, f := range g.Pkg().Syntax {
+		ast.Inspect(f, func(node ast.Node) bool {
+			ts, ok := node.(*ast.TypeSpec)
+			if !ok {
+				return true
+			}
+			if _, ok := ts.Type.(*ast.InterfaceType); !ok {
+				return true
+			}
+
+			if ts.Name.Name != getterName && ts.Name.Name != setterName {
+				return true
+			}
+
+			obj := g.Pkg().TypesInfo.Defs[ts.Name]
+			if obj == nil {
+				return true
+			}
+
+			named, ok := obj.Type().(*types.Named)
+			if !ok {
+				return true
+			}
+
+			switch ts.Name.Name {
+			case getterName:
+				get = named
+			case setterName:
+				set = named
+			}
+			return get != nil && set != nil
+		})
 	}
-	if st != nil {
-		return st.NumFields() > 0
-	}
-	return false
+	return get, set
 }

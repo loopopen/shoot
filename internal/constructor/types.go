@@ -2,6 +2,7 @@ package constructor
 
 import (
 	"fmt"
+	"go/types"
 
 	"github.com/lopolopen/shoot/internal/shoot"
 )
@@ -27,20 +28,29 @@ type TmplData struct {
 	// GoFile  string
 	Imports string
 	//All = Exported + Unexported
-	AllList     []string
-	NewList     []string
-	GetSet      bool
-	GetterList  []string
-	SetterList  []string
-	Option      bool
-	DefaultList []string
-	JSON        bool
+	AllList         []string
+	NewMap          map[string]string
+	GetSet          bool
+	GetterList      []string
+	SetterList      []string
+	GetterIfaces    []string
+	SetterIfaces    []string
+	Option          bool
+	DefaultList     []string
+	DefaultValueMap map[string]string
+	JSON            bool
+	JSONTagMap      map[string]string
 	//Marshal: Getteer + Exported
 	//Unmarshal: Setter + Exported
-	ExportedList []string
-	EmbedList    []string
-	Self         bool
-	Short        bool
+	ExportedList      []string
+	EmbedList         []string
+	Self              bool
+	Short             bool
+	NewParamsList     string
+	NewBody           string
+	TypeParamList     string
+	TypeParamNameList string
+	TypeMap           map[string]string
 }
 
 func NewTmplData(cmdline, version string) *TmplData {
@@ -65,4 +75,19 @@ type Flags struct {
 	opt     bool
 	exp     bool
 	short   bool
+}
+
+type Field struct {
+	name          string
+	qualifiedType string
+	typ           types.Type
+	depth         int32
+	isPtr         bool
+	isShadowed    bool
+	isEmbeded     bool
+	isGet         bool
+	isSet         bool
+	isNew         bool
+	defValue      string
+	jsonTag       string
 }
