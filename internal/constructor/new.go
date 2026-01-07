@@ -59,11 +59,10 @@ func (g *Generator) parseFields(typeName string) {
 		logx.Fatalf("type not exists: %s", typeName)
 	}
 
-	g.data.Imports = imports
-
 	g.typeParams = typeParams
 	g.typeParamsMap = typeParamsMap
 	g.fields = fields
+	g.data.Imports = imports
 }
 
 func buildImports(imports []*ast.ImportSpec) string {
@@ -98,8 +97,8 @@ func (g *Generator) makeNew() {
 	typeMap := make(map[string]string)
 	var defList []string
 	defValueMap := make(map[string]string)
-	var getterIfaces []string
-	var setterIfaces []string
+	var getIfaces []string
+	var setIfaces []string
 	var expList []string
 	for _, f := range g.fields {
 		if f.isShadowed {
@@ -112,11 +111,17 @@ func (g *Generator) makeNew() {
 				typ = types.NewPointer(typ)
 			}
 			get, set := g.findGetterSetterIfac(f.name)
-			if get != nil && types.ConvertibleTo(typ, get) {
-				getterIfaces = append(getterIfaces, types.TypeString(get, g.qualifier))
+			if get != nil {
+				iface, ok := assignableToIface(typ, get)
+				if ok {
+					getIfaces = append(getIfaces, types.TypeString(iface, g.qualifier))
+				}
 			}
-			if set != nil && types.ConvertibleTo(typ, set) {
-				setterIfaces = append(setterIfaces, types.TypeString(set, g.qualifier))
+			if set != nil {
+				iface, ok := assignableToIface(typ, set)
+				if ok {
+					setIfaces = append(setIfaces, types.TypeString(iface, g.qualifier))
+				}
 			}
 			continue
 		}
@@ -151,8 +156,8 @@ func (g *Generator) makeNew() {
 	g.data.TypeMap = typeMap
 	g.data.AllList = allList
 	g.data.EmbedList = embedList
-	g.data.GetterIfaces = getterIfaces
-	g.data.SetterIfaces = setterIfaces
+	g.data.GetterIfaces = getIfaces
+	g.data.SetterIfaces = setIfaces
 	g.data.NewMap = nameMap
 	g.data.DefaultList = defList
 	g.data.DefaultValueMap = defValueMap
@@ -161,42 +166,62 @@ func (g *Generator) makeNew() {
 	g.data.Short = g.flags.short
 }
 
+// func (g *Generator) findGetterSetterIfac(name string) (types.Type, types.Type) {
+// 	getterName := name + "Getter"
+// 	setterName := name + "Setter"
+// 	var get, set types.Type
+// 	for _, f := range g.Pkg().Syntax {
+// 		ast.Inspect(f, func(node ast.Node) bool {
+// 			ts, ok := node.(*ast.TypeSpec)
+// 			if !ok {
+// 				return true
+// 			}
+// 			if _, ok := ts.Type.(*ast.InterfaceType); !ok {
+// 				return true
+// 			}
+// 			if ts.Name.Name != getterName && ts.Name.Name != setterName {
+// 				return true
+// 			}
+
+// 			obj := g.Pkg().TypesInfo.Defs[ts.Name]
+// 			if obj == nil {
+// 				return true
+// 			}
+
+// 			named, ok := obj.Type().(*types.Named)
+// 			if !ok {
+// 				return true
+// 			}
+
+// 			switch ts.Name.Name {
+// 			case getterName:
+// 				get = named
+// 			case setterName:
+// 				set = named
+// 			}
+// 			return get != nil && set != nil
+// 		})
+// 	}
+// 	return get, set
+// }
+
 func (g *Generator) findGetterSetterIfac(name string) (types.Type, types.Type) {
 	getterName := name + "Getter"
 	setterName := name + "Setter"
 	var get, set types.Type
-	for _, f := range g.Pkg().Syntax {
-		ast.Inspect(f, func(node ast.Node) bool {
-			ts, ok := node.(*ast.TypeSpec)
-			if !ok {
-				return true
-			}
-			if _, ok := ts.Type.(*ast.InterfaceType); !ok {
-				return true
-			}
 
-			if ts.Name.Name != getterName && ts.Name.Name != setterName {
-				return true
-			}
+	scope := g.Pkg().Types.Scope()
 
-			obj := g.Pkg().TypesInfo.Defs[ts.Name]
-			if obj == nil {
-				return true
-			}
+	if obj := scope.Lookup(getterName); obj != nil {
+		if typeName, ok := obj.(*types.TypeName); ok {
+			get = typeName.Type()
+		}
+	}
 
-			named, ok := obj.Type().(*types.Named)
-			if !ok {
-				return true
-			}
-
-			switch ts.Name.Name {
-			case getterName:
-				get = named
-			case setterName:
-				set = named
-			}
-			return get != nil && set != nil
-		})
+	if obj := scope.Lookup(setterName); obj != nil {
+		if typeName, ok := obj.(*types.TypeName); ok {
+			set = typeName.Type()
+		}
 	}
 	return get, set
 }

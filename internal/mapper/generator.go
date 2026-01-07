@@ -157,7 +157,7 @@ func (g *Generator) MakeData(srcTypeName string) any {
 	shootnewIfac := makeNewShooterIfac()
 	srcTyp := g.parseSrcFields(srcTypeName)
 	if types.AssignableTo(srcTyp, shootnewIfac) {
-		g.parseSrcGetSetMethods(srcTyp)
+		g.parseSrcGetSetMethods(srcTyp, srcTypeName)
 	}
 	if srcTyp == nil {
 		logx.Fatalf("src type not exists: %s", srcTypeName)
@@ -171,7 +171,7 @@ func (g *Generator) MakeData(srcTypeName string) any {
 		}
 	}
 	if types.AssignableTo(destTyp, shootnewIfac) {
-		g.parseDestGetSetMethods(destTyp)
+		g.parseDestGetSetMethods(destTyp, destTypeName)
 	}
 
 	g.parseManual(srcTyp, destTyp)

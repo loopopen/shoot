@@ -21,17 +21,17 @@ func (b *Base) SetId(id_ uint) {
 	b.id = id_
 }
 
-type _Base_marshal struct {
+type _marshal_Base struct {
 	Id uint `json:"id"`
 }
 
-type _Base_unmarshal struct {
+type _unmarshal_Base struct {
 	Id uint `json:"id"`
 }
 
 // MarshalJSON serializes type Base to json bytes
 func (b Base) MarshalJSON() ([]byte, error) {
-	data := _Base_marshal{
+	data := _marshal_Base{
 		Id: b.Id(),
 	}
 	return json.Marshal(data)
@@ -39,7 +39,7 @@ func (b Base) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON deserializes json bytes to type Base
 func (b *Base) UnmarshalJSON(data []byte) error {
-	var base_ _Base_unmarshal
+	var base_ _unmarshal_Base
 	if err := json.Unmarshal(data, &base_); err != nil {
 		return err
 	}

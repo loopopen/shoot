@@ -24,17 +24,17 @@ func (o *Order) SetStatus(status_ string) {
 	o.status = status_
 }
 
-type _Order_marshal struct {
+type _marshal_Order struct {
 	Status string `json:"status"`
 }
 
-type _Order_unmarshal struct {
+type _unmarshal_Order struct {
 	Status string `json:"status"`
 }
 
 // MarshalJSON serializes type Order to json bytes
 func (o Order) MarshalJSON() ([]byte, error) {
-	data := _Order_marshal{
+	data := _marshal_Order{
 		Status: o.Status(),
 	}
 	values := make(map[string]interface{})
@@ -59,7 +59,7 @@ func (o Order) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON deserializes json bytes to type Order
 func (o *Order) UnmarshalJSON(data []byte) error {
-	var order_ _Order_unmarshal
+	var order_ _unmarshal_Order
 	if err := json.Unmarshal(data, &order_); err != nil {
 		return err
 	}
