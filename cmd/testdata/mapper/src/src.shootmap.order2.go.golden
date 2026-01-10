@@ -30,9 +30,6 @@ func (o *Order2) FromDest(order2_ *dest.Order2) *Order2 {
 	if o == nil {
 		o = new(Order2)
 	}
-	o.ID = order2_.Id()
-	o.Amount = o.DecimalToString(order2_.Amount())
-	o.OrderingTime = o.TimeToString(order2_.OrderTime())
 	order2_Addr0 := order2_.Addr0()
 	o.Addr0 = *new(OrderAddress).FromDest(&order2_Addr0)
 	order2_Addr1 := order2_.Addr1()
@@ -43,6 +40,9 @@ func (o *Order2) FromDest(order2_ *dest.Order2) *Order2 {
 	}
 	order2_Addr3 := order2_.Addr3()
 	o.Addr3 = new(OrderAddress).FromDest(order2_Addr3)
+	o.Amount = o.DecimalToString(order2_.Amount())
+	o.ID = order2_.Id()
+	o.OrderingTime = o.TimeToString(order2_.OrderTime())
 	return o
 }
 

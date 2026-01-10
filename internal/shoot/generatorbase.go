@@ -68,8 +68,8 @@ func (g *GeneratorBase) IsTypeSpecified() bool {
 }
 
 func (d *GeneratorBase) preRegister() {
-	d.RegisterTransfer("firstLower", transfer.FirstLower)
-	d.RegisterTransfer("camelCase", transfer.ToCamelCase)
+	d.RegisterTransfer("firstLower", transfer.FirstLowerLetter)
+	d.RegisterTransfer("camelCase", transfer.ToCamelCaseGO)
 	d.RegisterTransfer("pascalCase", transfer.ToPascalCase)
 	d.RegisterTransfer("in", func(s string, list []string) bool {
 		for _, x := range list {

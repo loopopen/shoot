@@ -17,6 +17,7 @@ import {{.DestPkgAlias}} "{{.DestPkgPath}}"
 import "{{.DestPkgPath}}"
 {{end}}
 
+{{if not .IsFromOnly}}
 // {{$ToDest}} converts receiver to type {{.QualifiedDestTypeName}}
 func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
     if {{$s}} == nil {
@@ -104,7 +105,9 @@ func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
     {{- end -}}
     return {{$d}}
 }
+{{end}}
 
+{{if not .IsToOnly}}
 // {{$FromDest}} reads from type {{.QualifiedDestTypeName}}, then writes back to receiver and returns it
 func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *{{.TypeName}} {
     if {{$d}} == nil {
@@ -195,6 +198,7 @@ func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *
     {{- end -}}
     return {{$s}}
 }
+{{end}}
 
 // ShootMap exists solely to fulfill the MapShooter interface contract
 func ({{$s}} {{.TypeName}}) ShootMap() { /*noop*/ }

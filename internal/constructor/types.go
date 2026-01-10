@@ -9,9 +9,16 @@ import (
 
 type TagCase string
 
+const (
+	TagCasePascal TagCase = "pascal"
+	TagCaseCamel  TagCase = "camel"
+	TagCaseLower  TagCase = "lower"
+	TagCaseUpper  TagCase = "upper"
+)
+
 func (v *TagCase) Set(value string) error {
-	switch value {
-	case "pascal", "camel", "lower", "upper":
+	switch TagCase(value) {
+	case TagCasePascal, TagCaseCamel, TagCaseLower, TagCaseUpper:
 		*v = TagCase(value)
 		return nil
 	default:
@@ -71,7 +78,7 @@ type Flags struct {
 	//[get;set] => get+set
 	getset  bool
 	json    bool
-	tagcase string
+	tagcase TagCase
 	opt     bool
 	exp     bool
 	short   bool

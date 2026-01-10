@@ -58,10 +58,14 @@ func (g *Generator) ParseFlags() {
 
 	g.ParseCommonFlags(sub)
 
+	if tagcase == "" {
+		tagcase = TagCaseCamel
+	}
+
 	g.flags = &Flags{
 		getset:  *getset,
 		json:    *json,
-		tagcase: tagcase.String(),
+		tagcase: tagcase,
 		opt:     *opt || *option,
 		exp:     *exp || *exported,
 		short:   *short,

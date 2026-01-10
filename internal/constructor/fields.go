@@ -94,16 +94,16 @@ func parseDef(f *ast.Field) string {
 	return ""
 }
 
-func parseJSON(f *ast.Field, name string, tagcase string) string {
+func parseJSON(f *ast.Field, name string, tagcase TagCase) string {
 	trans := transfer.ID
 	switch tagcase {
-	case "pascal":
+	case TagCasePascal:
 		trans = transfer.ToPascalCase
-	case "camel":
+	case TagCaseCamel:
 		trans = transfer.ToCamelCase
-	case "lower":
+	case TagCaseLower:
 		trans = strings.ToLower
-	case "upper":
+	case TagCaseUpper:
 		trans = strings.ToUpper
 	}
 

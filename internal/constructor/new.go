@@ -166,45 +166,6 @@ func (g *Generator) makeNew() {
 	g.data.Short = g.flags.short
 }
 
-// func (g *Generator) findGetterSetterIfac(name string) (types.Type, types.Type) {
-// 	getterName := name + "Getter"
-// 	setterName := name + "Setter"
-// 	var get, set types.Type
-// 	for _, f := range g.Pkg().Syntax {
-// 		ast.Inspect(f, func(node ast.Node) bool {
-// 			ts, ok := node.(*ast.TypeSpec)
-// 			if !ok {
-// 				return true
-// 			}
-// 			if _, ok := ts.Type.(*ast.InterfaceType); !ok {
-// 				return true
-// 			}
-// 			if ts.Name.Name != getterName && ts.Name.Name != setterName {
-// 				return true
-// 			}
-
-// 			obj := g.Pkg().TypesInfo.Defs[ts.Name]
-// 			if obj == nil {
-// 				return true
-// 			}
-
-// 			named, ok := obj.Type().(*types.Named)
-// 			if !ok {
-// 				return true
-// 			}
-
-// 			switch ts.Name.Name {
-// 			case getterName:
-// 				get = named
-// 			case setterName:
-// 				set = named
-// 			}
-// 			return get != nil && set != nil
-// 		})
-// 	}
-// 	return get, set
-// }
-
 func (g *Generator) findGetterSetterIfac(name string) (types.Type, types.Type) {
 	getterName := name + "Getter"
 	setterName := name + "Setter"

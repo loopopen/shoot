@@ -82,7 +82,14 @@ func (g *Generator) ParseFlags() {
 	path := sub.String("path", "", "destination package path to map to")
 	alias := sub.String("alias", "", "destination package alias")
 	destTypes := sub.String("to", "", "destination type names to map to (must align to -type)")
+	var way Way
+	sub.Var(&way, "way", "limit the mapping way(toonly/->, fromonly/<-, both/<->)")
+
 	g.ParseCommonFlags(sub)
+
+	if way == "" {
+		way = WayBoth
+	}
 
 	typNames := g.CommonFlags().TypeNames
 	typMap := make(map[string]string)
@@ -116,6 +123,7 @@ func (g *Generator) ParseFlags() {
 		destDir:   destDir,
 		destTypes: typMap,
 		alias:     *alias,
+		way:       way,
 	}
 }
 
@@ -128,6 +136,7 @@ func (g *Generator) LoadPackage(patterns ...string) map[string]*packages.Package
 }
 
 func (g *Generator) loadMorePkgs(srcTypeName string) {
+	g.mappingFuncList = nil
 	mapperTypeName := g.loadTypeMapperPkg(srcTypeName)
 	if mapperTypeName != "" {
 		g.parseMapper(mapperTypeName)
@@ -183,6 +192,8 @@ func (g *Generator) MakeData(srcTypeName string) any {
 	g.data.DestPkgPath = g.destPkg.PkgPath
 	g.data.DestPkgAlias = g.flags.alias
 	g.data.QualifiedDestTypeName = types.TypeString(destTyp, g.qualifier)
+	g.data.IsToOnly = g.flags.way == WayToOnly
+	g.data.IsFromOnly = g.flags.way == WayFromOnly
 	g.data.SetTypeName(srcTypeName)
 	g.data.SetPackageName(g.Pkg().Name)
 

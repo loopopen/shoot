@@ -3,7 +3,8 @@ package mapper
 import (
 	"go/types"
 	"strings"
-	"unicode"
+
+	"github.com/lopolopen/shoot/internal/transfer"
 )
 
 func (g *Generator) makeMatch() {
@@ -92,13 +93,13 @@ func smartMatch(a, b string) bool {
 	}
 
 	i := len(a)
-	for i > 0 && unicode.IsUpper(rune(a[i-1])) {
+	for i > 0 && transfer.IsUpper(a[i-1]) {
 		i--
 	}
 
 	if i == len(a) {
 		i = len(b)
-		for i > 0 && unicode.IsUpper(rune(b[i-1])) {
+		for i > 0 && transfer.IsUpper(b[i-1]) {
 			i--
 		}
 	}

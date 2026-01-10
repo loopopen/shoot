@@ -32,7 +32,7 @@ func (g *Generator) parseGetSetIface(pkg *packages.Package, stType types.Type, t
 				if results == nil || results.Len() == 0 || results.Len() > 1 {
 					continue
 				}
-				g.destGetSetMethods = append(g.destGetSetMethods, Func{
+				*funcs = append(*funcs, Func{
 					name:   fn.Name(),
 					result: results.At(0).Type(),
 					path:   fn.Name(),
@@ -54,7 +54,7 @@ func (g *Generator) parseGetSetIface(pkg *packages.Package, stType types.Type, t
 				if params == nil || params.Len() == 0 || params.Len() > 1 {
 					continue
 				}
-				g.destGetSetMethods = append(g.destGetSetMethods, Func{
+				*funcs = append(*funcs, Func{
 					name:  fn.Name(),
 					param: params.At(0).Type(),
 					path:  fn.Name(),
@@ -76,70 +76,66 @@ func (g *Generator) parseGetSetMethods(pkg *packages.Package, stTyp types.Type, 
 	}
 
 	for _, f := range pkg.Syntax {
-		ast.Inspect(f, func(n ast.Node) bool {
-			for _, decl := range f.Decls {
-				fn, ok := decl.(*ast.FuncDecl)
-				if !ok {
-					continue
-				}
-				if fn.Recv == nil || len(fn.Recv.List) == 0 {
-					continue
-				}
-				field, ok := super[fn.Name.Name]
-				if !ok {
-					continue
-				}
-
-				expr := fn.Recv.List[0].Type
-				if ptr, ok := expr.(*ast.StarExpr); ok {
-					expr = ptr.X
-				}
-				recvTyp := pkg.TypesInfo.TypeOf(expr)
-				if !types.Identical(recvTyp, stTyp) {
-					continue
-				}
-
-				params := fn.Type.Params
-				results := fn.Type.Results
-				if strings.HasPrefix(fn.Name.Name, set) {
-					//set
-					if results != nil && len(results.List) > 0 {
-						continue
-					}
-					if params == nil || len(params.List) > 1 {
-						continue
-					}
-					paramTyp := pkg.TypesInfo.TypeOf(params.List[0].Type)
-					if !types.Identical(paramTyp, field.typ) {
-						continue
-					}
-					*funcs = append(*funcs, Func{
-						name:  fn.Name.Name,
-						param: paramTyp,
-						path:  fn.Name.Name,
-					})
-				} else {
-					//get
-					if params != nil && len(params.List) > 0 {
-						continue
-					}
-					if results == nil || len(results.List) > 1 {
-						continue
-					}
-					resultTyp := pkg.TypesInfo.TypeOf(results.List[0].Type)
-					if !types.Identical(resultTyp, field.typ) {
-						continue
-					}
-					*funcs = append(*funcs, Func{
-						name:   fn.Name.Name,
-						result: resultTyp,
-						path:   fn.Name.Name,
-					})
-				}
+		for _, decl := range f.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok {
+				continue
+			}
+			if fn.Recv == nil || len(fn.Recv.List) == 0 {
+				continue
+			}
+			field, ok := super[fn.Name.Name]
+			if !ok {
+				continue
 			}
 
-			return false
-		})
+			expr := fn.Recv.List[0].Type
+			if ptr, ok := expr.(*ast.StarExpr); ok {
+				expr = ptr.X
+			}
+			recvTyp := pkg.TypesInfo.TypeOf(expr)
+			if !types.Identical(recvTyp, stTyp) {
+				continue
+			}
+
+			params := fn.Type.Params
+			results := fn.Type.Results
+			if strings.HasPrefix(fn.Name.Name, set) {
+				//set
+				if results != nil && len(results.List) > 0 {
+					continue
+				}
+				if params == nil || len(params.List) > 1 {
+					continue
+				}
+				paramTyp := pkg.TypesInfo.TypeOf(params.List[0].Type)
+				if !types.Identical(paramTyp, field.typ) {
+					continue
+				}
+				*funcs = append(*funcs, Func{
+					name:  fn.Name.Name,
+					param: paramTyp,
+					path:  fn.Name.Name,
+				})
+			} else {
+				//get
+				if params != nil && len(params.List) > 0 {
+					continue
+				}
+				if results == nil || len(results.List) > 1 {
+					continue
+				}
+				resultTyp := pkg.TypesInfo.TypeOf(results.List[0].Type)
+				if !types.Identical(resultTyp, field.typ) {
+					continue
+				}
+				*funcs = append(*funcs, Func{
+					name:   fn.Name.Name,
+					result: resultTyp,
+					path:   fn.Name.Name,
+				})
+			}
+		}
 	}
 }
 
