@@ -73,7 +73,6 @@ func (g *Generator) qualifier(pkg *types.Package) string {
 		if g.flags.alias != "" {
 			return g.flags.alias
 		}
-		return pkg.Name()
 	}
 	return pkg.Name()
 }
@@ -83,7 +82,14 @@ func (g *Generator) ParseFlags() {
 	path := sub.String("path", "", "destination package path to map to")
 	alias := sub.String("alias", "", "destination package alias")
 	destTypes := sub.String("to", "", "destination type names to map to (must align to -type)")
+	var way Way
+	sub.Var(&way, "way", "limit the mapping way(toonly/->, fromonly/<-, both/<->)")
+
 	g.ParseCommonFlags(sub)
+
+	if way == "" {
+		way = WayBoth
+	}
 
 	typNames := g.CommonFlags().TypeNames
 	typMap := make(map[string]string)
@@ -117,6 +123,7 @@ func (g *Generator) ParseFlags() {
 		destDir:   destDir,
 		destTypes: typMap,
 		alias:     *alias,
+		way:       way,
 	}
 }
 
@@ -129,6 +136,7 @@ func (g *Generator) LoadPackage(patterns ...string) map[string]*packages.Package
 }
 
 func (g *Generator) loadMorePkgs(srcTypeName string) {
+	g.mappingFuncList = nil
 	mapperTypeName := g.loadTypeMapperPkg(srcTypeName)
 	if mapperTypeName != "" {
 		g.parseMapper(mapperTypeName)
@@ -158,7 +166,7 @@ func (g *Generator) MakeData(srcTypeName string) any {
 	shootnewIfac := makeNewShooterIfac()
 	srcTyp := g.parseSrcFields(srcTypeName)
 	if types.AssignableTo(srcTyp, shootnewIfac) {
-		g.parseSrcGetSetMethods(srcTyp)
+		g.parseSrcGetSetMethods(srcTyp, srcTypeName)
 	}
 	if srcTyp == nil {
 		logx.Fatalf("src type not exists: %s", srcTypeName)
@@ -172,7 +180,7 @@ func (g *Generator) MakeData(srcTypeName string) any {
 		}
 	}
 	if types.AssignableTo(destTyp, shootnewIfac) {
-		g.parseDestGetSetMethods(destTyp)
+		g.parseDestGetSetMethods(destTyp, destTypeName)
 	}
 
 	g.parseManual(srcTyp, destTyp)
@@ -184,6 +192,8 @@ func (g *Generator) MakeData(srcTypeName string) any {
 	g.data.DestPkgPath = g.destPkg.PkgPath
 	g.data.DestPkgAlias = g.flags.alias
 	g.data.QualifiedDestTypeName = types.TypeString(destTyp, g.qualifier)
+	g.data.IsToOnly = g.flags.way == WayToOnly
+	g.data.IsFromOnly = g.flags.way == WayFromOnly
 	g.data.SetTypeName(srcTypeName)
 	g.data.SetPackageName(g.Pkg().Name)
 

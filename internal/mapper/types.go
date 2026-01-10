@@ -1,11 +1,39 @@
 package mapper
 
 import (
+	"fmt"
 	"go/types"
 	"strings"
 
 	"github.com/lopolopen/shoot/internal/shoot"
 )
+
+type Way string
+
+const (
+	WayToOnly   Way = "toonly"
+	WayFromOnly Way = "fromonly"
+	WayBoth     Way = "both"
+)
+
+func (v *Way) Set(value string) error {
+	var err error
+	switch Way(value) {
+	case WayToOnly, "->":
+		*v = WayToOnly
+	case WayFromOnly, "<-":
+		*v = WayFromOnly
+	case WayBoth, "<->":
+		*v = WayBoth
+	default:
+		err = fmt.Errorf("invalid mapping way: %s", value)
+	}
+	return err
+}
+
+func (v *Way) String() string {
+	return string(*v)
+}
 
 type TmplData struct {
 	*shoot.TmplDataBase
@@ -45,6 +73,8 @@ type TmplData struct {
 	ReadMethodName  string //fromModel
 	IsReadParamPtr  bool
 	WriteMethodName string //toModel
+	IsToOnly        bool
+	IsFromOnly      bool
 }
 
 func NewTmplData(cmdline, version string) *TmplData {
@@ -57,6 +87,7 @@ type Flags struct {
 	destDir   string
 	destTypes map[string]string
 	alias     string
+	way       Way
 }
 
 type Field struct {

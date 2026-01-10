@@ -1,6 +1,7 @@
 package main
 
 import (
+	"constructorsample/embed"
 	"constructorsample/model"
 	"encoding/json"
 	"fmt"
@@ -44,4 +45,11 @@ func main() {
 		model.HostOfConf([]string{"host"}),
 	)
 	fmt.Println(conf)
+
+	ord := embed.NewOrder(1, "x")
+	ordJson, err := json.Marshal(ord)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(ordJson))
 }

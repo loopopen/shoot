@@ -88,10 +88,10 @@ func (g *Generator) parseManual(srcType, destType types.Type) []string {
 						}
 					}
 
-					srcTypeName := types.TypeString(srcType, g.qualifier)
+					destTypeName := types.TypeString(destType, g.qualifier)
 					if isWrite {
 						if !(isSame && isParamPtr) && !isSetter {
-							logx.Fatalf("(%s).%s: parameter of write method must be a pointer or a setter of %s", recvTypeName, fn.Name.Name, srcTypeName)
+							logx.Fatalf("(%s).%s: parameter of write method must be a pointer or a setter of %s", recvTypeName, fn.Name.Name, destTypeName)
 						}
 
 						if g.data.WriteMethodName == "" {
@@ -105,7 +105,7 @@ func (g *Generator) parseManual(srcType, destType types.Type) []string {
 						}
 					} else if isRead { //write src
 						if !isSame && !isGetter {
-							logx.Fatalf("(%s).%s: parameter of read method must be a value or a getter of %s", recvTypeName, fn.Name.Name, srcTypeName)
+							logx.Fatalf("(%s).%s: parameter of read method must be a value or a getter of %s", recvTypeName, fn.Name.Name, destTypeName)
 						}
 						g.data.IsReadParamPtr = isParamPtr || isGetter
 

@@ -2,15 +2,23 @@ package constructor
 
 import (
 	"fmt"
+	"go/types"
 
 	"github.com/lopolopen/shoot/internal/shoot"
 )
 
 type TagCase string
 
+const (
+	TagCasePascal TagCase = "pascal"
+	TagCaseCamel  TagCase = "camel"
+	TagCaseLower  TagCase = "lower"
+	TagCaseUpper  TagCase = "upper"
+)
+
 func (v *TagCase) Set(value string) error {
-	switch value {
-	case "pascal", "camel", "lower", "upper":
+	switch TagCase(value) {
+	case TagCasePascal, TagCaseCamel, TagCaseLower, TagCaseUpper:
 		*v = TagCase(value)
 		return nil
 	default:
@@ -27,20 +35,29 @@ type TmplData struct {
 	// GoFile  string
 	Imports string
 	//All = Exported + Unexported
-	AllList     []string
-	NewList     []string
-	GetSet      bool
-	GetterList  []string
-	SetterList  []string
-	Option      bool
-	DefaultList []string
-	JSON        bool
+	AllList         []string
+	NewMap          map[string]string
+	GetSet          bool
+	GetterList      []string
+	SetterList      []string
+	GetterIfaces    []string
+	SetterIfaces    []string
+	Option          bool
+	DefaultList     []string
+	DefaultValueMap map[string]string
+	JSON            bool
+	JSONTagMap      map[string]string
 	//Marshal: Getteer + Exported
 	//Unmarshal: Setter + Exported
-	ExportedList []string
-	EmbedList    []string
-	Self         bool
-	Short        bool
+	ExportedList      []string
+	EmbedList         []string
+	Self              bool
+	Short             bool
+	NewParamsList     string
+	NewBody           string
+	TypeParamList     string
+	TypeParamNameList string
+	TypeMap           map[string]string
 }
 
 func NewTmplData(cmdline, version string) *TmplData {
@@ -61,8 +78,23 @@ type Flags struct {
 	//[get;set] => get+set
 	getset  bool
 	json    bool
-	tagcase string
+	tagcase TagCase
 	opt     bool
 	exp     bool
 	short   bool
+}
+
+type Field struct {
+	name          string
+	qualifiedType string
+	typ           types.Type
+	depth         int32
+	isPtr         bool
+	isShadowed    bool
+	isEmbeded     bool
+	isGet         bool
+	isSet         bool
+	isNew         bool
+	defValue      string
+	jsonTag       string
 }

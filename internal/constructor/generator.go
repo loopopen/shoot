@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"go/ast"
+	"go/types"
 	"strings"
 
 	"github.com/lopolopen/shoot/internal/shoot"
@@ -18,8 +19,12 @@ var tmplTxt string
 // Generator holds the state of the analysis.
 type Generator struct {
 	*shoot.GeneratorBase
-	flags *Flags
-	data  *TmplData
+	flags         *Flags
+	data          *TmplData
+	typeParams    []string
+	typeParamsMap map[int]string
+	fields        []*Field
+	hasNew        bool
 }
 
 func New() *Generator {
@@ -27,6 +32,16 @@ func New() *Generator {
 		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
 	}
 	return g
+}
+
+func (g *Generator) qualifier(pkg *types.Package) string {
+	if pkg == nil {
+		return ""
+	}
+	if pkg.Path() == g.Pkg().PkgPath {
+		return ""
+	}
+	return pkg.Name()
 }
 
 func (g *Generator) ParseFlags() {
@@ -43,10 +58,14 @@ func (g *Generator) ParseFlags() {
 
 	g.ParseCommonFlags(sub)
 
+	if tagcase == "" {
+		tagcase = TagCaseCamel
+	}
+
 	g.flags = &Flags{
 		getset:  *getset,
 		json:    *json,
-		tagcase: tagcase.String(),
+		tagcase: tagcase,
 		opt:     *opt || *option,
 		exp:     *exp || *exported,
 		short:   *short,
@@ -58,10 +77,11 @@ func (g *Generator) MakeData(typeName string) any {
 		g.CommonFlags().CmdLine,
 		g.CommonFlags().Version,
 	)
-	g.makeNew(typeName)
-	g.makeOpt(typeName)
-	g.makeGetSet(typeName)
-	g.makeJson(typeName)
+
+	g.parseFields(typeName)
+	g.makeNew()
+	g.makeGetSet()
+	g.makeJson()
 	g.data.SetTypeName(typeName)
 	g.data.SetPackageName(g.Pkg().Name)
 	return g.data

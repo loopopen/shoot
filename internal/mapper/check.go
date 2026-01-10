@@ -147,7 +147,9 @@ func prepareReadPaths(fields []*Field, ptrTypeMap map[string]string, readPathsMa
 			}
 			readPaths = append(readPaths, path)
 		}
-		readPathsMap[f.Name] = readPaths
+		if len(readPaths) > 0 {
+			readPathsMap[f.Name] = readPaths
+		}
 	}
 }
 

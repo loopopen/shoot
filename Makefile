@@ -3,7 +3,7 @@
 golden:
 	go test ./cmd
 
-goldenup:
+update:
 	go test ./cmd -update
 
 generate:

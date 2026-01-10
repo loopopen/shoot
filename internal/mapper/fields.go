@@ -31,12 +31,11 @@ func (g *Generator) parseFields(
 				typ = obj.Type()
 			}
 
+			var tags map[string]string
 			if tagMap != nil {
-				g.extractTopFiels(pkg, st, *tagMap, *ptrTypeMap, &fields)
-			} else {
-				g.extractTopFiels(pkg, st, nil, *ptrTypeMap, &fields)
-
+				tags = *tagMap
 			}
+			g.extractTopFiels(pkg, st, tags, *ptrTypeMap, &fields)
 			return false
 		})
 	}

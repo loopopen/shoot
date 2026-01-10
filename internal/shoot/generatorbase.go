@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
+	"go/types"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -67,8 +68,8 @@ func (g *GeneratorBase) IsTypeSpecified() bool {
 }
 
 func (d *GeneratorBase) preRegister() {
-	d.RegisterTransfer("firstLower", transfer.FirstLower)
-	d.RegisterTransfer("camelCase", transfer.ToCamelCase)
+	d.RegisterTransfer("firstLower", transfer.FirstLowerLetter)
+	d.RegisterTransfer("camelCase", transfer.ToCamelCaseGO)
 	d.RegisterTransfer("pascalCase", transfer.ToPascalCase)
 	d.RegisterTransfer("in", func(s string, list []string) bool {
 		for _, x := range list {
@@ -281,7 +282,16 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 
 func getGoFile(pkg *packages.Package, typeName string) string {
 	for _, obj := range pkg.TypesInfo.Defs {
-		if obj != nil && obj.Name() == typeName {
+		if obj == nil {
+			continue
+		}
+
+		_, ok := obj.(*types.TypeName)
+		if !ok {
+			continue
+		}
+
+		if obj.Name() == typeName {
 			pos := pkg.Fset.Position(obj.Pos())
 			return filepath.Base(pos.Filename)
 		}
