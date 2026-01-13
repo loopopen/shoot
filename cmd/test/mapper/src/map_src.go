@@ -1,9 +1,9 @@
-package mapper
+package src
 
 import (
 	"time"
 
-	"github.com/lopolopen/shoot/cmd/testdata/mapper/dest"
+	"github.com/lopolopen/shoot/cmd/test/mapper/dest"
 )
 
 type Mapper struct {

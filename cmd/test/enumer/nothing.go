@@ -2,7 +2,7 @@ package enumer
 
 // type Alias = int
 
-const AliasX Alias = 0
+// const AliasX Alias = 0
 
 type NoValue int
 

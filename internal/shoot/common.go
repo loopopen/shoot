@@ -1,6 +1,7 @@
 package shoot
 
 import (
+	"go/types"
 	"path/filepath"
 	"strings"
 )
@@ -22,4 +23,24 @@ func FixPath(path string) string {
 		return path
 	}
 	return "./" + path
+}
+
+func TypeEquals(x, y types.Type) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+	nopkg := false
+	qf := func(p *types.Package) string {
+		if p == nil {
+			nopkg = true
+			return ""
+		}
+		return p.Path()
+	}
+	xname := types.TypeString(x, qf)
+	yname := types.TypeString(y, qf)
+	if nopkg {
+		return false
+	}
+	return xname == yname
 }

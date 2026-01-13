@@ -19,17 +19,20 @@ var tmplTxt string
 // Generator holds the state of the analysis.
 type Generator struct {
 	*shoot.GeneratorBase
+	// ifaceReg      *shoot.IfaceRegiser
 	flags         *Flags
 	data          *TmplData
 	typeParams    []string
 	typeParamsMap map[int]string
 	fields        []*Field
 	hasNew        bool
+	getsetMethods []shoot.Func
 }
 
 func New() *Generator {
 	g := &Generator{
 		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		// ifaceReg:      shoot.NewIfaceRegister(),
 	}
 	return g
 }
@@ -72,19 +75,23 @@ func (g *Generator) ParseFlags() {
 	}
 }
 
-func (g *Generator) MakeData(typeName string) any {
+func (g *Generator) MakeData(typeName string) (any, bool) {
 	g.data = NewTmplData(
 		g.CommonFlags().CmdLine,
 		g.CommonFlags().Version,
 	)
 
-	g.parseFields(typeName)
+	theTyp := g.parseFields(typeName)
+	if theTyp == nil {
+		logx.Fatalf("type not exists: %s", typeName)
+	}
+	// g.parseGetSetMethods(theTyp, typeName)
+	g.makeGetSet() //must be before makeNew & makeJson
 	g.makeNew()
-	g.makeGetSet()
 	g.makeJson()
 	g.data.SetTypeName(typeName)
 	g.data.SetPackageName(g.Pkg().Name)
-	return g.data
+	return g.data, g.data.GetSet
 }
 
 func (g *Generator) ListTypes() []string {

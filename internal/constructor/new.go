@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/lopolopen/shoot/internal/shoot"
-	"github.com/lopolopen/shoot/internal/tools/logx"
 	"github.com/lopolopen/shoot/internal/transfer"
 )
 
-func (g *Generator) parseFields(typeName string) {
+func (g *Generator) parseFields(typeName string) types.Type {
+	var typ types.Type
 	var imports string
 
 	var typeParams []string
@@ -24,17 +24,21 @@ func (g *Generator) parseFields(typeName string) {
 	}
 
 	var fields []*Field
-
-	typeExists := false
 	for _, f := range g.Pkg().Syntax {
 		ast.Inspect(f, func(n ast.Node) bool {
 			if !g.testNode(typeName, n) {
 				return true
 			}
 
-			typeExists = true
 			ts, _ := n.(*ast.TypeSpec)
 			st, _ := ts.Type.(*ast.StructType)
+
+			obj := g.Pkg().TypesInfo.Defs[ts.Name]
+			if obj != nil {
+				typ = obj.Type()
+			} else {
+				return true
+			}
 
 			if ts.TypeParams != nil {
 				for i, p := range ts.TypeParams.List {
@@ -55,14 +59,15 @@ func (g *Generator) parseFields(typeName string) {
 			return false
 		})
 	}
-	if !typeExists {
-		logx.Fatalf("type not exists: %s", typeName)
+	if typ == nil {
+		return nil
 	}
 
 	g.typeParams = typeParams
 	g.typeParamsMap = typeParamsMap
 	g.fields = fields
 	g.data.Imports = imports
+	return typ
 }
 
 func buildImports(imports []*ast.ImportSpec) string {
@@ -92,45 +97,19 @@ func (g *Generator) makeNew() {
 	g.data.TypeParamNameList = strings.Join(nameGroups, ", ")
 
 	var allList []string
-	var embedList []string
 	nameMap := make(map[string]string)
 	typeMap := make(map[string]string)
 	var defList []string
 	defValueMap := make(map[string]string)
-	var getIfaces []string
-	var setIfaces []string
-	var expList []string
 	for _, f := range g.fields {
 		if f.isShadowed {
 			continue
 		}
 		if f.isEmbeded {
-			embedList = append(embedList, f.name)
-			typ := f.typ
-			if !f.isPtr {
-				typ = types.NewPointer(typ)
-			}
-			get, set := g.findGetterSetterIfac(f.name)
-			if get != nil {
-				iface, ok := assignableToIface(typ, get)
-				if ok {
-					getIfaces = append(getIfaces, types.TypeString(iface, g.qualifier))
-				}
-			}
-			if set != nil {
-				iface, ok := assignableToIface(typ, set)
-				if ok {
-					setIfaces = append(setIfaces, types.TypeString(iface, g.qualifier))
-				}
-			}
 			continue
 		}
 
 		allList = append(allList, f.name)
-
-		if ast.IsExported(f.name) {
-			expList = append(expList, f.name)
-		}
 
 		if f.defValue != "" {
 			defList = append(defList, f.name)
@@ -155,34 +134,9 @@ func (g *Generator) makeNew() {
 	g.data.NewBody = body
 	g.data.TypeMap = typeMap
 	g.data.AllList = allList
-	g.data.EmbedList = embedList
-	g.data.GetterIfaces = getIfaces
-	g.data.SetterIfaces = setIfaces
 	g.data.NewMap = nameMap
 	g.data.DefaultList = defList
 	g.data.DefaultValueMap = defValueMap
-	g.data.ExportedList = expList
 	g.data.Option = g.flags.opt
 	g.data.Short = g.flags.short
-}
-
-func (g *Generator) findGetterSetterIfac(name string) (types.Type, types.Type) {
-	getterName := name + "Getter"
-	setterName := name + "Setter"
-	var get, set types.Type
-
-	scope := g.Pkg().Types.Scope()
-
-	if obj := scope.Lookup(getterName); obj != nil {
-		if typeName, ok := obj.(*types.TypeName); ok {
-			get = typeName.Type()
-		}
-	}
-
-	if obj := scope.Lookup(setterName); obj != nil {
-		if typeName, ok := obj.(*types.TypeName); ok {
-			set = typeName.Type()
-		}
-	}
-	return get, set
 }

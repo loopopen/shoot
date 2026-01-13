@@ -9,10 +9,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func (g *Generator) parseFields(
-	pkg *packages.Package, typeName string,
-	tagMap, ptrTypeMap *map[string]string,
-	exportedFields, unexportedFields *[]*Field) types.Type {
+func (g *Generator) parseFields(pkg *packages.Package, typeName string, tagMap, ptrTypeMap *map[string]string, exportedFields, unexportedFields *[]*Field) types.Type {
 	var typ types.Type
 
 	*ptrTypeMap = make(map[string]string)

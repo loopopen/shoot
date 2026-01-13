@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/lopolopen/shoot/internal/tools/logx"
-	"github.com/lopolopen/shoot/internal/transfer"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -40,14 +39,15 @@ func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, f
 			get, set := parseGetSet(f, name.Name, g.flags.getset)
 			defv := parseDef(f)
 			var tag string
-			if g.flags.json {
-				tag = parseJSON(f, name.Name, g.flags.tagcase)
+			if g.flags.json && f.Tag != nil {
+				tag = parseJSONTag(f.Tag.Value)
 			}
 
 			qname, isPtr := qualifiedName(obj.Type(), g.qualifier)
 			checkShadowAndAppend(fields, &Field{
 				name:          name.Name,
 				qualifiedType: qname,
+				typ:           obj.Type(),
 				depth:         0,
 				isPtr:         isPtr,
 				isGet:         get,
@@ -92,29 +92,6 @@ func parseDef(f *ast.Field) string {
 		}
 	}
 	return ""
-}
-
-func parseJSON(f *ast.Field, name string, tagcase TagCase) string {
-	trans := transfer.ID
-	switch tagcase {
-	case TagCasePascal:
-		trans = transfer.ToPascalCase
-	case TagCaseCamel:
-		trans = transfer.ToCamelCase
-	case TagCaseLower:
-		trans = strings.ToLower
-	case TagCaseUpper:
-		trans = strings.ToUpper
-	}
-
-	tag := name
-	if f.Tag != nil {
-		jtag := parseJSONTag(f.Tag.Value)
-		if jtag != "" {
-			tag = jtag
-		}
-	}
-	return trans(tag)
 }
 
 func newParamsList(fields []*Field, nameMap map[string]string) string {
@@ -221,14 +198,12 @@ func extractStructFields(pkg *packages.Package, qf types.Qualifier, depth int32,
 			continue
 		}
 
-		// if ast.IsExported(f.Name()) {
-		// 	continue
-		// }
 		checkShadowAndAppend(fields, &Field{
 			name:          f.Name(),
 			qualifiedType: types.TypeString(f.Type(), qf),
 			depth:         depth,
 			isNew:         isNew,
+			typ:           f.Type(),
 		})
 	}
 }

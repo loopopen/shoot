@@ -84,7 +84,6 @@ func (g *Generator) neverWriteCheck() {
 
 		neverWriteDest = append(neverWriteDest, f)
 	}
-
 	reportWarn(g.data.PackageName+dot+g.data.TypeName, neverWriteSrc)
 	reportWarn(g.data.QualifiedDestTypeName, neverWriteDest)
 }

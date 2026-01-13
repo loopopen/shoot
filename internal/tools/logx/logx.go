@@ -5,6 +5,8 @@ import (
 	"log"
 )
 
+const gap = " "
+
 func Fatal(v ...any) {
 	xs := append([]any{"❌"}, v...)
 	log.Fatal(xs...)
@@ -15,17 +17,21 @@ func Fatalf(format string, v ...any) {
 }
 
 func Warn(v ...any) { //width: A not W
-	xs := append([]any{"⚠️", " "}, v...)
+	xs := append([]any{"⚠️", gap}, v...)
 	log.Print(xs...)
 }
 
 func Warnf(format string, v ...any) {
-	log.Printf("⚠️ "+" "+format, v...)
+	log.Printf("⚠️ "+gap+format, v...)
 }
 
 func Pin(v ...any) {
 	xs := append([]any{"📌"}, v...)
 	log.Println(xs...)
+}
+
+func Pinf(format string, v ...any) {
+	log.Printf("📌 "+format, v...)
 }
 
 func PinJSON(v ...any) {
@@ -45,6 +51,10 @@ func PinJSON(v ...any) {
 func Debug(v ...any) {
 	xs := append([]any{"🐛"}, v...)
 	log.Println(xs...)
+}
+
+func Debugf(format string, v ...any) {
+	log.Printf("🐛 "+format, v...)
 }
 
 func DebugJSON(v ...any) {

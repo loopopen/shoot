@@ -8,6 +8,7 @@ import (
 	"go/ast"
 	"go/types"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -28,6 +29,7 @@ type GeneratorBase struct {
 	allInOneFile    string
 	fileNameMap     map[string]string
 	isTypeSpecified bool
+	overlay         map[string][]byte
 }
 
 func NewGeneratorBase(subCmd string, tmplTxt string) *GeneratorBase {
@@ -35,6 +37,7 @@ func NewGeneratorBase(subCmd string, tmplTxt string) *GeneratorBase {
 		subCmd:      subCmd,
 		tmplTxt:     tmplTxt,
 		fileNameMap: make(map[string]string),
+		overlay:     make(map[string][]byte),
 	}
 	g.preRegister()
 	return g
@@ -192,14 +195,23 @@ func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
 func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Package {
 	patterns = append(patterns, dot)
 
+	if g.commonFlags.Verbose {
+		var keys []string
+		for key := range g.overlay {
+			keys = append(keys, key)
+		}
+		logx.Debugf("load with patterns: %v, with overlay: %v", patterns, keys)
+	}
+
 	cfg := &packages.Config{
 		Mode: packages.NeedName |
 			packages.NeedFiles |
 			packages.NeedSyntax |
 			packages.NeedTypes |
 			packages.NeedTypesInfo,
-		Tests: false,
-		Dir:   g.commonFlags.Dir,
+		Tests:   false,
+		Dir:     g.commonFlags.Dir,
+		Overlay: g.overlay,
 	}
 	pkgs, err := loadPkgs(cfg, patterns...)
 	if err != nil {
@@ -255,7 +267,11 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 	for _, pat := range patterns {
 		for _, pkg := range pkgs {
 			if hasMultiPkgs(pkg) {
-				logx.Fatalf("multiple packages found in %s", pkg.Dir)
+				var names []string
+				for _, p := range pkgs {
+					names = append(names, p.Name)
+				}
+				logx.Fatalf("multiple packages found in %s: %s", pkg.Dir, strings.Join(names, ", "))
 			}
 
 			if pkg.PkgPath == pat {
@@ -328,8 +344,8 @@ func (g *GeneratorBase) Generate(
 
 	srcMap := make(map[string][]byte)
 	var srcList [][]byte
-	for _, typName := range g.commonFlags.TypeNames {
-		data := gen.MakeData(typName)
+	for i, typName := range g.commonFlags.TypeNames {
+		data, isStale := gen.MakeData(typName)
 		if data == nil {
 			continue
 		}
@@ -337,8 +353,20 @@ func (g *GeneratorBase) Generate(
 		if len(src) == 0 {
 			continue
 		}
+
+		filename := g.fileName(typName, false)
+		var dir string
+		if len(g.pkg.GoFiles) > 0 {
+			dir = filepath.Dir(g.pkg.GoFiles[0])
+		}
+		if isStale && i < len(g.commonFlags.TypeNames)-1 {
+			//reload pkg
+			g.overlay[path.Join(dir, filename)] = src
+			g.LoadPackage()
+		}
+
 		if g.commonFlags.Separate {
-			srcMap[g.fileName(typName, false)] = src
+			srcMap[filename] = src
 		} else {
 			srcList = append(srcList, src)
 		}

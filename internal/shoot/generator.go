@@ -19,7 +19,7 @@ type Generator interface {
 }
 
 type DataMaker interface {
-	MakeData(typName string) any
+	MakeData(typName string) (any, bool)
 }
 
 type TypeLister interface {

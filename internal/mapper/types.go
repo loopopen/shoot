@@ -99,7 +99,7 @@ type Field struct {
 	IsGet       bool
 	IsSet       bool
 	Target      *Field `json:"-"`
-	IsSame      bool
+	CanAssign   bool
 	IsConv      bool
 	CanMap      bool
 	CanEachMap  bool
@@ -128,11 +128,4 @@ func (f Field) MatchingName() string {
 		return f.backingName
 	}
 	return f.Name
-}
-
-type Func struct {
-	name   string
-	path   string
-	param  types.Type
-	result types.Type
 }

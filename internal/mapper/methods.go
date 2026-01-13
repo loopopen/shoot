@@ -6,65 +6,13 @@ import (
 	"go/types"
 	"strings"
 
+	"github.com/lopolopen/shoot/internal/shoot"
 	"github.com/lopolopen/shoot/internal/tools/logx"
 	"github.com/lopolopen/shoot/internal/transfer"
 	"golang.org/x/tools/go/packages"
 )
 
-func (g *Generator) parseGetSetIface(pkg *packages.Package, stType types.Type, typeName string, funcs *[]Func) {
-	ptrType := types.NewPointer(stType)
-	get, set := findGetterSetterIfac(pkg, typeName)
-	if get == nil && set == nil {
-		return
-	}
-
-	if named, ok := assignableToIface(ptrType, get); ok {
-		iface, ok := named.Underlying().(*types.Interface)
-		if ok {
-			for i := 0; i < iface.NumMethods(); i++ {
-				fn := iface.Method(i)
-				sig := fn.Type().(*types.Signature)
-				params := sig.Params()
-				results := sig.Results()
-				if params != nil && params.Len() > 0 {
-					continue
-				}
-				if results == nil || results.Len() == 0 || results.Len() > 1 {
-					continue
-				}
-				*funcs = append(*funcs, Func{
-					name:   fn.Name(),
-					result: results.At(0).Type(),
-					path:   fn.Name(),
-				})
-			}
-		}
-	}
-	if named, ok := assignableToIface(ptrType, set); ok {
-		iface, ok := named.Underlying().(*types.Interface)
-		if ok {
-			for i := 0; i < iface.NumMethods(); i++ {
-				fn := iface.Method(i)
-				sig := fn.Type().(*types.Signature)
-				params := sig.Params()
-				results := sig.Results()
-				if results != nil && results.Len() > 0 {
-					continue
-				}
-				if params == nil || params.Len() == 0 || params.Len() > 1 {
-					continue
-				}
-				*funcs = append(*funcs, Func{
-					name:  fn.Name(),
-					param: params.At(0).Type(),
-					path:  fn.Name(),
-				})
-			}
-		}
-	}
-}
-
-func (g *Generator) parseGetSetMethods(pkg *packages.Package, stTyp types.Type, unexportedFields []*Field, funcs *[]Func) {
+func parseGetSetMethods(pkg *packages.Package, stTyp types.Type, unexportedFields []*Field, funcs *[]shoot.Func) {
 	if len(unexportedFields) == 0 {
 		return
 	}
@@ -109,13 +57,13 @@ func (g *Generator) parseGetSetMethods(pkg *packages.Package, stTyp types.Type, 
 					continue
 				}
 				paramTyp := pkg.TypesInfo.TypeOf(params.List[0].Type)
-				if !types.Identical(paramTyp, field.typ) {
+				if !shoot.TypeEquals(paramTyp, field.typ) {
 					continue
 				}
-				*funcs = append(*funcs, Func{
-					name:  fn.Name.Name,
-					param: paramTyp,
-					path:  fn.Name.Name,
+				*funcs = append(*funcs, shoot.Func{
+					Name:  fn.Name.Name,
+					Param: paramTyp,
+					Path:  fn.Name.Name,
 				})
 			} else {
 				//get
@@ -129,10 +77,10 @@ func (g *Generator) parseGetSetMethods(pkg *packages.Package, stTyp types.Type, 
 				if !types.Identical(resultTyp, field.typ) {
 					continue
 				}
-				*funcs = append(*funcs, Func{
-					name:   fn.Name.Name,
-					result: resultTyp,
-					path:   fn.Name.Name,
+				*funcs = append(*funcs, shoot.Func{
+					Name:   fn.Name.Name,
+					Result: resultTyp,
+					Path:   fn.Name.Name,
 				})
 			}
 		}
@@ -141,36 +89,38 @@ func (g *Generator) parseGetSetMethods(pkg *packages.Package, stTyp types.Type, 
 
 func (g *Generator) parseSrcGetSetMethods(srcTyp types.Type, typeName string) {
 	g.getsetMethods = nil
-	g.parseGetSetIface(g.Pkg(), srcTyp, typeName, &g.getsetMethods)
-	if len(g.getsetMethods) == 0 {
-		g.parseGetSetMethods(g.Pkg(), srcTyp, g.unexportedFields, &g.getsetMethods)
+	ptrTyp := types.NewPointer(srcTyp)
+	shoot.ParseGetSetIface(g.Pkg(), ptrTyp, typeName, &g.getsetMethods)
+	if len(g.getsetMethods) == 0 { //todo: need it?
+		parseGetSetMethods(g.Pkg(), srcTyp, g.unexportedFields, &g.getsetMethods)
 	}
 }
 
 func (g *Generator) parseDestGetSetMethods(destTyp types.Type, typeName string) {
 	g.destGetSetMethods = nil
-	g.parseGetSetIface(g.destPkg, destTyp, typeName, &g.destGetSetMethods)
+	ptrTyp := types.NewPointer(destTyp)
+	shoot.ParseGetSetIface(g.destPkg, ptrTyp, typeName, &g.destGetSetMethods)
 	if len(g.destGetSetMethods) == 0 {
-		g.parseGetSetMethods(g.destPkg, destTyp, g.destUnexportedFields, &g.destGetSetMethods)
+		parseGetSetMethods(g.destPkg, destTyp, g.destUnexportedFields, &g.destGetSetMethods)
 	}
 }
 
-func compatlize(fields *[]*Field, methods []Func) {
+func compatlize(fields *[]*Field, methods []shoot.Func) {
 	for _, m := range methods {
-		if m.param != nil { //set
+		if m.Param != nil { //set
 			*fields = append(*fields, &Field{
-				Name:        m.name,
-				path:        m.path,
-				typ:         m.param,
-				backingName: trimLeftOnce(m.name, set),
+				Name:        m.Name,
+				path:        m.Path,
+				typ:         m.Param,
+				backingName: trimLeftOnce(m.Name, set),
 				IsSet:       true,
 			})
-		} else if m.result != nil { //get
+		} else if m.Result != nil { //get
 			*fields = append(*fields, &Field{
-				Name:        m.name,
-				path:        m.path,
-				typ:         m.result,
-				backingName: m.name,
+				Name:        m.Name,
+				path:        m.Path,
+				typ:         m.Result,
+				backingName: m.Name,
 				IsGet:       true,
 			})
 		}
@@ -225,25 +175,4 @@ func assertArgs(v, name string) {
 	if v == "" {
 		logx.Fatalf("%s should not be empty", name)
 	}
-}
-
-func findGetterSetterIfac(pkg *packages.Package, name string) (types.Type, types.Type) {
-	getterName := name + "Getter"
-	setterName := name + "Setter"
-	var get, set types.Type
-
-	scope := pkg.Types.Scope()
-
-	if obj := scope.Lookup(getterName); obj != nil {
-		if typeName, ok := obj.(*types.TypeName); ok {
-			get = typeName.Type()
-		}
-	}
-
-	if obj := scope.Lookup(setterName); obj != nil {
-		if typeName, ok := obj.(*types.TypeName); ok {
-			set = typeName.Type()
-		}
-	}
-	return get, set
 }
