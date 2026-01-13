@@ -16,8 +16,6 @@ const SubCmd = "new"
 //go:embed constructor.tmpl
 var tmplTxt string
 
-// var getSetIfaces = make(map[string][]shoot.Func)
-
 // Generator holds the state of the analysis.
 type Generator struct {
 	*shoot.GeneratorBase

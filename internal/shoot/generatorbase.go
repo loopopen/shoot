@@ -6,8 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
-	"go/parser"
-	"go/token"
 	"go/types"
 	"os"
 	"path"
@@ -484,25 +482,4 @@ func firstLine(file string) (string, error) {
 		return "", err
 	}
 	return line, nil
-}
-
-func parseBytesToFile(src []byte, filename string) (*ast.File, *token.FileSet, error) {
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, filename, src, parser.ParseComments)
-	if err != nil {
-		return nil, nil, err
-	}
-	return file, fset, nil
-}
-
-func makeTypeInfo() *types.Info {
-	return &types.Info{
-		Types:      make(map[ast.Expr]types.TypeAndValue),
-		Defs:       make(map[*ast.Ident]types.Object),
-		Uses:       make(map[*ast.Ident]types.Object),
-		Implicits:  make(map[ast.Node]types.Object),
-		Selections: make(map[*ast.SelectorExpr]*types.Selection),
-		Scopes:     make(map[ast.Node]*types.Scope),
-		InitOrder:  []*types.Initializer{},
-	}
 }
