@@ -44,7 +44,7 @@ func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
     {{- $close = true -}}
     {{- end -}}
 
-    {{- if $df.IsSame -}}
+    {{- if $df.CanAssign -}}
     {{assign (dot $d $df.Name) $evalue $df.IsSet}} {{"\n"}} 
     {{- end -}}
 
@@ -137,7 +137,7 @@ func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *
     {{- $close = true -}}
     {{- end -}}
 
-    {{- if $sf.IsSame -}} 
+    {{- if $sf.CanAssign -}} 
     {{assign (dot $s $sf.Name) $evalue $sf.IsSet}} {{"\n"}}
     {{- end -}}
 

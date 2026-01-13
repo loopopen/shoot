@@ -72,7 +72,7 @@ func (g *Generator) addPackage(pkg *packages.Package) {
 	}
 }
 
-func (g *Generator) MakeData(typeName string) any {
+func (g *Generator) MakeData(typeName string) (any, bool) {
 	g.data = NewTmplData(
 		g.CommonFlags().CmdLine,
 		g.CommonFlags().Version,
@@ -84,12 +84,12 @@ func (g *Generator) MakeData(typeName string) any {
 	g.makeSQL()
 
 	if len(g.data.NameList) == 0 {
-		return nil
+		return nil, false
 	}
 
 	g.data.SetTypeName(typeName)
 	g.data.SetPackageName(g.Pkg().Name)
-	return g.data
+	return g.data, false
 }
 
 func (g *Generator) ListTypes() []string {

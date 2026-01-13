@@ -5,6 +5,8 @@ import (
 	"go/types"
 	"path/filepath"
 	"strings"
+
+	"github.com/lopolopen/shoot/internal/shoot"
 )
 
 func (g *Generator) loadTypeMapperPkg(typeName string) string {
@@ -94,7 +96,7 @@ func (g *Generator) parseMapper(mapperTypeName string) {
 		return
 	}
 
-	var expFuncList []Func
+	var expFuncList []shoot.Func
 	for _, f := range g.mapperpkg.Syntax {
 		ast.Inspect(f, func(n ast.Node) bool {
 			if !g.testNode(mapperTypeName, n) {
@@ -135,10 +137,10 @@ func (g *Generator) parseMapper(mapperTypeName string) {
 						continue
 					}
 
-					expFuncList = append(expFuncList, Func{
-						name:   fn.Name.Name,
-						param:  g.mapperpkg.TypesInfo.TypeOf(params[0].Type),
-						result: g.mapperpkg.TypesInfo.TypeOf(results[0].Type),
+					expFuncList = append(expFuncList, shoot.Func{
+						Name:   fn.Name.Name,
+						Param:  g.mapperpkg.TypesInfo.TypeOf(params[0].Type),
+						Result: g.mapperpkg.TypesInfo.TypeOf(results[0].Type),
 					})
 				}
 			}
@@ -159,11 +161,6 @@ func (g *Generator) makeMismatch() {
 				continue
 			}
 
-			same, conv := matchType(f1.typ, f2.typ)
-			if same || conv {
-				continue
-			}
-
 			g.makeFuncMap(f1, f2)
 			g.makeSubMap(f1, f2, f1.typ, f2.typ, false)
 			g.makeSubListMap(f1, f2)
@@ -175,10 +172,9 @@ func (g *Generator) makeFuncMap(f1, f2 *Field) {
 	for _, fn := range g.mappingFuncList {
 		if !g.writeDestSet[f2.Name] && !f2.IsGet {
 			//in ToXxx, mapping func's param type is src field type
-			// if fn.param.String() == f1.typ.String() && fn.result.String() == f2.typ.String() {
-			if types.Identical(fn.param, f1.typ) && types.Identical(fn.result, f2.typ) {
+			if shoot.TypeEquals(fn.Param, f1.typ) && shoot.TypeEquals(fn.Result, f2.typ) {
 				f1.Target = f2
-				f2.Func = fn.name
+				f2.Func = fn.Name
 				g.writeDestSet[f2.Name] = true
 				g.readSrcMap[f1.Name] = f2.Name
 			}
@@ -186,10 +182,9 @@ func (g *Generator) makeFuncMap(f1, f2 *Field) {
 
 		if !g.writeSrcSet[f1.Name] && !f1.IsGet {
 			//in FromXxx, mapping func's param type is dest field type
-			// if fn.param.String() == f2.typ.String() && fn.result.String() == f1.typ.String() {
-			if types.Identical(fn.param, f2.typ) && types.Identical(fn.result, f1.typ) {
+			if shoot.TypeEquals(fn.Param, f2.typ) && shoot.TypeEquals(fn.Result, f1.typ) {
 				f2.Target = f1
-				f1.Func = fn.name
+				f1.Func = fn.Name
 				g.writeSrcSet[f1.Name] = true
 				g.writeSrcMap[f1.Name] = f2.Name
 			}

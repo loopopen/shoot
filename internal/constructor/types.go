@@ -35,20 +35,21 @@ type TmplData struct {
 	// GoFile  string
 	Imports string
 	//All = Exported + Unexported
-	AllList         []string
-	NewMap          map[string]string
-	GetSet          bool
-	GetterList      []string
-	SetterList      []string
-	GetterIfaces    []string
-	SetterIfaces    []string
-	Option          bool
-	DefaultList     []string
-	DefaultValueMap map[string]string
-	JSON            bool
-	JSONTagMap      map[string]string
-	//Marshal: Getteer + Exported
-	//Unmarshal: Setter + Exported
+	AllList           []string
+	NewMap            map[string]string
+	GetSet            bool
+	GetterList        []string
+	SetterList        []string
+	GetterIfaces      []string
+	SetterIfaces      []string
+	Option            bool
+	DefaultList       []string
+	DefaultValueMap   map[string]string
+	JSON              bool
+	JSONList          []string
+	JSONTagMap        map[string]string
+	JSONGetterList    []string
+	JSONSetterList    []string
 	ExportedList      []string
 	EmbedList         []string
 	Self              bool
@@ -97,4 +98,15 @@ type Field struct {
 	isNew         bool
 	defValue      string
 	jsonTag       string
+}
+
+func (f *Field) HasJSONTag() bool {
+	return f.jsonTag != ""
+}
+
+func (f *Field) JSONTag() string {
+	if f.jsonTag == "" {
+		return f.name
+	}
+	return f.jsonTag
 }

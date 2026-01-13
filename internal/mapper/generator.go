@@ -38,14 +38,14 @@ type Generator struct {
 	destExportedFields   []*Field
 	destUnexportedFields []*Field
 
-	getsetMethods     []Func
-	destGetSetMethods []Func
+	getsetMethods     []shoot.Func
+	destGetSetMethods []shoot.Func
 
 	srcPtrTypeMap   map[string]string
 	destPtrTypeMap  map[string]string
 	srcPathsMap     map[string][]string
 	destPathsMap    map[string][]string
-	mappingFuncList []Func
+	mappingFuncList []shoot.Func
 
 	writeSrcSet  map[string]bool
 	writeDestSet map[string]bool
@@ -143,7 +143,7 @@ func (g *Generator) loadMorePkgs(srcTypeName string) {
 	}
 }
 
-func (g *Generator) MakeData(srcTypeName string) any {
+func (g *Generator) MakeData(srcTypeName string) (any, bool) {
 	//will reload and reset all pkgs, call as early as possible
 	g.loadMorePkgs(srcTypeName)
 
@@ -176,7 +176,7 @@ func (g *Generator) MakeData(srcTypeName string) any {
 		if g.IsTypeSpecified() {
 			logx.Fatalf("dest type not exists: %s", destTypeName)
 		} else {
-			return nil
+			return nil, false
 		}
 	}
 	if types.AssignableTo(destTyp, shootnewIfac) {
@@ -198,7 +198,7 @@ func (g *Generator) MakeData(srcTypeName string) any {
 	g.data.SetPackageName(g.Pkg().Name)
 
 	g.makeReadWriteCheck()
-	return g.data
+	return g.data, false
 }
 
 func (g *Generator) ListTypes() []string {

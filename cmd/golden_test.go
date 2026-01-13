@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"os"
 	"strings"
 	"testing"
 
+	ctor "github.com/lopolopen/shoot/cmd/test/constructor"
 	"github.com/lopolopen/shoot/internal/constructor"
 	"github.com/lopolopen/shoot/internal/enumer"
 	"github.com/lopolopen/shoot/internal/mapper"
@@ -44,6 +46,12 @@ var goldens_new = []Golden{
 			"new_file.shootnew.go",
 		},
 	},
+	{
+		cmd: "shoot new -getset -file=new_getset2.go",
+		names: []string{
+			"new_getset2.shootnew.go",
+		},
+	},
 }
 
 var goldens_enum = []Golden{
@@ -78,31 +86,34 @@ var goldens_map = []Golden{
 	{
 		cmd: "shoot map -path=../dest -type=Order",
 		names: []string{
-			"src.shootmap.order.go",
+			"map_src.shootmap.order.go",
 		},
 	},
 	{
 		cmd: "shoot map -path=../dest -type=Order2",
 		names: []string{
-			"src.shootmap.order2.go",
+			"map_src.shootmap.order2.go",
 		},
 	},
 	{
 		cmd: "shoot map -path=../dest -alias=target -to=Dest -type=Src",
 		names: []string{
-			"src.shootmap.src.go",
+			"map_src.shootmap.src.go",
 		},
 	},
 }
 
+const datadir = "./testdata"
+
 func TestShootNew_Golden(t *testing.T) {
-	const dir = "./testdata/constructor"
+	const codedir = "./test/constructor"
+
 	g := goldie.New(t,
-		goldie.WithFixtureDir(dir),
+		goldie.WithFixtureDir(datadir),
 	)
 
 	for _, test := range goldens_new {
-		srcMap := generate(test, constructor.New(), dir)
+		srcMap := generate(test, constructor.New(), codedir)
 
 		for _, name := range test.names {
 			got, ok := srcMap[name]
@@ -119,13 +130,13 @@ func TestShootNew_Golden(t *testing.T) {
 }
 
 func TestShootEnum_Golden(t *testing.T) {
-	const dir = "./testdata/enumer"
+	const codedir = "./test/enumer"
 	g := goldie.New(t,
-		goldie.WithFixtureDir(dir),
+		goldie.WithFixtureDir(datadir),
 	)
 
 	for _, test := range goldens_enum {
-		srcMap := generate(test, enumer.New(), dir)
+		srcMap := generate(test, enumer.New(), codedir)
 
 		if len(srcMap) != len(test.names) {
 			t.Errorf("expected count: %d, got: %d", len(test.names), len(srcMap))
@@ -146,13 +157,13 @@ func TestShootEnum_Golden(t *testing.T) {
 }
 
 func TestShootRest_Golden(t *testing.T) {
-	const dir = "./testdata/restclient"
+	const codedir = "./test/restclient"
 	g := goldie.New(t,
-		goldie.WithFixtureDir(dir),
+		goldie.WithFixtureDir(datadir),
 	)
 
 	for _, test := range goldens_rest {
-		srcMap := generate(test, restclient.New(), dir)
+		srcMap := generate(test, restclient.New(), codedir)
 
 		if len(srcMap) != len(test.names) {
 			t.Errorf("expected count: %d, got: %d", len(test.names), len(srcMap))
@@ -173,13 +184,13 @@ func TestShootRest_Golden(t *testing.T) {
 }
 
 func TestShootMap_Golden(t *testing.T) {
-	const dir = "./testdata/mapper/src"
+	const codedir = "./test/mapper/src"
 	g := goldie.New(t,
-		goldie.WithFixtureDir(dir),
+		goldie.WithFixtureDir(datadir),
 	)
 
 	for _, test := range goldens_map {
-		srcMap := generate(test, mapper.New(), dir)
+		srcMap := generate(test, mapper.New(), codedir)
 
 		if len(srcMap) != len(test.names) {
 			t.Errorf("expected count: %d, got: %d", len(test.names), len(srcMap))
@@ -197,6 +208,19 @@ func TestShootMap_Golden(t *testing.T) {
 			g.Assert(t, name, got)
 		}
 	}
+}
+
+func TestShootNew_JSON_Golden(t *testing.T) {
+	const name = "new_json.json"
+	g := goldie.New(t,
+		goldie.WithFixtureDir(datadir),
+	)
+	obj := ctor.NewSonJSON("Z", 1, "A", 2, 3, ctor.Other{
+		Name: "cz",
+		Age:  18,
+	})
+	j, _ := json.MarshalIndent(obj, "", "  ")
+	g.Assert(t, name, j)
 }
 
 func generate(test Golden, g shoot.Generator, dir string) map[string][]byte {

@@ -1,9 +1,10 @@
 .PHONY: test release
 
 golden:
+	cd ./cmd/test && go generate ./...
 	go test ./cmd
 
-update:
+golden-up:
 	go test ./cmd -update
 
 generate:

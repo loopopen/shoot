@@ -4,6 +4,7 @@ import (
 	"go/types"
 	"strings"
 
+	"github.com/lopolopen/shoot/internal/shoot"
 	"github.com/lopolopen/shoot/internal/transfer"
 )
 
@@ -15,6 +16,7 @@ func (g *Generator) makeMatch() {
 			}
 
 			same, conv := matchType(f1.typ, f2.typ)
+			_, convback := matchType(f2.typ, f1.typ)
 			if !g.writeDestSet[f2.Name] && !f2.IsGet {
 				//f2 = f1
 				//f2 = (type)f1
@@ -24,7 +26,7 @@ func (g *Generator) makeMatch() {
 					g.readSrcMap[f1.Name] = f2.Name
 				}
 				if same {
-					f2.IsSame = true
+					f2.CanAssign = true
 				} else if conv {
 					f2.IsConv = true
 					f2.Type = qualifiedTypeName(f2.typ, g.flags.alias)
@@ -32,14 +34,14 @@ func (g *Generator) makeMatch() {
 			}
 
 			if !g.writeSrcSet[f1.Name] && !f1.IsGet {
-				if same || conv {
+				if same || convback {
 					f2.Target = f1
 					g.writeSrcSet[f1.Name] = true
 					g.writeSrcMap[f1.Name] = f2.Name
 				}
 				if same {
-					f1.IsSame = true
-				} else if conv {
+					f1.CanAssign = true
+				} else if convback {
 					f1.IsConv = true
 					f1.Type = qualifiedTypeName(f1.typ, g.flags.alias)
 				}
@@ -119,7 +121,7 @@ func smartMatch(a, b string) bool {
 }
 
 func matchType(type1, type2 types.Type) (bool, bool) {
-	same := types.Identical(type1, type2)
+	same := shoot.TypeEquals(type1, type2)
 	conv := types.ConvertibleTo(type1, type2)
 	if !same && conv {
 		if mayMisConv(type1, type2) {

@@ -1,9 +1,83 @@
 package constructor
 
+import (
+	"go/types"
+
+	"github.com/lopolopen/shoot/internal/shoot"
+)
+
 func (g *Generator) makeGetSet() {
 	var getList []string
 	var setList []string
+	var getIfaces []string
+	var setIfaces []string
+	onceSet := make(map[string]bool)
 	for _, f := range g.fields {
+		if onceSet[f.name] {
+			continue
+		}
+		onceSet[f.name] = true
+
+		if f.isEmbeded {
+			get, set := shoot.FindGetterSetterIfac(g.Pkg(), f.name)
+			if get != nil {
+				named, ok := shoot.AssignableToIface(f.typ, get)
+				if ok {
+					getIfaces = append(getIfaces, types.TypeString(named, g.qualifier))
+
+					//todo: refac: REPEAT01
+					iface, ok := named.Underlying().(*types.Interface)
+					if ok {
+						for i := 0; i < iface.NumMethods(); i++ {
+							fn := iface.Method(i)
+							sig := fn.Type().(*types.Signature)
+							params := sig.Params()
+							results := sig.Results()
+							if params != nil && params.Len() > 0 {
+								continue
+							}
+							if results == nil || results.Len() == 0 || results.Len() > 1 {
+								continue
+							}
+							g.getsetMethods = append(g.getsetMethods, shoot.Func{
+								Name:   fn.Name(),
+								Result: results.At(0).Type(),
+								Path:   fn.Name(),
+							})
+						}
+					}
+				}
+			}
+			if set != nil {
+				named, ok := shoot.AssignableToIface(f.typ, set)
+				if ok {
+					setIfaces = append(setIfaces, types.TypeString(named, g.qualifier))
+				}
+
+				iface, ok := named.Underlying().(*types.Interface)
+				if ok {
+					for i := 0; i < iface.NumMethods(); i++ {
+						fn := iface.Method(i)
+						sig := fn.Type().(*types.Signature)
+						params := sig.Params()
+						results := sig.Results()
+						if results != nil && results.Len() > 0 {
+							continue
+						}
+						if params == nil || params.Len() == 0 || params.Len() > 1 {
+							continue
+						}
+						g.getsetMethods = append(g.getsetMethods, shoot.Func{
+							Name:  fn.Name(),
+							Param: params.At(0).Type(),
+							Path:  fn.Name(),
+						})
+					}
+				}
+			}
+			continue
+		}
+
 		if f.isGet {
 			getList = append(getList, f.name)
 		}
@@ -15,4 +89,6 @@ func (g *Generator) makeGetSet() {
 	g.data.GetterList = getList
 	g.data.SetterList = setList
 	g.data.GetSet = len(getList) > 0 || len(setList) > 0
+	g.data.GetterIfaces = getIfaces
+	g.data.SetterIfaces = setIfaces
 }
