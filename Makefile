@@ -18,3 +18,6 @@ release: test
 	git add -A
 	git commit -m"chore: ${tag}"
 	git tag ${tag}
+
+push:
+	git push && git push --tags
