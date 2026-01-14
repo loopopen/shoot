@@ -1,6 +1,6 @@
 package constructor
 
-//go:generate go tool shoot new -getset -json -file=$GOFILE
+//go:generate go tool shoot new -getset -json -file=$GOFILE -ver=test
 
 type BaseJSON struct {
 	z string

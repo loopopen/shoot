@@ -16,7 +16,7 @@ func _() {
 	_ = x[Strikethrough-8]
 }
 
-const _formatStyle_all = None | Bold | Italic | Underline | Strikethrough | 0
+const _formatStyle_max = None | Bold | Italic | Underline | Strikethrough
 
 var _formatStyle_values = []FormatStyle{None, Bold, Italic, Underline, Strikethrough}
 
@@ -44,7 +44,7 @@ func (f FormatStyle) String() string {
 	if ok {
 		return str
 	}
-	if f < 0 || f > _formatStyle_all {
+	if f < 0 || f > _formatStyle_max {
 		return fmt.Sprintf("%d", f)
 	}
 
@@ -76,6 +76,11 @@ func (f FormatStyle) Values() []FormatStyle {
 
 func (f FormatStyle) Strings() []string {
 	return _formatStyle_strings
+}
+
+func (f FormatStyle) IsValid() bool {
+	_, ok := _formatStyle_string_map[f]
+	return ok
 }
 
 func (f FormatStyle) ValueMap() map[string]FormatStyle {

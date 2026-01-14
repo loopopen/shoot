@@ -16,7 +16,7 @@ func _() {
 	_ = x[ColorBlue-3]
 }
 
-const _color_all = ColorRed | ColorGreen | ColorBlue | 0
+const _color_max = ColorRed | ColorGreen | ColorBlue
 
 var _color_values = []Color{ColorRed, ColorGreen, ColorBlue}
 
@@ -40,7 +40,7 @@ func (c Color) String() string {
 	if ok {
 		return str
 	}
-	if c < 0 || c > _color_all {
+	if c < 0 || c > _color_max {
 		return fmt.Sprintf("%d", c)
 	}
 
@@ -53,6 +53,11 @@ func (c Color) Values() []Color {
 
 func (c Color) Strings() []string {
 	return _color_strings
+}
+
+func (c Color) IsValid() bool {
+	_, ok := _color_string_map[c]
+	return ok
 }
 
 func (c Color) ValueMap() map[string]Color {

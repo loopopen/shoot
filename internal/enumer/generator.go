@@ -38,14 +38,20 @@ func (g *Generator) ParseFlags() {
 	json := sub.Bool("json", false, "generate MarshalJSON/UnmarshalJSON method for the type")
 	text := sub.Bool("text", false, "generate MarshaText/UnmarshalText method for the type")
 	sql := sub.Bool("sql", false, "generate Value/Scan method for the type")
+	gorm := sub.Bool("gorm", false, "generate GormDataType/GormDBDataType for the type")
 
 	g.ParseCommonFlags(sub)
+
+	if *gorm && !*sql {
+		logx.Fatal("-gorm only works when -sql is enabled")
+	}
 
 	g.flags = &Flags{
 		bitwise: *bitwise || *bit,
 		json:    *json,
 		text:    *text,
 		sql:     *sql,
+		gorm:    *gorm,
 	}
 }
 

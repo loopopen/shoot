@@ -27,4 +27,5 @@ func (g *Generator) makeSQL() {
 		return
 	}
 	g.data.SQL = true
+	g.data.Gorm = g.flags.gorm
 }

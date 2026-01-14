@@ -1,6 +1,7 @@
 package enumer
 
 import (
+	"fmt"
 	"go/ast"
 	"go/constant"
 	"go/token"
@@ -123,14 +124,21 @@ func (g *Generator) makeStr(typeName string) {
 	sort.Slice(values, func(i, j int) bool {
 		return values[i].value < values[j].value
 	})
+	var enums []string
 	for _, v := range values {
 		nameList = append(nameList, v.name)
 		valueMap[v.name] = int64(v.value)
 		shortName := strings.TrimPrefix(v.name, typeName)
 		strMap[v.name] = shortName
+		enums = append(enums, fmt.Sprintf("'%s'", shortName))
 	}
 
 	g.data.NameList = nameList
+	g.data.Enums = strings.Join(enums, ",")
+	g.data.Max = strings.Join(nameList, " | ")
+	if g.data.Max == "" {
+		g.data.Max = "0"
+	}
 
 	g.RegisterTransfer("valueof", func(key string) interface{} {
 		return valueMap[key]

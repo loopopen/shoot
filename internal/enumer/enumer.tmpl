@@ -12,6 +12,10 @@ import "database/sql/driver" {{"\n"}}
 {{- end -}}
 {{- if or .JSON .Text .SQL -}}
 import "github.com/lopolopen/shoot" {{"\n"}}
+{{- end -}}
+{{- if .Gorm -}}
+import "gorm.io/gorm"
+import "gorm.io/gorm/schema"
 {{- end}}
 
 func _() {
@@ -21,7 +25,7 @@ func _() {
 	{{- end -}}
 }
 
-const _{{camelCase .TypeName}}_all = {{range .NameList}}{{.}} |{{end}}0
+const _{{camelCase .TypeName}}_max = {{.Max}}
 
 var _{{camelCase .TypeName}}_values = []{{.TypeName}}{ {{range .NameList}}{{.}}, {{end}} }
 
@@ -45,7 +49,7 @@ func ({{$this}} {{.TypeName}}) String() string {
 	if ok {
 		return str
 	}
-	if {{$this}} < 0 || {{$this}} > _{{camelCase .TypeName}}_all {
+	if {{$this}} < 0 || {{$this}} > _{{camelCase .TypeName}}_max {
 		return fmt.Sprintf("%d", {{$this}})
 	}
 	{{if .Bitwise}}
@@ -77,6 +81,11 @@ func ({{$this}} {{.TypeName}}) Values() []{{.TypeName}} {
 
 func ({{$this}} {{.TypeName}}) Strings() []string {
 	return _{{camelCase .TypeName}}_strings
+}
+
+func ({{$this}} {{.TypeName}}) IsValid() bool {
+	_, ok := _{{camelCase .TypeName}}_string_map[{{$this}}]
+	return ok
 }
 
 func ({{$this}} {{.TypeName}}) ValueMap() map[string]{{.TypeName}} {
@@ -145,6 +154,18 @@ func ({{$this}} *{{.TypeName}}) Scan(value interface{}) error {
 	}
 	*{{$this}}  = e_
 	return nil
+}
+{{end}}
+
+{{if .Gorm}}
+// GormDataType specifies the general data type that GORM should treat this field as.
+func ({{$this}} {{.TypeName}}) GormDataType() string {
+	return "string"
+}
+
+// GormDBDataType provides the exact database column type definition for this field.
+func ({{$this}} {{.TypeName}}) GormDBDataType(db *gorm.DB, field *schema.Field) string {
+	return "ENUM({{.Enums}})"
 }
 {{end}}
 

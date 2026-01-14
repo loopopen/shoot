@@ -85,7 +85,6 @@ func (g *Generator) MakeData(typeName string) (any, bool) {
 	if theTyp == nil {
 		logx.Fatalf("type not exists: %s", typeName)
 	}
-	// g.parseGetSetMethods(theTyp, typeName)
 	g.makeGetSet() //must be before makeNew & makeJson
 	g.makeNew()
 	g.makeJson()

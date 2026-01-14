@@ -11,10 +11,13 @@ import (
 type TmplData struct {
 	*shoot.TmplDataBase
 	NameList []string
+	Enums    string
+	Max      string
 	Bitwise  bool
 	JSON     bool
 	Text     bool
 	SQL      bool
+	Gorm     bool
 }
 
 func NewTmplData(cmdline, version string) *TmplData {
@@ -28,6 +31,7 @@ type Flags struct {
 	json    bool
 	text    bool
 	sql     bool
+	gorm    bool
 }
 
 // Value represents a declared constant.
