@@ -17,14 +17,14 @@ type RestConf struct {
 	enableLogging bool
 	//todo: enableTrace    bool
 	defaultHeaders map[string]string
-	Middlewares    []middleware.Middleware
+	_middlewares   []middleware.Middleware
 }
 
 // BuildMiddleware constructs the middleware chain by wrapping the default HTTP transport.
 func (r *RestConf) BuildMiddleware() http.RoundTripper {
 	t := http.DefaultTransport
-	for i := len(r.Middlewares) - 1; i >= 0; i-- {
-		t = r.Middlewares[i](t)
+	for i := len(r._middlewares) - 1; i >= 0; i-- {
+		t = r._middlewares[i](t)
 	}
 	if r.enableLogging {
 		t = middleware.LoggingMiddleware(t)
@@ -35,7 +35,7 @@ func (r *RestConf) BuildMiddleware() http.RoundTripper {
 // Use returns an Option function that applies the given middleware to a RestConf instance.
 func Use(middleware middleware.Middleware) Option[RestConf, *RestConf] {
 	return func(r *RestConf) {
-		r.Middlewares = append(r.Middlewares, middleware)
+		r._middlewares = append(r._middlewares, middleware)
 	}
 }
 

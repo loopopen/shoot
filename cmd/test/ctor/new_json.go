@@ -1,4 +1,4 @@
-package constructor
+package ctor
 
 //go:generate go tool shoot new -getset -json -file=$GOFILE -ver=test
 

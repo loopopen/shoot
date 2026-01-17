@@ -233,22 +233,10 @@ func (o *Order) FromDomain(order_ *domain.Order) *Order {
 ```
 
 ## more examples:
-[samples](https://github.com/lopolopen/shoot/tree/main/samples)
+* [samples](https://github.com/lopolopen/shoot/tree/main/samples)
+* [shoot-examples](https://github.com/lopolopen/shoot-examples)
 
-# TODO:
-- [x] shoot new -getset -type=YourType
-- [x] shoot new: field instruction like get;default=1
-- [x] shoot new -opt|option -type=YourType
-- [x] shoot new -json -type=YourType
-- [x] shoot new: embed struct
-- [x] shoot new: external package
-- [x] shoot new -file=YourFile
-- [ ] shoot new: type instruction like ignore
-- [x] shoot new: -separate
-- [x] shoot enum -bit|bitwise -type=YourEnum
-- [x] shoot enum -json -type=YourEnum
-- [x] refactor: duplicated code
-- [x] shoot map
+
 
 # Inspiring projects
 * [stringer](https://pkg.go.dev/golang.org/x/tools/cmd/stringer)

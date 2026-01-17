@@ -8,9 +8,108 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/lopolopen/shoot/internal/shoot"
 	"github.com/lopolopen/shoot/internal/tools/logx"
 	"golang.org/x/tools/go/packages"
 )
+
+func (g *Generator) parseFields(typeName string) types.Type {
+	var typ types.Type
+	var imports string
+
+	var typeParams []string
+	typeParamsMap := make(map[int]string)
+
+	pkgPath := g.Pkg().PkgPath
+	if pkgPath == shoot.SelfPkgPath {
+		g.data.Self = true
+	}
+
+	var fields []*Field
+	for _, f := range g.Pkg().Syntax {
+		if g.flags.getset {
+			for _, decl := range f.Decls {
+				gd, ok := decl.(*ast.GenDecl)
+				if !ok {
+					continue
+				}
+				for _, spec := range gd.Specs {
+					ts, ok := spec.(*ast.TypeSpec)
+					if !ok {
+						continue
+					}
+					if ts.Name.Name != typeName {
+						continue
+					}
+
+					if gd.Doc != nil {
+						getter, setter := parseGetterSetter(gd)
+						g.getter = getter
+						g.setter = setter
+					}
+				}
+			}
+		}
+
+		ast.Inspect(f, func(n ast.Node) bool {
+			if !g.testNode(typeName, n) {
+				return true
+			}
+
+			ts, _ := n.(*ast.TypeSpec)
+			st, _ := ts.Type.(*ast.StructType)
+
+			obj := g.Pkg().TypesInfo.Defs[ts.Name]
+			if obj != nil {
+				typ = obj.Type()
+			} else {
+				return true
+			}
+
+			if ts.TypeParams != nil {
+				for i, p := range ts.TypeParams.List {
+					var names []string
+					for _, n := range p.Names {
+						names = append(names, n.Name)
+					}
+					typeParamsMap[i] = strings.Join(names, ", ")
+					if ident, ok := p.Type.(*ast.Ident); ok {
+						typeParams = append(typeParams, ident.Name)
+					}
+				}
+			}
+
+			g.extractTopFiels(g.Pkg(), st, &fields)
+
+			imports = buildImports(f.Imports)
+			return false
+		})
+	}
+	if typ == nil {
+		return nil
+	}
+
+	g.typeParams = typeParams
+	g.typeParamsMap = typeParamsMap
+	g.fields = fields
+	g.data.Imports = imports
+	return typ
+}
+
+func buildImports(imports []*ast.ImportSpec) string {
+	var buff bytes.Buffer
+	for _, imp := range imports {
+		if imp.Name != nil {
+			buff.WriteString(imp.Name.Name)
+			buff.WriteString(" ")
+		}
+		if imp.Path != nil {
+			buff.WriteString(imp.Path.Value)
+			buff.WriteString("\n")
+		}
+	}
+	return buff.String()
+}
 
 func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, fields *[]*Field) {
 	for _, f := range st.Fields.List {
@@ -36,7 +135,21 @@ func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, f
 				continue
 			}
 
-			get, set := parseGetSet(f, name.Name, g.flags.getset)
+			if strings.HasPrefix(name.Name, "_") {
+				continue
+			}
+
+			if f.Tag != nil {
+				new := parseNewTag(f.Tag.Value)
+				if new == "-" {
+					continue
+				}
+			}
+
+			var get, set bool
+			if g.flags.getset {
+				get, set = parseGetSet(f, name.Name)
+			}
 			defv := parseDef(f)
 			var tag string
 			if g.flags.json && f.Tag != nil {
@@ -60,20 +173,21 @@ func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, f
 	}
 }
 
-func parseGetSet(f *ast.Field, name string, defGetSet bool) (bool, bool) {
-	get := defGetSet
-	set := defGetSet
+func parseGetSet(f *ast.Field, name string) (bool, bool) {
+	var get, set bool
 	var g, s bool
 	if f.Doc != nil {
 		g, s = parseGetSetComment(f.Doc.Text())
-		if g {
+		if g == s {
 			get = true
-			set = set && s
-		}
-		if s {
-			get = get && g
 			set = true
+		} else {
+			get = g
+			set = s
 		}
+	} else {
+		get = true
+		set = true
 	}
 	if ast.IsExported(name) {
 		if g || s {
@@ -276,4 +390,38 @@ func parseJSONTag(tag string) string {
 		return ""
 	}
 	return matches[1]
+}
+
+func parseNewTag(tag string) string {
+	reg := regexp.MustCompile(`new:"([^"]*)"`)
+	matches := reg.FindStringSubmatch(tag)
+	if len(matches) <= 1 {
+		return ""
+	}
+	return matches[1]
+}
+
+func parseGetterSetter(genDecl *ast.GenDecl) (bool, bool) {
+	var getter, setter bool
+	if genDecl.Doc != nil {
+		g, s := parseGetterSetterDoc(genDecl.Doc.Text())
+		if g == s {
+			getter = true
+			setter = true
+		} else {
+			getter = g
+			setter = s
+		}
+	} else {
+		return true, true
+	}
+	return getter, setter
+}
+
+func parseGetterSetterDoc(doc string) (bool, bool) {
+	regGet := regexp.MustCompile(`(?im)^shoot:.*?\Wgetter(;.*|\s*)$`)
+	regSet := regexp.MustCompile(`(?im)^shoot:.*?\Wsetter(;.*|\s*)$`)
+	get := regGet.MatchString(doc)
+	set := regSet.MatchString(doc)
+	return get, set
 }

@@ -267,11 +267,7 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 	for _, pat := range patterns {
 		for _, pkg := range pkgs {
 			if hasMultiPkgs(pkg) {
-				var names []string
-				for _, p := range pkgs {
-					names = append(names, p.Name)
-				}
-				logx.Fatalf("multiple packages found in %s: %s", pkg.Dir, strings.Join(names, ", "))
+				logx.Fatalf("multiple packages found in %s", pkg.Dir)
 			}
 
 			if pkg.PkgPath == pat {

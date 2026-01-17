@@ -1,4 +1,4 @@
-package constructor
+package ctor
 
 type User struct {
 	id         int

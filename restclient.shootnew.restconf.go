@@ -4,14 +4,12 @@ package shoot
 
 import (
 	"time"
-
-	"github.com/lopolopen/shoot/middleware"
 )
 
 // NewRestConf constructs a new instance of type RestConf
-func NewRestConf(baseURL string, timeout time.Duration, enableLogging bool, defaultHeaders map[string]string) *RestConf {
+func NewRestConf(baseUrl string, timeout time.Duration, enableLogging bool, defaultHeaders map[string]string) *RestConf {
 	return &RestConf{
-		baseURL:        baseURL,
+		baseURL:        baseUrl,
 		timeout:        timeout,
 		enableLogging:  enableLogging,
 		defaultHeaders: defaultHeaders,
@@ -51,13 +49,6 @@ func EnableLogging(enableLogging_ bool) Option[RestConf, *RestConf] {
 func DefaultHeaders(defaultHeaders_ map[string]string) Option[RestConf, *RestConf] {
 	return func(r *RestConf) {
 		r.defaultHeaders = defaultHeaders_
-	}
-}
-
-// Middlewares is a configuration for the filed Middlewares
-func Middlewares(middlewares_ []middleware.Middleware) Option[RestConf, *RestConf] {
-	return func(r *RestConf) {
-		r.Middlewares = middlewares_
 	}
 }
 
@@ -101,9 +92,6 @@ func (r *RestConf) SetDefaultHeaders(defaultHeaders_ map[string]string) {
 	r.defaultHeaders = defaultHeaders_
 }
 
-// ShootNew exists solely to fulfill the NewShooter interface contract
-func (r RestConf) ShootNew() { /*noop*/ }
-
 // RestConfGetter is read-only interface for RestConf type
 type RestConfGetter interface {
 	BaseURL() string
@@ -119,3 +107,6 @@ type RestConfSetter interface {
 	SetEnableLogging(bool)
 	SetDefaultHeaders(map[string]string)
 }
+
+// ShootNew exists solely to fulfill the NewShooter interface contract
+func (r RestConf) ShootNew() { /*noop*/ }

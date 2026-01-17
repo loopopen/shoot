@@ -32,9 +32,7 @@ func (v *TagCase) String() string {
 
 type TmplData struct {
 	*shoot.TmplDataBase
-	// GoFile  string
-	Imports string
-	//All = Exported + Unexported
+	Imports           string
 	AllList           []string
 	NewMap            map[string]string
 	GetSet            bool

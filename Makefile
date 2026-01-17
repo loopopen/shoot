@@ -11,9 +11,9 @@ generate:
 	go generate ./...
 
 test:
-	go test ./...
+	cd ./internal && go test ./...
 
-release: test
+release: test golden
 	sed -i '' "s/= \"v[^\"]*\"/= \"${tag}\"/" ./internal/shoot/consts.go
 	git add -A
 	git commit -m"chore: ${tag}"

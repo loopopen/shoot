@@ -1,4 +1,4 @@
-package constructor
+package ctor
 
 type F1 struct {
 	fa string

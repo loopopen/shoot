@@ -19,8 +19,11 @@ func (g *Generator) makeGetSet() {
 		onceSet[f.name] = true
 
 		if f.isEmbeded {
-			get, set := shoot.FindGetterSetterIfac(g.Pkg(), f.name)
-			if get != nil {
+			var get, set types.Type
+			if g.getter || g.setter {
+				get, set = shoot.FindGetterSetterIfac(g.Pkg(), f.name)
+			}
+			if g.getter && get != nil {
 				named, ok := shoot.AssignableToIface(f.typ, get)
 				if ok {
 					getIfaces = append(getIfaces, types.TypeString(named, g.qualifier))
@@ -48,7 +51,7 @@ func (g *Generator) makeGetSet() {
 					}
 				}
 			}
-			if set != nil {
+			if g.setter && set != nil {
 				named, ok := shoot.AssignableToIface(f.typ, set)
 				if ok {
 					setIfaces = append(setIfaces, types.TypeString(named, g.qualifier))
@@ -78,17 +81,21 @@ func (g *Generator) makeGetSet() {
 			continue
 		}
 
-		if f.isGet {
+		if f.isGet && g.getter {
 			getList = append(getList, f.name)
 		}
-		if f.isSet {
+		if f.isSet && g.setter {
 			setList = append(setList, f.name)
 		}
 	}
 
-	g.data.GetterList = getList
-	g.data.SetterList = setList
-	g.data.GetSet = len(getList) > 0 || len(setList) > 0
-	g.data.GetterIfaces = getIfaces
-	g.data.SetterIfaces = setIfaces
+	if g.getter {
+		g.data.GetterIfaces = getIfaces
+		g.data.GetterList = getList
+	}
+	if g.setter {
+		g.data.SetterIfaces = setIfaces
+		g.data.SetterList = setList
+	}
+	g.data.GetSet = g.flags.getset
 }

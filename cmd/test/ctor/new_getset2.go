@@ -1,4 +1,4 @@
-package constructor
+package ctor
 
 type Base struct {
 	z string

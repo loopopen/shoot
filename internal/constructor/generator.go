@@ -19,7 +19,6 @@ var tmplTxt string
 // Generator holds the state of the analysis.
 type Generator struct {
 	*shoot.GeneratorBase
-	// ifaceReg      *shoot.IfaceRegiser
 	flags         *Flags
 	data          *TmplData
 	typeParams    []string
@@ -27,12 +26,13 @@ type Generator struct {
 	fields        []*Field
 	hasNew        bool
 	getsetMethods []shoot.Func
+	getter        bool
+	setter        bool
 }
 
 func New() *Generator {
 	g := &Generator{
 		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
-		// ifaceReg:      shoot.NewIfaceRegister(),
 	}
 	return g
 }
@@ -76,6 +76,8 @@ func (g *Generator) ParseFlags() {
 }
 
 func (g *Generator) MakeData(typeName string) (any, bool) {
+	g.getter = true
+	g.setter = true
 	g.data = NewTmplData(
 		g.CommonFlags().CmdLine,
 		g.CommonFlags().Version,

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	ctor "github.com/lopolopen/shoot/cmd/test/constructor"
+	"github.com/lopolopen/shoot/cmd/test/ctor"
 	"github.com/lopolopen/shoot/internal/constructor"
 	"github.com/lopolopen/shoot/internal/enumer"
 	"github.com/lopolopen/shoot/internal/mapper"
@@ -106,7 +106,7 @@ var goldens_map = []Golden{
 const datadir = "./testdata"
 
 func TestShootNew_Golden(t *testing.T) {
-	const codedir = "./test/constructor"
+	const codedir = "./test/ctor"
 
 	g := goldie.New(t,
 		goldie.WithFixtureDir(datadir),
