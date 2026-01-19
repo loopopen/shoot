@@ -1,8 +1,10 @@
 {{- $s := firstLower .TypeName -}}
 {{- $d := printf "%s_" (camelCase .DestTypeName) -}}
+{{- $pkg := .DestPkgName -}}
 {{- $ToDest := printf "To%s" (pascalCase .DestPkgName) -}}
 {{- $FromDest := printf "From%s" (pascalCase .DestPkgName) -}}
 {{- if .DestPkgAlias -}}
+{{- $pkg = .DestPkgAlias -}}
 {{- $ToDest = printf "To%s" (pascalCase .DestPkgAlias) -}}
 {{- $FromDest = printf "From%s" (pascalCase .DestPkgAlias) -}}
 {{- end -}}
@@ -22,12 +24,41 @@ import "{{.DestPkgPath}}"
 func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
     if {{$s}} == nil {
         return nil
-    }
+    } {{"\n"}}
+    {{- if .DestCtorParams -}}
+    {{$d}} := {{$pkg}}.New{{.DestTypeName}}( {{"\n"}}
+        {{- range $df := $.DestCtorParams -}}
+            {{- if $df.Zero -}}
+            {{$df.Zero}}, //{{$df.Path}} {{"\n"}}
+            {{- end -}}
+
+            {{- $sf := $df.Target -}}
+            {{- if $sf -}}
+                {{- $evalue := evaluate $s $sf.Name $sf.IsGet -}}
+
+                {{- if $df.CanAssign -}}
+                    {{$evalue}}, //{{$df.Path}} {{"\n"}}
+                {{- end -}}
+
+                {{- if $df.IsConv -}}
+                    {{- $right := printf "%s(%s)" $df.Type $evalue -}}
+                    {{$right}}, //{{$df.Path}} {{"\n"}}
+                {{- end -}}
+
+                {{- if $df.Func -}}
+                    {{- $right := printf "%s.%s(%s)" $s $df.Func $evalue -}}
+                    {{$right}}, //{{$df.Path}} {{"\n"}}
+                {{- end -}}
+            {{- end -}}
+        {{- end -}}
+    ) {{"\n"}}
+    {{- else -}}
     {{$d}} := new({{.QualifiedDestTypeName}}) {{"\n"}}
     {{- range $p := $.DestPtrPathList -}}
     if {{$d}}.{{$p}} == nil {
         {{$d}}.{{$p}} = new({{index $.DestPtrTypeMap $p}})
     } {{"\n"}}
+    {{- end -}}
     {{- end -}}
 
     {{- /* ----------------- */ -}}
@@ -112,14 +143,50 @@ func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
 func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *{{.TypeName}} {
     if {{$d}} == nil {
         return nil
-    }
+    } {{"\n"}}
+    {{- if .SrcCtorParams -}}
+    {{$s}}_ := New{{.TypeName}}( {{"\n"}}
+        {{- range $sf := $.SrcCtorParams -}}
+            {{- if $sf.Zero -}}
+            {{$sf.Zero}}, //{{$sf.Path}} {{"\n"}}
+            {{- end -}}
+
+            {{- $df := $sf.Target -}}
+            {{- if $df -}}
+                {{- $evalue := evaluate $d $df.Name $df.IsGet -}}
+
+                {{- if $sf.CanAssign -}}
+                    {{$evalue}}, //{{$sf.Path}} {{"\n"}}
+                {{- end -}}
+
+                {{- if $sf.IsConv -}}
+                    {{- $right := printf "%s(%s)" $sf.Type $evalue -}}
+                    {{$right}}, //{{$sf.Path}} {{"\n"}}
+                {{- end -}}
+
+                {{- if $sf.Func -}}
+                    {{- $right := printf "%s.%s(%s)" $s $sf.Func $evalue -}}
+                    {{$right}}, //{{$sf.Path}} {{"\n"}}
+                {{- end -}}
+            {{- end -}}
+        {{- end -}}
+    ) 
+    if {{$s}} == nil {
+        {{$s}} = {{$s}}_
+    } else {
+        *{{$s}} = *{{$s}}_
+    } {{"\n"}}
+    {{- else -}}
     if {{$s}} == nil {
         {{$s}} = new({{.TypeName}})
+    } else {
+        *{{$s}} = {{.TypeName}}{}
     } {{"\n"}}
     {{- range $p := $.SrcPtrPathList -}}
     if {{$s}}.{{$p}} == nil {
         {{$s}}.{{$p}} = new({{index $.SrcPtrTypeMap $p}})
     } {{"\n"}}
+    {{- end -}}
     {{- end -}}
 
     {{- /* ----------------- */ -}}

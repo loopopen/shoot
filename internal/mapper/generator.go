@@ -52,7 +52,11 @@ type Generator struct {
 	readSrcMap   map[string]string
 	writeSrcMap  map[string]string
 
-	srcTagMap map[string]string
+	srcTagMap  map[string]string
+	newShooter types.Type
+
+	srcCtorParams  []*Field
+	destCtorParams []*Field
 }
 
 func New() *Generator {
@@ -84,6 +88,7 @@ func (g *Generator) ParseFlags() {
 	destTypes := sub.String("to", "", "destination type names to map to (must align to -type)")
 	var way Way
 	sub.Var(&way, "way", "limit the mapping way(toonly/->, fromonly/<-, both/<->)")
+	ic := sub.Bool("i", false, "enables case‑insensitive field name matching")
 
 	g.ParseCommonFlags(sub)
 
@@ -120,10 +125,11 @@ func (g *Generator) ParseFlags() {
 	}
 
 	g.flags = &Flags{
-		destDir:   destDir,
-		destTypes: typMap,
-		alias:     *alias,
-		way:       way,
+		destDir:    destDir,
+		destTypes:  typMap,
+		alias:      *alias,
+		way:        way,
+		ignoreCase: *ic,
 	}
 }
 
@@ -163,11 +169,7 @@ func (g *Generator) MakeData(srcTypeName string) (any, bool) {
 	}
 	g.data.DestTypeName = destTypeName
 
-	shootnewIfac := makeNewShooterIfac()
 	srcTyp := g.parseSrcFields(srcTypeName)
-	if types.AssignableTo(srcTyp, shootnewIfac) {
-		g.parseSrcGetSetMethods(srcTyp, srcTypeName)
-	}
 	if srcTyp == nil {
 		logx.Fatalf("src type not exists: %s", srcTypeName)
 	}
@@ -179,14 +181,15 @@ func (g *Generator) MakeData(srcTypeName string) (any, bool) {
 			return nil, false
 		}
 	}
-	if types.AssignableTo(destTyp, shootnewIfac) {
-		g.parseDestGetSetMethods(destTyp, destTypeName)
-	}
 
+	g.parseCtors(srcTyp, destTyp, srcTypeName, destTypeName)
+	g.parseMethods(srcTyp, destTyp, srcTypeName, destTypeName)
 	g.parseManual(srcTyp, destTyp)
+
 	g.makeCompatible()
-	g.makeMismatch() //priority: makeMismatch > makeMatch
-	g.makeMatch()
+	g.makeCtorMatch()
+	g.makeTypeMismatch() //priority: mismatch > match
+	g.makeTypeMatch()
 
 	g.data.DestPkgName = g.destPkg.Name
 	g.data.DestPkgPath = g.destPkg.PkgPath
@@ -204,6 +207,9 @@ func (g *Generator) MakeData(srcTypeName string) (any, bool) {
 func (g *Generator) ListTypes() []string {
 	var typeNames []string
 	for _, f := range g.Pkg().Syntax {
+		if !g.TestFile(f) {
+			continue
+		}
 		ast.Inspect(f, func(n ast.Node) bool {
 			if !g.testNode("", n) {
 				return true
@@ -247,7 +253,14 @@ func (g *Generator) writeDestMap() map[string]string {
 	return g.readSrcMap
 }
 
-func makeNewShooterIfac() types.Type {
+func (g *Generator) newShooterIface() types.Type {
+	if g.newShooter == nil {
+		g.newShooter = makeNewShooterIface()
+	}
+	return g.newShooter
+}
+
+func makeNewShooterIface() types.Type {
 	iface := types.NewInterfaceType(
 		[]*types.Func{
 			types.NewFunc(

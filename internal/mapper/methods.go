@@ -12,6 +12,35 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+func (g *Generator) parseMethods(srcTyp, destTyp types.Type, srcTypName, destTypName string) {
+	shootnewIface := g.newShooterIface()
+	if types.AssignableTo(srcTyp, shootnewIface) {
+		g.parseSrcGetSetMethods(srcTyp, srcTypName)
+	}
+
+	if types.AssignableTo(destTyp, shootnewIface) {
+		g.parseDestGetSetMethods(destTyp, destTypName)
+	}
+}
+
+func (g *Generator) parseSrcGetSetMethods(srcTyp types.Type, typeName string) {
+	g.getsetMethods = nil
+	ptrTyp := types.NewPointer(srcTyp)
+	shoot.ParseGetSetIface(g.Pkg(), ptrTyp, typeName, &g.getsetMethods)
+	if len(g.getsetMethods) == 0 { //todo: need it?
+		parseGetSetMethods(g.Pkg(), srcTyp, g.unexportedFields, &g.getsetMethods)
+	}
+}
+
+func (g *Generator) parseDestGetSetMethods(destTyp types.Type, typeName string) {
+	g.destGetSetMethods = nil
+	ptrTyp := types.NewPointer(destTyp)
+	shoot.ParseGetSetIface(g.destPkg, ptrTyp, typeName, &g.destGetSetMethods)
+	if len(g.destGetSetMethods) == 0 {
+		parseGetSetMethods(g.destPkg, destTyp, g.destUnexportedFields, &g.destGetSetMethods)
+	}
+}
+
 func parseGetSetMethods(pkg *packages.Package, stTyp types.Type, unexportedFields []*Field, funcs *[]shoot.Func) {
 	if len(unexportedFields) == 0 {
 		return
@@ -87,30 +116,12 @@ func parseGetSetMethods(pkg *packages.Package, stTyp types.Type, unexportedField
 	}
 }
 
-func (g *Generator) parseSrcGetSetMethods(srcTyp types.Type, typeName string) {
-	g.getsetMethods = nil
-	ptrTyp := types.NewPointer(srcTyp)
-	shoot.ParseGetSetIface(g.Pkg(), ptrTyp, typeName, &g.getsetMethods)
-	if len(g.getsetMethods) == 0 { //todo: need it?
-		parseGetSetMethods(g.Pkg(), srcTyp, g.unexportedFields, &g.getsetMethods)
-	}
-}
-
-func (g *Generator) parseDestGetSetMethods(destTyp types.Type, typeName string) {
-	g.destGetSetMethods = nil
-	ptrTyp := types.NewPointer(destTyp)
-	shoot.ParseGetSetIface(g.destPkg, ptrTyp, typeName, &g.destGetSetMethods)
-	if len(g.destGetSetMethods) == 0 {
-		parseGetSetMethods(g.destPkg, destTyp, g.destUnexportedFields, &g.destGetSetMethods)
-	}
-}
-
 func compatlize(fields *[]*Field, methods []shoot.Func) {
 	for _, m := range methods {
 		if m.Param != nil { //set
 			*fields = append(*fields, &Field{
 				Name:        m.Name,
-				path:        m.Path,
+				Path:        m.Path,
 				typ:         m.Param,
 				backingName: trimLeftOnce(m.Name, set),
 				IsSet:       true,
@@ -118,7 +129,7 @@ func compatlize(fields *[]*Field, methods []shoot.Func) {
 		} else if m.Result != nil { //get
 			*fields = append(*fields, &Field{
 				Name:        m.Name,
-				path:        m.Path,
+				Path:        m.Path,
 				typ:         m.Result,
 				backingName: m.Name,
 				IsGet:       true,

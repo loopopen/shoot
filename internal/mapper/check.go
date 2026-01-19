@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -46,62 +47,66 @@ func (g *Generator) neverWriteCheck() {
 	var neverWriteSrc []*Field
 	var neverWriteDest []*Field
 
-	for _, f := range g.exportedFields {
-		s := f.Name
+	if g.flags.way != WayToOnly {
+		for _, f := range g.exportedFields {
+			s := f.Name
 
-		if g.writeSrcSet[s] || f.IsGet {
-			continue
-		}
-		c := false
-		for path := range g.writeSrcSet { //Model covers Model.ID
-			if f.CoveredBy(path) {
-				c = true
-				break
+			if g.writeSrcSet[s] || f.IsGet {
+				continue
 			}
+			c := false
+			for path := range g.writeSrcSet { //Model covers Model.ID
+				if f.CoveredBy(path) {
+					c = true
+					break
+				}
+			}
+			if c {
+				continue
+			}
+			neverWriteSrc = append(neverWriteSrc, f)
 		}
-		if c {
-			continue
-		}
-		neverWriteSrc = append(neverWriteSrc, f)
 	}
 
-	for _, f := range g.destExportedFields {
-		d := f.Name
+	if g.flags.way != WayFromOnly {
+		for _, f := range g.destExportedFields {
+			d := f.Name
 
-		if g.writeDestSet[d] || f.IsGet {
-			continue
-		}
-		c := false
-		for path := range g.writeDestSet {
-			if f.CoveredBy(path) {
-				c = true
-				break
+			if g.writeDestSet[d] || f.IsGet {
+				continue
 			}
-		}
-		if c {
-			continue
-		}
+			c := false
+			for path := range g.writeDestSet {
+				if f.CoveredBy(path) {
+					c = true
+					break
+				}
+			}
+			if c {
+				continue
+			}
 
-		neverWriteDest = append(neverWriteDest, f)
+			neverWriteDest = append(neverWriteDest, f)
+		}
 	}
 	reportWarn(g.data.PackageName+dot+g.data.TypeName, neverWriteSrc)
 	reportWarn(g.data.QualifiedDestTypeName, neverWriteDest)
 }
 
 func reportWarn(typename string, fields []*Field) {
-	var fnames, mnames []string
+	var fnames, mnames bytes.Buffer
 	for _, f := range fields {
 		if f.IsSet {
-			mnames = append(mnames, f.path)
+			mnames.WriteString(fmt.Sprintf("\n\t🟪 %s", f.Path))
 		} else {
-			fnames = append(fnames, f.path)
+			fnames.WriteString(fmt.Sprintf("\n\t🟦 %s", f.Path))
 		}
 	}
-	if len(fnames) > 0 {
-		logx.Warnf("%s: these fields are never assigned:\n\t🌱 %s", typename, strings.Join(fnames, ", "))
+	if fnames.Len() > 0 {
+		logx.Warnf("%s: these fields are never assigned:%s", typename, fnames.String())
 	}
-	if len(mnames) > 0 {
-		logx.Warnf("%s: these setter methods are never called:\n\t🔧 %s", typename, strings.Join(mnames, ", "))
+	if mnames.Len() > 0 {
+		logx.Warnf("%s: these setter methods are never called:%s", typename, mnames.String())
 	}
 }
 
@@ -137,7 +142,7 @@ func prepareReadPaths(fields []*Field, ptrTypeMap map[string]string, readPathsMa
 		}
 
 		var readPaths []string
-		ps := strings.Split(f.path, dot)
+		ps := strings.Split(f.Path, dot)
 		for i := 1; i < len(ps); i++ {
 			path := strings.Join(ps[:i], dot)
 			_, ok := ptrTypeMap[path]

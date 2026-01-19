@@ -151,13 +151,13 @@ func (g *Generator) parseMapper(mapperTypeName string) {
 	g.mappingFuncList = expFuncList
 }
 
-func (g *Generator) makeMismatch() {
+func (g *Generator) makeTypeMismatch() {
 	g.writeSrcMap = make(map[string]string)
 	g.readSrcMap = make(map[string]string)
 
 	for _, f1 := range g.exportedFields {
 		for _, f2 := range g.destExportedFields {
-			if !canNameMatch(f1, f2, g.srcTagMap) {
+			if !canNameMatch(f1, f2, g.srcTagMap, g.flags.ignoreCase) {
 				continue
 			}
 
@@ -188,6 +188,10 @@ func (g *Generator) makeFuncMap(f1, f2 *Field) {
 				g.writeSrcSet[f1.Name] = true
 				g.writeSrcMap[f1.Name] = f2.Name
 			}
+		}
+
+		if f1.Target != nil && f2.Target != nil {
+			break
 		}
 	}
 }

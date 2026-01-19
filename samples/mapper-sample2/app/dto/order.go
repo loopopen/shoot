@@ -26,5 +26,5 @@ func (o *Order) writeDomain(dest *model.Order) {
 }
 
 func (o *Order) readDomain(model.OrderGetter) {
-	o.y = ""
+	// o.y = ""
 }

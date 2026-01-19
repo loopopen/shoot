@@ -14,7 +14,6 @@ func (g *Generator) parseManual(srcType, destType types.Type) []string {
 	g.writeDestSet = make(map[string]bool)
 
 	pkg := g.Pkg()
-	shootnewIfac := makeNewShooterIfac()
 	for _, f := range pkg.Syntax {
 		ast.Inspect(f, func(n ast.Node) bool {
 			for _, decl := range f.Decls {
@@ -116,8 +115,9 @@ func (g *Generator) parseManual(srcType, destType types.Type) []string {
 						}
 						names := findAssignedFieldPaths(fn, recv.Names[0].Name)
 						for _, n := range names {
-							if types.ConvertibleTo(srcType, shootnewIfac) && !ast.IsExported(n) {
-								n = set + transfer.ToPascalCase(n)
+							if types.ConvertibleTo(srcType, g.newShooterIface()) && !ast.IsExported(n) {
+								//r.x = 0 => SetX, SetX may not exist
+								n = set + transfer.ToPascalCase(n) //ref:02
 							}
 							g.writeSrcSet[n] = true
 						}
