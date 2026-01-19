@@ -145,7 +145,7 @@ func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *
         return nil
     } {{"\n"}}
     {{- if .SrcCtorParams -}}
-    {{$s}}_ := New{{.TypeName}}( {{"\n"}}
+    _{{$s}}_ := New{{.TypeName}}( {{"\n"}}
         {{- range $sf := $.SrcCtorParams -}}
             {{- if $sf.Zero -}}
             {{$sf.Zero}}, //{{$sf.Path}} {{"\n"}}
@@ -172,9 +172,9 @@ func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *
         {{- end -}}
     ) 
     if {{$s}} == nil {
-        {{$s}} = {{$s}}_
+        {{$s}} = _{{$s}}_
     } else {
-        *{{$s}} = *{{$s}}_
+        *{{$s}} = *_{{$s}}_
     } {{"\n"}}
     {{- else -}}
     if {{$s}} == nil {

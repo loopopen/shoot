@@ -29,6 +29,8 @@ func (o *Order) FromDest(order_ *dest.Order) *Order {
 	}
 	if o == nil {
 		o = new(Order)
+	} else {
+		*o = Order{}
 	}
 	o.ID = order_.ID
 	o.Amount = o.DecimalToString(order_.Amount)
