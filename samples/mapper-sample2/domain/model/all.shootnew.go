@@ -10,13 +10,15 @@ import (
 )
 
 // NewOrder constructs a new instance of type Order
-func NewOrder(id string, amount decimal.Decimal, status enums.OrderStatus, orderTime time.Time, address OrderAddress) *Order {
+func NewOrder(id string, amount decimal.Decimal, status enums.OrderStatus, orderTime time.Time, address OrderAddress, x string, y string) *Order {
 	return &Order{
 		id:        id,
 		amount:    amount,
 		status:    status,
 		orderTime: orderTime,
 		address:   address,
+		x:         x,
+		y:         y,
 	}
 }
 
@@ -45,6 +47,16 @@ func (o *Order) Address() OrderAddress {
 	return o.address
 }
 
+// X gets the value of field x
+func (o *Order) X() string {
+	return o.x
+}
+
+// Y gets the value of field y
+func (o *Order) Y() string {
+	return o.y
+}
+
 // SetId sets the value of field id
 func (o *Order) SetId(id_ string) {
 	o.id = id_
@@ -70,6 +82,16 @@ func (o *Order) SetAddress(address_ OrderAddress) {
 	o.address = address_
 }
 
+// SetX sets the value of field x
+func (o *Order) SetX(x_ string) {
+	o.x = x_
+}
+
+// SetY sets the value of field y
+func (o *Order) SetY(y_ string) {
+	o.y = y_
+}
+
 // OrderGetter is read-only interface for Order type
 type OrderGetter interface {
 	Id() string
@@ -77,6 +99,8 @@ type OrderGetter interface {
 	Status() enums.OrderStatus
 	OrderTime() time.Time
 	Address() OrderAddress
+	X() string
+	Y() string
 }
 
 // OrderSetter is write-only interface for Order type
@@ -86,6 +110,8 @@ type OrderSetter interface {
 	SetStatus(enums.OrderStatus)
 	SetOrderTime(time.Time)
 	SetAddress(OrderAddress)
+	SetX(string)
+	SetY(string)
 }
 
 // ShootNew exists solely to fulfill the NewShooter interface contract

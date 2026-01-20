@@ -28,27 +28,29 @@ func ({{$s}} *{{.TypeName}}) {{$ToDest}}() *{{.QualifiedDestTypeName}} {
     {{- if .DestCtorParams -}}
     {{$d}} := {{$pkg}}.New{{.DestTypeName}}( {{"\n"}}
         {{- range $df := $.DestCtorParams -}}
-            {{- if $df.Zero -}}
-            {{$df.Zero}}, //{{$df.Path}} {{"\n"}}
-            {{- end -}}
-
+            {{- $right := "" -}}
             {{- $sf := $df.Target -}}
-            {{- if $sf -}}
-                {{- $evalue := evaluate $s $sf.Name $sf.IsGet -}}
 
+            {{- if $df.Zero -}}
+                {{- $right = $df.Zero -}}
+            {{- else if $sf -}}
+                {{- $evalue := evaluate $s $sf.Name $sf.IsGet -}}
+                
                 {{- if $df.CanAssign -}}
-                    {{$evalue}}, //{{$df.Path}} {{"\n"}}
+                    {{- $right = $evalue -}}
                 {{- end -}}
 
                 {{- if $df.IsConv -}}
-                    {{- $right := printf "%s(%s)" $df.Type $evalue -}}
-                    {{$right}}, //{{$df.Path}} {{"\n"}}
+                    {{- $right = printf "%s(%s)" $df.Type $evalue -}}
                 {{- end -}}
 
                 {{- if $df.Func -}}
-                    {{- $right := printf "%s.%s(%s)" $s $df.Func $evalue -}}
-                    {{$right}}, //{{$df.Path}} {{"\n"}}
+                    {{- $right = printf "%s.%s(%s)" $s $df.Func $evalue -}}
                 {{- end -}}
+            {{- end -}}
+
+            {{- if $right -}}
+                {{$right}}, //{{$df.Path}} {{"\n"}}
             {{- end -}}
         {{- end -}}
     ) {{"\n"}}

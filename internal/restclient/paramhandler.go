@@ -14,16 +14,16 @@ import (
 func (g *Generator) handleExpr(paramType ast.Expr, name *ast.Ident, file *ast.File, methodName, httpMethod string) {
 	switch t := paramType.(type) {
 	case *ast.SelectorExpr:
-		// fmt.Println(">>>>", "SelectorExpr")
+		// fmt.Println("::", "SelectorExpr")
 		g.handleSelectorExpr(t, name, methodName)
 	case *ast.Ident:
-		// fmt.Println(">>>>", "Ident")
+		// fmt.Println("::", "Ident")
 		g.handleIdent(t, name, file, methodName)
 	case *ast.MapType:
-		// fmt.Println(">>>>", "MapType")
+		// fmt.Println("::", "MapType")
 		g.handleMapType(name, methodName, httpMethod)
 	case *ast.StarExpr:
-		// fmt.Println(">>>>", "StarExpr")
+		// fmt.Println("::", "StarExpr")
 		g.handleExpr(t.X, name, file, methodName, httpMethod)
 	default:
 		logx.Fatalf("unsupported param type %T of method %s", t, methodName)

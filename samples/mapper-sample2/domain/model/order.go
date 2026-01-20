@@ -13,6 +13,6 @@ type Order struct {
 	status    enums.OrderStatus
 	orderTime time.Time
 	address   OrderAddress
-	// x         string
-	// y         string
+	x         string
+	y         string
 }

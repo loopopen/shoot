@@ -21,6 +21,10 @@ func (g *Generator) parseCtors(srcTyp, destTyp types.Type, srcTypName, destTypNa
 	if types.AssignableTo(destTyp, shootnewIface) {
 		fields := parseCtors(g.destPkg, destTyp, destTypName)
 		g.destCtorParams = fields
+
+		for _, f := range fields {
+			logx.Pin(f.Name, f.backingName)
+		}
 	}
 }
 
@@ -99,6 +103,11 @@ func makeCtorMatch(g *Generator, expFields []*Field, ctorParams []*Field, tagMap
 
 	for _, f := range expFields {
 		for _, p := range ctorParams {
+			//p = f (p accepts value of f)
+			if f.IsSet {
+				continue
+			}
+
 			if !canNameMatch(f, p, tagMap, g.flags.ignoreCase) {
 				continue
 			}

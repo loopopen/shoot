@@ -9,17 +9,7 @@ func (o *Order) ToDomain() *domain.Order {
 	if o == nil {
 		return nil
 	}
-	order_ := domain.NewOrder(
-		"",                               //id
-		o.StringToDecimal(o.Amount()),    //amount
-		0,                                //status
-		o.StringToTime(o.OrderingTime()), //orderTime
-		domain.OrderAddress{},            //address
-	)
-	oAddress := o.Address()
-	if oAddress != nil {
-		order_.SetAddress(*oAddress.ToDomain())
-	}
+	order_ := new(domain.Order)
 	o.writeDomain(order_)
 	return order_
 }
@@ -35,17 +25,14 @@ func (o *Order) FromDomain(order_ *domain.Order) *Order {
 		order_.Status(),                    //status
 		"",                                 //orderingTime
 		nil,                                //address
-		"",                                 //x
-		"",                                 //y
+		order_.X(),                         //x
+		order_.Y(),                         //y
 	)
 	if o == nil {
 		o = _o_
 	} else {
 		*o = *_o_
 	}
-	order_Address := order_.Address()
-	o.SetAddress(new(OrderAddress).FromDomain(&order_Address))
-	o.SetOrderingTime(o.TimeToString(order_.OrderTime()))
 	o.readDomain(order_)
 	return o
 }
@@ -58,11 +45,7 @@ func (o *OrderAddress) ToDomain() *domain.OrderAddress {
 	if o == nil {
 		return nil
 	}
-	orderAddress_ := domain.NewOrderAddress(
-		o.City(),    //city
-		o.Street(),  //street
-		o.RoomNum(), //room
-	)
+	orderAddress_ := new(domain.OrderAddress)
 	o.writeDomain(orderAddress_)
 	return orderAddress_
 }
@@ -82,7 +65,6 @@ func (o *OrderAddress) FromDomain(orderAddress_ *domain.OrderAddress) *OrderAddr
 	} else {
 		*o = *_o_
 	}
-	o.SetRoomNum(orderAddress_.Room())
 	o.readDomain(orderAddress_)
 	return o
 }
