@@ -25,6 +25,8 @@ func (s *Src) FromTarget(dest_ *target.Dest) *Src {
 	}
 	if s == nil {
 		s = new(Src)
+	} else {
+		*s = Src{}
 	}
 	if s.Embed == nil {
 		s.Embed = new(Embed)

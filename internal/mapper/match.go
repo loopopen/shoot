@@ -5,13 +5,14 @@ import (
 	"strings"
 
 	"github.com/lopolopen/shoot/internal/shoot"
+	"github.com/lopolopen/shoot/internal/tools/logx"
 	"github.com/lopolopen/shoot/internal/transfer"
 )
 
-func (g *Generator) makeMatch() {
+func (g *Generator) makeTypeMatch() {
 	for _, f1 := range g.exportedFields {
 		for _, f2 := range g.destExportedFields {
-			if !canNameMatch(f1, f2, g.srcTagMap) {
+			if !canNameMatch(f1, f2, g.srcTagMap, g.flags.ignoreCase) {
 				continue
 			}
 
@@ -21,7 +22,7 @@ func (g *Generator) makeMatch() {
 				//f2 = f1
 				//f2 = (type)f1
 				if same || conv {
-					f1.Target = f2
+					f1.Target = f2 //ref:01
 					g.writeDestSet[f2.Name] = true
 					g.readSrcMap[f1.Name] = f2.Name
 				}
@@ -63,7 +64,7 @@ func qualifiedTypeName(t types.Type, alias string) string {
 	return types.TypeString(t, qualifier)
 }
 
-func canNameMatch(f1, f2 *Field, tagMap map[string]string) bool {
+func canNameMatch(f1, f2 *Field, tagMap map[string]string, ignoreCase bool) bool {
 	if f1.IsGet && f2.IsGet {
 		return false
 	}
@@ -82,42 +83,33 @@ func canNameMatch(f1, f2 *Field, tagMap map[string]string) bool {
 		m1 = tag
 	}
 
-	return smartMatch(m1, m2)
+	if ignoreCase {
+		return strings.EqualFold(m1, m2)
+	}
+
+	yes := smartMatch(m1, m2)
+	if !yes {
+		if !f1.warned && !f2.warned {
+			if strings.EqualFold(m1, m2) {
+				logx.Warnf("%s and %s almost matched, you may want to use -i to enable case‑insensitive matching", m1, m2)
+				f1.warned = true
+				f2.warned = true
+			}
+		}
+	}
+	return yes
 }
 
 func smartMatch(a, b string) bool {
-	if a == b {
-		return true
-	}
-
 	if len(a) != len(b) {
 		return false
 	}
 
-	i := len(a)
-	for i > 0 && transfer.IsUpper(a[i-1]) {
-		i--
+	if a == b {
+		return true
 	}
 
-	if i == len(a) {
-		i = len(b)
-		for i > 0 && transfer.IsUpper(b[i-1]) {
-			i--
-		}
-	}
-
-	if i == len(b) {
-		return false
-	}
-
-	prefixA, suffixA := a[:i], a[i:]
-	prefixB, suffixB := b[:i], b[i:]
-
-	if prefixA != prefixB {
-		return false
-	}
-
-	return strings.EqualFold(suffixA, suffixB)
+	return transfer.ToCamelCase(a) == transfer.ToCamelCase(b)
 }
 
 func matchType(type1, type2 types.Type) (bool, bool) {

@@ -9,10 +9,15 @@ func (o *Order2) ToDest() *dest.Order2 {
 	if o == nil {
 		return nil
 	}
-	order2_ := new(dest.Order2)
-	order2_.SetId(o.ID)
-	order2_.SetAmount(o.StringToDecimal(o.Amount))
-	order2_.SetOrderTime(o.StringToTime(o.OrderingTime))
+	order2_ := dest.NewOrder2(
+		o.ID,                           //id
+		o.StringToDecimal(o.Amount),    //amount
+		o.StringToTime(o.OrderingTime), //orderTime
+		dest.OrderAddress{},            //addr0
+		dest.OrderAddress{},            //addr1
+		nil,                            //addr2
+		nil,                            //addr3
+	)
 	order2_.SetAddr0(*o.Addr0.ToDest())
 	if o.Addr1 != nil {
 		order2_.SetAddr1(*o.Addr1.ToDest())
@@ -29,6 +34,8 @@ func (o *Order2) FromDest(order2_ *dest.Order2) *Order2 {
 	}
 	if o == nil {
 		o = new(Order2)
+	} else {
+		*o = Order2{}
 	}
 	order2_Addr0 := order2_.Addr0()
 	o.Addr0 = *new(OrderAddress).FromDest(&order2_Addr0)

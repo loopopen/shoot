@@ -37,6 +37,8 @@ func (v *Way) String() string {
 
 type TmplData struct {
 	*shoot.TmplDataBase
+	SrcCtorParams         []*Field
+	DestCtorParams        []*Field
 	SrcFieldList          []*Field
 	DestFieldList         []*Field
 	DestTypeName          string //Order
@@ -56,20 +58,6 @@ type TmplData struct {
 	SrcNeedWriteCheckMap  map[string]string
 	DestNeedWriteCheckMap map[string]string
 
-	// MismatchFuncMap  map[string]string //Amount -> Amount
-	// SrcToDestFuncMap map[string]string //Amount -> StringToDecimal
-	// DestToSrcFuncMap map[string]string //Amount -> DecimalToString
-
-	// MismatchSubMap     map[string]string //Address -> Address
-	// DestMismatchSubMap map[string]string
-	// SrcPtrSet  map[string]bool //Address -> true
-	// DestPtrSet map[string]bool //Address -> false
-	// SrcSubTypeMap  map[string]string //Address -> OrderAddress
-	// DestSubTypeMap map[string]string //Address -> domain.OrderAddress
-
-	// MismatchSubListMap     map[string]string //AddrList -> AddrList
-	// DestMismatchSubListMap map[string]string
-
 	ReadMethodName  string //fromModel
 	IsReadParamPtr  bool
 	WriteMethodName string //toModel
@@ -84,15 +72,16 @@ func NewTmplData(cmdline, version string) *TmplData {
 }
 
 type Flags struct {
-	destDir   string
-	destTypes map[string]string
-	alias     string
-	way       Way
+	destDir    string
+	destTypes  map[string]string
+	alias      string
+	way        Way
+	ignoreCase bool
 }
 
 type Field struct {
 	Name        string //ID
-	path        string //Model.ID
+	Path        string //Model.ID
 	typ         types.Type
 	depth       int32
 	backingName string
@@ -106,21 +95,23 @@ type Field struct {
 	Type        string
 	Func        string
 	IsPtr       bool
+	Zero        string
+	warned      bool
 }
 
 func (f Field) IsEmbeded() bool {
-	return strings.Contains(f.path, dot)
+	return strings.Contains(f.Path, dot)
 }
 
 func (f Field) CoveredBy(path string) bool {
-	if f.path == path { //Model.ID
+	if f.Path == path { //Model.ID
 		return true
 	}
-	if strings.HasPrefix(f.path, path+dot) { //Model.
+	if strings.HasPrefix(f.Path, path+dot) { //Model.
 		return true
 	}
 	xs := strings.Split(path, dot)
-	return strings.HasSuffix(f.path, dot+xs[len(xs)-1]) //.ID
+	return strings.HasSuffix(f.Path, dot+xs[len(xs)-1]) //.ID
 }
 
 func (f Field) MatchingName() string {

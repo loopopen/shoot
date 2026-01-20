@@ -100,7 +100,7 @@ func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, t
 			if obj, ok := pkg.TypesInfo.Defs[name].(*types.Var); ok {
 				appendOrReplace(fields, &Field{
 					Name:  name.Name,
-					path:  name.Name,
+					Path:  name.Name,
 					typ:   obj.Type(),
 					depth: 0,
 				})
@@ -144,7 +144,7 @@ func extractStructFields(pkg *packages.Package, qf types.Qualifier, pre string, 
 
 		appendOrReplace(fields, &Field{
 			Name:  f.Name(),
-			path:  pre + "." + f.Name(),
+			Path:  pre + "." + f.Name(),
 			typ:   f.Type(),
 			depth: depth,
 		})
@@ -157,7 +157,7 @@ func appendOrReplace(fields *[]*Field, field *Field) {
 		if (*fields)[i].Name == field.Name {
 			f = (*fields)[i]
 			if field.depth < f.depth {
-				f.path = field.path
+				f.Path = field.Path
 				f.typ = field.typ
 				f.depth = field.depth
 				break

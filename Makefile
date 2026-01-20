@@ -7,9 +7,6 @@ golden:
 golden-up:
 	go test ./cmd -update
 
-generate:
-	go generate ./...
-
 test:
 	cd ./internal && go test ./...
 

@@ -225,24 +225,14 @@ func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Pac
 	}
 
 	primaryPkg := pkgs[dot]
-	if g.commonFlags.FileName != "" {
-		//only keep the specified file
-		var fs []*ast.File
-		for _, f := range primaryPkg.Syntax {
-			filename := primaryPkg.Fset.File(f.Pos()).Name()
-			if filepath.Base(filename) == g.commonFlags.FileName {
-				fs = append(fs, f)
-				break
-			}
-		}
-		primaryPkg.Syntax = fs
-	} else if Contains(g.commonFlags.TypeNames, star) {
+	cf := g.commonFlags
+	if cf.FileName == "" && Contains(cf.TypeNames, star) {
 		//find the file in which cmdline exists
 	end:
 		for i, f := range primaryPkg.Syntax {
 			for _, cg := range f.Comments {
 				for _, c := range cg.List {
-					if !findCmdLine(c.Text, g.commonFlags.CmdLine) {
+					if !findCmdLine(c.Text, cf.CmdLine) {
 						continue
 					}
 					filename := filepath.Base(primaryPkg.GoFiles[i])
@@ -255,6 +245,17 @@ func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Pac
 
 	g.SetPkg(primaryPkg)
 	return pkgs
+}
+
+func (g *GeneratorBase) TestFile(file *ast.File) bool {
+	if g.commonFlags.FileName == "" {
+		return true
+	}
+	filename := g.pkg.Fset.File(file.Pos()).Name()
+	if filepath.Base(filename) == g.commonFlags.FileName {
+		return true
+	}
+	return false
 }
 
 func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Package, error) {

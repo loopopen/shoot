@@ -21,10 +21,10 @@ type Order struct {
 }
 
 func (o *Order) writeDomain(dest *model.Order) {
-	// dest.SetId("...")
-	// dest.SetStatus(0)
+	dest.SetId("...")
+	dest.SetStatus(0)
 }
 
 func (o *Order) readDomain(model.OrderGetter) {
-	o.y = ""
+	// o.SetY("y")
 }

@@ -98,6 +98,9 @@ func (g *Generator) MakeData(typeName string) (any, bool) {
 func (g *Generator) ListTypes() []string {
 	var typeNames []string
 	for _, f := range g.Pkg().Syntax {
+		if !g.TestFile(f) {
+			continue
+		}
 		ast.Inspect(f, func(n ast.Node) bool {
 			if !g.testNode("", n) {
 				return true

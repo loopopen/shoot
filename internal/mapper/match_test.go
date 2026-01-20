@@ -88,7 +88,7 @@ func Test_smartMatch(t *testing.T) {
 				a: "id",
 				b: "Id",
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "id~ID",
@@ -117,8 +117,8 @@ func Test_smartMatch(t *testing.T) {
 		{
 			name: "LoadXml~LoadXML",
 			args: args{
-				a: "id",
-				b: "ID",
+				a: "LoadXml",
+				b: "LoadXML",
 			},
 			want: true,
 		},

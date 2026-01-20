@@ -102,6 +102,9 @@ func (g *Generator) ListTypes() []string {
 	var typeNames []string
 	pkg := g.Pkg()
 	for _, f := range pkg.Syntax {
+		if !g.TestFile(f) {
+			continue
+		}
 		ast.Inspect(f, func(n ast.Node) bool {
 			decl, ok := n.(*ast.GenDecl)
 			if !ok {
