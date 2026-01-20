@@ -21,10 +21,6 @@ func (g *Generator) parseCtors(srcTyp, destTyp types.Type, srcTypName, destTypNa
 	if types.AssignableTo(destTyp, shootnewIface) {
 		fields := parseCtors(g.destPkg, destTyp, destTypName)
 		g.destCtorParams = fields
-
-		for _, f := range fields {
-			logx.Pin(f.Name, f.backingName)
-		}
 	}
 }
 
