@@ -47,8 +47,8 @@ type Generator struct {
 	destPathsMap    map[string][]string
 	mappingFuncList []shoot.Func
 
-	writeSrcSet  map[string]bool
-	writeDestSet map[string]bool
+	writeSrcSet  shoot.Set[string]
+	writeDestSet shoot.Set[string]
 	readSrcMap   map[string]string
 	writeSrcMap  map[string]string
 

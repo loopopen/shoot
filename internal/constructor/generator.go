@@ -12,6 +12,7 @@ import (
 )
 
 const SubCmd = "new"
+const set = "Set"
 
 //go:embed constructor.tmpl
 var tmplTxt string

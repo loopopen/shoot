@@ -17,7 +17,7 @@ func (f *Func) IsGetter() bool {
 }
 
 func (f *Func) IsSetter() bool {
-	if !strings.HasPrefix(f.Name, Set) {
+	if !strings.HasPrefix(f.Name, set) {
 		return false
 	}
 	return f.Param != nil && f.Result == nil

@@ -18,12 +18,12 @@ func (g *Generator) makeTypeMatch() {
 
 			same, conv := matchType(f1.typ, f2.typ)
 			_, convback := matchType(f2.typ, f1.typ)
-			if !g.writeDestSet[f2.Name] && !f2.IsGet {
+			if !g.writeDestSet.Has(f2.Name) && !f2.IsGet {
 				//f2 = f1
 				//f2 = (type)f1
 				if same || conv {
 					f1.Target = f2 //ref:01
-					g.writeDestSet[f2.Name] = true
+					g.writeDestSet.Adds(f2.Name)
 					g.readSrcMap[f1.Name] = f2.Name
 				}
 				if same {
@@ -34,10 +34,10 @@ func (g *Generator) makeTypeMatch() {
 				}
 			}
 
-			if !g.writeSrcSet[f1.Name] && !f1.IsGet {
+			if !g.writeSrcSet.Has(f1.Name) && !f1.IsGet {
 				if same || convback {
 					f2.Target = f1
-					g.writeSrcSet[f1.Name] = true
+					g.writeSrcSet.Adds(f1.Name)
 					g.writeSrcMap[f1.Name] = f2.Name
 				}
 				if same {

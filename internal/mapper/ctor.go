@@ -91,7 +91,7 @@ func (g *Generator) makeCtorMatch() {
 	}
 }
 
-func makeCtorMatch(g *Generator, expFields []*Field, ctorParams []*Field, tagMap map[string]string, writeSet map[string]bool) bool {
+func makeCtorMatch(g *Generator, expFields []*Field, ctorParams []*Field, tagMap map[string]string, writeSet shoot.Set[string]) bool {
 	if len(ctorParams) == 0 {
 		return false
 	}
@@ -108,7 +108,7 @@ func makeCtorMatch(g *Generator, expFields []*Field, ctorParams []*Field, tagMap
 				continue
 			}
 
-			if writeSet[p.Name] {
+			if writeSet.Has(p.Name) {
 				continue
 			}
 
@@ -123,7 +123,7 @@ func makeCtorMatch(g *Generator, expFields []*Field, ctorParams []*Field, tagMap
 			}
 			if same || conv {
 				p.Target = f //ref:01; Target has different meanings
-				writeSet[p.Name] = true
+				writeSet.Adds(p.Name)
 				continue
 			}
 
@@ -131,7 +131,7 @@ func makeCtorMatch(g *Generator, expFields []*Field, ctorParams []*Field, tagMap
 				if shoot.TypeEquals(fn.Param, f.typ) && shoot.TypeEquals(fn.Result, p.typ) {
 					p.Target = f
 					p.Func = fn.Name
-					writeSet[p.Name] = true
+					writeSet.Adds(p.Name)
 					continue
 				}
 			}

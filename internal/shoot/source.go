@@ -32,7 +32,7 @@ func MergeSources(sources ...[]byte) ([]byte, error) {
 
 	pkgName := files[0].Name.Name
 
-	importSet := map[string]bool{}
+	importSet := MakeSet[string]()
 	var importDecls []ast.Decl
 
 	for _, f := range files {
@@ -41,8 +41,8 @@ func MergeSources(sources ...[]byte) ([]byte, error) {
 			if imp.Name != nil {
 				key += imp.Name.Name
 			}
-			if !importSet[key] {
-				importSet[key] = true
+			if !importSet.Has(key) {
+				importSet.Adds(key)
 				importDecls = append(importDecls, &ast.GenDecl{
 					Tok:   token.IMPORT,
 					Specs: []ast.Spec{imp},

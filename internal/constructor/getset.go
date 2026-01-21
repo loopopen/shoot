@@ -11,12 +11,12 @@ func (g *Generator) makeGetSet() {
 	var setList []string
 	var getIfaces []string
 	var setIfaces []string
-	onceSet := make(map[string]bool)
+	onceSet := shoot.MakeSet[string]()
 	for _, f := range g.fields {
-		if onceSet[f.name] {
+		if onceSet.Has(f.name) {
 			continue
 		}
-		onceSet[f.name] = true
+		onceSet[f.name] = struct{}{}
 
 		if f.isEmbeded {
 			var get, set types.Type

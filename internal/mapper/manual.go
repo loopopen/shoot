@@ -5,13 +5,14 @@ import (
 	"go/types"
 	"strings"
 
+	"github.com/lopolopen/shoot/internal/shoot"
 	"github.com/lopolopen/shoot/internal/tools/logx"
 	"github.com/lopolopen/shoot/internal/transfer"
 )
 
 func (g *Generator) parseManual(srcType, destType types.Type) []string {
-	g.writeSrcSet = make(map[string]bool)
-	g.writeDestSet = make(map[string]bool)
+	g.writeSrcSet = shoot.MakeSet[string]()
+	g.writeDestSet = shoot.MakeSet[string]()
 
 	pkg := g.Pkg()
 	for _, f := range pkg.Syntax {
@@ -100,7 +101,7 @@ func (g *Generator) parseManual(srcType, destType types.Type) []string {
 						}
 						names := findAssignedFieldPaths(fn, param.Names[0].Name)
 						for _, n := range names {
-							g.writeDestSet[n] = true
+							g.writeDestSet.Adds(n)
 						}
 					} else if isRead { //write src
 						if !isSame && !isGetter {
@@ -119,7 +120,7 @@ func (g *Generator) parseManual(srcType, destType types.Type) []string {
 								//r.x = 0 => SetX, SetX may not exist
 								n = set + transfer.ToPascalCase(n) //ref:02
 							}
-							g.writeSrcSet[n] = true
+							g.writeSrcSet.Adds(n)
 						}
 					}
 				}

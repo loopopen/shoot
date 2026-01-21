@@ -27,14 +27,14 @@ func (g *Generator) makeJson() {
 		trans = strings.ToUpper
 	}
 
-	allGetSet := make(map[string]bool)
-	allSetSet := make(map[string]bool)
+	allGetSet := shoot.MakeSet[string]()
+	allSetSet := shoot.MakeSet[string]()
 	for _, m := range g.getsetMethods {
 		if m.IsGetter() {
-			allGetSet[m.Name] = true
+			allGetSet.Adds(m.Name)
 		}
 		if m.IsSetter() {
-			allSetSet[m.Name] = true
+			allSetSet.Adds(m.Name)
 		}
 	}
 
@@ -54,10 +54,10 @@ func (g *Generator) makeJson() {
 				needJSON = true
 			}
 		} else {
-			if f.isGet || allGetSet[transfer.ToPascalCase(f.name)] {
+			if f.isGet || allGetSet.Has(transfer.ToPascalCase(f.name)) {
 				needJSON = true
 			}
-			if f.isSet || allSetSet[shoot.Set+transfer.ToPascalCase(f.name)] {
+			if f.isSet || allSetSet.Has(set+transfer.ToPascalCase(f.name)) {
 				needJSON = true
 			}
 		}
@@ -68,11 +68,11 @@ func (g *Generator) makeJson() {
 			jsonList = append(jsonList, f.name)
 		} else {
 			getset := false
-			if f.isGet || allGetSet[transfer.ToPascalCase(f.name)] {
+			if f.isGet || allGetSet.Has(transfer.ToPascalCase(f.name)) {
 				getterList = append(getterList, f.name)
 				getset = true
 			}
-			if f.isSet || allSetSet[shoot.Set+transfer.ToPascalCase(f.name)] {
+			if f.isSet || allSetSet.Has(set+transfer.ToPascalCase(f.name)) {
 				setterList = append(setterList, f.name)
 				getset = true
 			}

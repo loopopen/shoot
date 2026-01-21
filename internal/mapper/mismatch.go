@@ -170,22 +170,22 @@ func (g *Generator) makeTypeMismatch() {
 
 func (g *Generator) makeFuncMap(f1, f2 *Field) {
 	for _, fn := range g.mappingFuncList {
-		if !g.writeDestSet[f2.Name] && !f2.IsGet {
+		if !g.writeDestSet.Has(f2.Name) && !f2.IsGet {
 			//in ToXxx, mapping func's param type is src field type
 			if shoot.TypeEquals(fn.Param, f1.typ) && shoot.TypeEquals(fn.Result, f2.typ) {
 				f1.Target = f2
 				f2.Func = fn.Name
-				g.writeDestSet[f2.Name] = true
+				g.writeDestSet.Adds(f2.Name)
 				g.readSrcMap[f1.Name] = f2.Name
 			}
 		}
 
-		if !g.writeSrcSet[f1.Name] && !f1.IsGet {
+		if !g.writeSrcSet.Has(f1.Name) && !f1.IsGet {
 			//in FromXxx, mapping func's param type is dest field type
 			if shoot.TypeEquals(fn.Param, f2.typ) && shoot.TypeEquals(fn.Result, f1.typ) {
 				f2.Target = f1
 				f1.Func = fn.Name
-				g.writeSrcSet[f1.Name] = true
+				g.writeSrcSet.Adds(f1.Name)
 				g.writeSrcMap[f1.Name] = f2.Name
 			}
 		}
@@ -215,7 +215,7 @@ func (g *Generator) makeSubMap(f1, f2 *Field, typ1, typ2 types.Type, isSlice boo
 			pkgpath2 := n2.Obj().Pkg().Path()
 
 			if pkgpath1 == g.Pkg().PkgPath && pkgpath2 == g.destPkg.PkgPath {
-				if !g.writeDestSet[f2.Name] && !f2.IsGet {
+				if !g.writeDestSet.Has(f2.Name) && !f2.IsGet {
 					//f2 = f1.ToDest()
 					f1.Target = f2
 					if isSlice {
@@ -226,10 +226,10 @@ func (g *Generator) makeSubMap(f1, f2 *Field, typ1, typ2 types.Type, isSlice boo
 					f2.Type = qualifiedTypeName(typ2, g.flags.alias)
 					f1.IsPtr = isPtr1
 					f2.IsPtr = isPtr2
-					g.writeDestSet[f2.Name] = true
+					g.writeDestSet.Adds(f2.Name)
 					g.readSrcMap[f1.Name] = f2.Name
 				}
-				if !g.writeSrcSet[f1.Name] && !f1.IsGet {
+				if !g.writeSrcSet.Has(f1.Name) && !f1.IsGet {
 					f2.Target = f1
 					if isSlice {
 						f1.CanEachMap = true
@@ -239,7 +239,7 @@ func (g *Generator) makeSubMap(f1, f2 *Field, typ1, typ2 types.Type, isSlice boo
 					f1.Type = n1.Obj().Name()
 					f1.IsPtr = isPtr1
 					f2.IsPtr = isPtr2
-					g.writeSrcSet[f1.Name] = true
+					g.writeSrcSet.Adds(f1.Name)
 					g.writeSrcMap[f1.Name] = f2.Name
 				}
 			}

@@ -51,7 +51,7 @@ func (g *Generator) neverWriteCheck() {
 		for _, f := range g.exportedFields {
 			s := f.Name
 
-			if g.writeSrcSet[s] || f.IsGet {
+			if g.writeSrcSet.Has(s) || f.IsGet {
 				continue
 			}
 			c := false
@@ -72,7 +72,7 @@ func (g *Generator) neverWriteCheck() {
 		for _, f := range g.destExportedFields {
 			d := f.Name
 
-			if g.writeDestSet[d] || f.IsGet {
+			if g.writeDestSet.Has(d) || f.IsGet {
 				continue
 			}
 			c := false
