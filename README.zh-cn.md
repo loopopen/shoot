@@ -1,8 +1,5 @@
 # shoot        [English](https://github.com/lopolopen/shoot/blob/main/README.md)
-为 "go generate" 而打造的工具集。
-
-# 项目状态:
-BETA版本，谨慎使用！
+用于"go generate"的一组工具。
 
 # 如何使用?
 
@@ -41,26 +38,6 @@ go get -tool github.com/lopolopen/shoot/cmd/shoot@latest
 ```zsh
 go generate 		# 在当前目录执行
 go generate ./...	# 递归当前目录及其子目录
-```
-
-## 使用 go1.24- （至少1.18）
-
-```zsh
-go install github.com/lopolopen/shoot/cmd/shoot@latest
-
-go get github.com/lopolopen/shoot@latest	# 低版本的项目中需要单独安装
-```
-
-```go
-//go:generate shoot new -getset -json -type=YourType
-
-//go:generate shoot new -getset -json -file=$GOFILE
-
-//go:generate shoot enum -json -type=YourEnum
-
-//go:generate shoot rest -type=YourClient
-
-//go:generate shoot map -path=../destpath -type=YourSrcType
 ```
 
 ## 生成文件示例1：
@@ -195,7 +172,7 @@ func (c *client) GetUser(ctx context.Context, userID string, pageSize int, pageI
 
 package dto
 
-import domain "mappersample/domain/model"
+import domain "mapperexample/domain/model"
 
 // ToDomain converts receiver to type domain.Order
 func (o *Order) ToDomain() *domain.Order {
@@ -233,7 +210,7 @@ func (o *Order) FromDomain(order_ *domain.Order) *Order {
 ```
 
 ## 更多示例：
-* [示例](https://github.com/lopolopen/shoot/tree/main/samples)
+* [示例](https://github.com/lopolopen/shoot/tree/main/examples)
 * [shoot-examples](https://github.com/lopolopen/shoot-examples)
 
 # 启发项目：

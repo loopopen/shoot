@@ -44,7 +44,7 @@ type TmplData struct {
 	DestTypeName          string //Order
 	DestPkgName           string //model
 	DestPkgAlias          string //domain
-	DestPkgPath           string //mappersample/domain/model
+	DestPkgPath           string //mapperexample/domain/model
 	QualifiedDestTypeName string //domain.Order
 
 	SrcPtrTypeMap   map[string]string //Model -> gorm.Model
