@@ -141,7 +141,11 @@ func (g *Generator) makeStr(typeName string) {
 	}
 
 	g.RegisterTransfer("valueof", func(key string) interface{} {
-		return valueMap[key]
+		v := valueMap[key]
+		if v >= 0 {
+			return fmt.Sprintf("%d", v)
+		}
+		return fmt.Sprintf("(%d)", v)
 	})
 
 	g.RegisterTransfer("strof", func(key string) interface{} {

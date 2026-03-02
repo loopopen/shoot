@@ -11,3 +11,12 @@ const (
 	LightYello
 	LightGreen
 )
+
+type Status int32
+
+const (
+	StatusFailed  Status = -1
+	StatusPending Status = iota
+	StatusProcessing
+	StatusSucceeded
+)
