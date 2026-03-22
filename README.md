@@ -1,4 +1,10 @@
-# shoot        [中文](https://github.com/lopolopen/shoot/blob/main/README.zh-cn.md)
+<p align="center">
+  <img height="140" src="https://raw.githubusercontent.com/lopolopen/shoot/refs/heads/main/docs/logo.png" alt="GAP Logo">
+</p>
+
+# shoot
+[![Language](https://img.shields.io/badge/language-中文-blue.svg)](https://github.com/lopolopen/shoot/blob/main/README.zh-cn.md)
+              
 A pack of tools for "go generate".
 
 # How to use?
