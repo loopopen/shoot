@@ -18,7 +18,7 @@ func (g *Generator) handleExpr(paramType ast.Expr, name *ast.Ident, file *ast.Fi
 		g.handleSelectorExpr(t, name, methodName)
 	case *ast.Ident:
 		// fmt.Println("::", "Ident")
-		g.handleIdent(t, name, file, methodName)
+		g.handleIdent(t, name, methodName)
 	case *ast.MapType:
 		// fmt.Println("::", "MapType")
 		g.handleMapType(name, methodName, httpMethod)
@@ -92,8 +92,13 @@ func (g *Generator) handleStruct(paramType ast.Expr, paramTypeName string, name 
 	}
 }
 
-func (g *Generator) handleIdent(paramType *ast.Ident, name *ast.Ident, file *ast.File, methodName string) {
-	if isStructType(paramType.Name, file) {
+func (g *Generator) handleIdent(paramType *ast.Ident, name *ast.Ident, methodName string) {
+	var isStruct bool
+	obj := g.Pkg().Types.Scope().Lookup(paramType.Name)
+	if obj != nil {
+		_, isStruct = obj.Type().Underlying().(*types.Struct)
+	}
+	if isStruct {
 		g.setBodyParamName(methodName, name.Name)
 		g.handleStruct(paramType, paramType.Name, name, methodName)
 	} else {

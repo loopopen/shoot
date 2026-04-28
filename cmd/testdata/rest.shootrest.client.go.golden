@@ -21,11 +21,11 @@ type client struct {
 	conf   *shoot.RestConf
 }
 
-func (c *client) GetUser(ctx context.Context, userID string) (*User, *http.Response, error) {
+func (_c *client) GetUser(ctx context.Context, userID string) (*User, *http.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", userID), 1)
 
-	url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -37,7 +37,7 @@ func (c *client) GetUser(ctx context.Context, userID string) (*User, *http.Respo
 
 	req_.Header.Add("Accept", "application/json")
 
-	resp_, err := c.client.Do(req_)
+	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -68,10 +68,10 @@ func (c *client) GetUser(ctx context.Context, userID string) (*User, *http.Respo
 	return &r_, resp_, nil
 }
 
-func (c *client) QueryUsers(ctx context.Context, key string, pageSize int, pageIdx int) (*QueryUsersResp, *http.Response, error) {
+func (_c *client) QueryUsers(ctx context.Context, key string, pageSize int, pageIdx int) (*QueryUsersResp, *http.Response, error) {
 	path_ := "/users"
 
-	url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -89,7 +89,7 @@ func (c *client) QueryUsers(ctx context.Context, key string, pageSize int, pageI
 
 	req_.Header.Add("Accept", "application/json")
 
-	resp_, err := c.client.Do(req_)
+	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -120,10 +120,10 @@ func (c *client) QueryUsers(ctx context.Context, key string, pageSize int, pageI
 	return &r_, resp_, nil
 }
 
-func (c *client) QueryUsers2(ctx context.Context, params map[string]string) (*QueryUsersResp, *http.Response, error) {
+func (_c *client) QueryUsers2(ctx context.Context, params map[string]string) (*QueryUsersResp, *http.Response, error) {
 	path_ := "/users"
 
-	url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -141,7 +141,7 @@ func (c *client) QueryUsers2(ctx context.Context, params map[string]string) (*Qu
 
 	req_.Header.Add("Accept", "application/json")
 
-	resp_, err := c.client.Do(req_)
+	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -172,10 +172,10 @@ func (c *client) QueryUsers2(ctx context.Context, params map[string]string) (*Qu
 	return &r_, resp_, nil
 }
 
-func (c *client) QueryUsers3(ctx context.Context, params *map[string]string) (*QueryUsersResp, *http.Response, error) {
+func (_c *client) QueryUsers3(ctx context.Context, params *map[string]string) (*QueryUsersResp, *http.Response, error) {
 	path_ := "/users"
 
-	url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -193,7 +193,7 @@ func (c *client) QueryUsers3(ctx context.Context, params *map[string]string) (*Q
 
 	req_.Header.Add("Accept", "application/json")
 
-	resp_, err := c.client.Do(req_)
+	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -224,10 +224,10 @@ func (c *client) QueryUsers3(ctx context.Context, params *map[string]string) (*Q
 	return &r_, resp_, nil
 }
 
-func (c *client) QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUsersResp, *http.Response, error) {
+func (_c *client) QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUsersResp, *http.Response, error) {
 	path_ := "/users"
 
-	url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -245,7 +245,7 @@ func (c *client) QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUser
 
 	req_.Header.Add("Accept", "application/json")
 
-	resp_, err := c.client.Do(req_)
+	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -276,10 +276,10 @@ func (c *client) QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUser
 	return &r_, resp_, nil
 }
 
-func (c *client) QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUsersResp, *http.Response, error) {
+func (_c *client) QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUsersResp, *http.Response, error) {
 	path_ := "/users"
 
-	url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -297,7 +297,7 @@ func (c *client) QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUse
 
 	req_.Header.Add("Accept", "application/json")
 
-	resp_, err := c.client.Do(req_)
+	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -328,10 +328,10 @@ func (c *client) QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUse
 	return &r_, resp_, nil
 }
 
-func (c *client) QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, *http.Response, error) {
+func (_c *client) QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, *http.Response, error) {
 	path_ := "/users"
 
-	url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -349,7 +349,7 @@ func (c *client) QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, *
 
 	req_.Header.Add("Accept", "application/json")
 
-	resp_, err := c.client.Do(req_)
+	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -380,11 +380,11 @@ func (c *client) QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, *
 	return r_, resp_, nil
 }
 
-func (c *client) UpdateUser(ctx context.Context, id int, user User) (*http.Response, error) {
+func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*http.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", id), 1)
 
-	url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func (c *client) UpdateUser(ctx context.Context, id int, user User) (*http.Respo
 	req_.Header.Add("Accept", "application/json")
 	req_.Header.Add("Content-Type", "application/json")
 
-	resp_, err := c.client.Do(req_)
+	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, err
 	}
@@ -425,13 +425,13 @@ func (c *client) UpdateUser(ctx context.Context, id int, user User) (*http.Respo
 }
 
 // ConfigHTTPClient allows customization of the underlying http.Client.
-func (c *client) ConfigHTTPClient(config func(*http.Client)) Client {
-	config(c.client)
-	return c
+func (_c *client) ConfigHTTPClient(config func(*http.Client)) Client {
+	config(_c.client)
+	return _c
 }
 
 // ShootRest exists solely to fulfill the RestShooter interface contract.
-func (c *client) ShootRest() { /*noop*/ }
+func (_c *client) ShootRest() { /*noop*/ }
 
 func init() {
 	shoot.Register(func(conf shoot.RestConf) Client {

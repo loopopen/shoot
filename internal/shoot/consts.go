@@ -2,7 +2,7 @@ package shoot
 
 const (
 	Shoot       = "shoot"
-	Version     = "v0.7.1"
+	Version     = "v0.7.2"
 	SelfPkgPath = "github.com/lopolopen/shoot"
 )
 

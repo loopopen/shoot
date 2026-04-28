@@ -281,24 +281,6 @@ func parseAlias(doc string) map[string]string {
 	return kvMap
 }
 
-// func getUnderlyingTypeName(expr ast.Expr) string {
-// 	switch t := expr.(type) {
-// 	case *ast.Ident:
-// 		return t.Name
-// 	case *ast.StarExpr:
-// 		// 指针类型，递归获取底层类型
-// 		return getUnderlyingTypeName(t.X)
-// 	case *ast.SelectorExpr:
-// 		// 处理像 pkg.Type 这样的类型
-// 		return getUnderlyingTypeName(t.X) + "." + t.Sel.Name
-// 	case *ast.ArrayType:
-// 		// 处理数组或切片类型
-// 		return "[]" + getUnderlyingTypeName(t.Elt)
-// 	default:
-// 		return fmt.Sprintf("%T", expr)
-// 	}
-// }
-
 func getReturnTypeName(expr ast.Expr) (string, bool) {
 	isPtr := false
 	var typeName string
@@ -314,24 +296,6 @@ func getReturnTypeName(expr ast.Expr) (string, bool) {
 		logx.Fatalf("unsupported return type: %T", expr)
 	}
 	return typeName, isPtr
-}
-
-func isStructType(name string, file *ast.File) bool {
-	for _, decl := range file.Decls {
-		gen, ok := decl.(*ast.GenDecl)
-		if !ok || gen.Tok != token.TYPE {
-			continue
-		}
-		for _, spec := range gen.Specs {
-			typeSpec, ok := spec.(*ast.TypeSpec)
-			if !ok || typeSpec.Name.Name != name {
-				continue
-			}
-			_, isStruct := typeSpec.Type.(*ast.StructType)
-			return isStruct
-		}
-	}
-	return false
 }
 
 type fieldInfo struct {

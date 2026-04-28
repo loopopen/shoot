@@ -12,7 +12,7 @@ type {{camelCase .TypeName}} struct{
 }
 
 {{range $item := .MethodList}}
-func (c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
+func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     {{- $errret := index $.ErrReturnMap . -}}
     {{- $result := index $.ReturnResultMap . -}}
     {{- $ptr := "" -}}
@@ -31,7 +31,7 @@ func (c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     {{- end}}
     {{end}}
 
-    url_, err := url.JoinPath(c.conf.BaseURL(), path_)
+    url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
     if err != nil {
         return {{$errret}}
     }
@@ -91,7 +91,7 @@ func (c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     req_.Header.Add("{{$key}}", "{{$value}}"){{"\n"}}
     {{- end}}
 
-    resp_, err := c.client.Do(req_)
+    resp_, err := _c.client.Do(req_)
     if err != nil {
         return {{$errret}}
     }
@@ -132,13 +132,13 @@ func (c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
 {{end}}
 
 // ConfigHTTPClient allows customization of the underlying http.Client.
-func (c *{{camelCase .TypeName}}) ConfigHTTPClient(config func(*http.Client)) {{.TypeName}} {
-	config(c.client)
-    return c
+func (_c *{{camelCase .TypeName}}) ConfigHTTPClient(config func(*http.Client)) {{.TypeName}} {
+	config(_c.client)
+    return _c
 }
 
 // ShootRest exists solely to fulfill the RestShooter interface contract.
-func (c *{{camelCase .TypeName}}) ShootRest() { /*noop*/ }
+func (_c *{{camelCase .TypeName}}) ShootRest() { /*noop*/ }
 
 func init() {
 	shoot.Register(func(conf shoot.RestConf) {{.TypeName}} {

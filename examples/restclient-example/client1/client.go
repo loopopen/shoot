@@ -1,10 +1,10 @@
-package xclient
+package client1
 
 import (
 	"context"
 	"fmt"
 	"net/http"
-	"restclientexample/xclient/dto"
+	"restclientexample/client1/dto"
 
 	"github.com/lopolopen/shoot"
 )
