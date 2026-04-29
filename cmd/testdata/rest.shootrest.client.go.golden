@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/lopolopen/shoot"
+	"github.com/lopolopen/shoot/cmd/test/restclient/alias"
+	"github.com/lopolopen/shoot/cmd/test/restclient/dto"
 )
 
 type client struct {
@@ -370,6 +372,110 @@ func (_c *client) QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, 
 	}
 
 	var r_ []User
+	err = json.NewDecoder(resp_.Body).Decode(&r_)
+	if err == io.EOF {
+		err = nil //ignore EOF errors caused by empty response body
+	}
+	if err != nil {
+		return nil, resp_, err
+	}
+	return r_, resp_, nil
+}
+
+func (_c *client) QueryUsers7(ctx context.Context, req *dto.QueryUsersReq) ([]dto.User, *http.Response, error) {
+	path_ := "/users"
+
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	query_ := req_.URL.Query()
+	query_.Set("name", fmt.Sprintf("%v", req.Name))
+	query_.Set("size", fmt.Sprintf("%v", req.PageSize))
+	query_.Set("page_idx", fmt.Sprintf("%v", req.PageIdx))
+	req_.URL.RawQuery = query_.Encode()
+
+	req_.Header.Add("Accept", "application/json")
+
+	resp_, err := _c.client.Do(req_)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp_.Body.Close()
+
+	switch {
+	case resp_.StatusCode >= 500:
+		body_, _ := io.ReadAll(resp_.Body)
+		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
+	case resp_.StatusCode >= 400:
+		body_, _ := io.ReadAll(resp_.Body)
+		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
+	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
+		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
+	}
+	if err != nil {
+		return nil, resp_, err
+	}
+
+	var r_ []dto.User
+	err = json.NewDecoder(resp_.Body).Decode(&r_)
+	if err == io.EOF {
+		err = nil //ignore EOF errors caused by empty response body
+	}
+	if err != nil {
+		return nil, resp_, err
+	}
+	return r_, resp_, nil
+}
+
+func (_c *client) QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]alias.User, *http.Response, error) {
+	path_ := "/users"
+
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	query_ := req_.URL.Query()
+	query_.Set("name", fmt.Sprintf("%v", req.Name))
+	query_.Set("size", fmt.Sprintf("%v", req.PageSize))
+	query_.Set("page_idx", fmt.Sprintf("%v", req.PageIdx))
+	req_.URL.RawQuery = query_.Encode()
+
+	req_.Header.Add("Accept", "application/json")
+
+	resp_, err := _c.client.Do(req_)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp_.Body.Close()
+
+	switch {
+	case resp_.StatusCode >= 500:
+		body_, _ := io.ReadAll(resp_.Body)
+		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
+	case resp_.StatusCode >= 400:
+		body_, _ := io.ReadAll(resp_.Body)
+		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
+	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
+		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
+	}
+	if err != nil {
+		return nil, resp_, err
+	}
+
+	var r_ []alias.User
 	err = json.NewDecoder(resp_.Body).Decode(&r_)
 	if err == io.EOF {
 		err = nil //ignore EOF errors caused by empty response body

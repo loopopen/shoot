@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/lopolopen/shoot"
+	"github.com/lopolopen/shoot/cmd/test/restclient/alias"
+	"github.com/lopolopen/shoot/cmd/test/restclient/dto"
 )
 
 type User struct {
@@ -45,6 +47,12 @@ type Client interface {
 
 	//shoot: Get("/users")
 	QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, *http.Response, error)
+
+	//shoot: Get("/users")
+	QueryUsers7(ctx context.Context, req *dto.QueryUsersReq) ([]dto.User, *http.Response, error)
+
+	//shoot: Get("/users")
+	QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]alias.User, *http.Response, error)
 
 	//shoot: Put("/users/{id}")
 	UpdateUser(ctx context.Context, id int, user User) (*http.Response, error)
