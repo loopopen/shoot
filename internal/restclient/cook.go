@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/build"
-	"go/parser"
 	"go/printer"
 	"go/token"
 	"net/http"
@@ -307,79 +305,79 @@ type fieldInfo struct {
 	IsPtr      bool
 }
 
-func extractStructFields(pkgPath, typeName string) ([]fieldInfo, error) {
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, pkgPath, nil, parser.ParseComments)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse package: %w", err)
-	}
+// func extractStructFields(pkgPath, typeName string) ([]fieldInfo, error) {
+// 	fset := token.NewFileSet()
+// 	pkgs, err := parser.ParseDir(fset, pkgPath, nil, parser.ParseComments)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to parse package: %w", err)
+// 	}
 
-	var fields []fieldInfo
-	for _, pkg := range pkgs {
-		for _, file := range pkg.Files {
-			for _, decl := range file.Decls {
-				genDecl, ok := decl.(*ast.GenDecl)
-				if !ok {
-					continue
-				}
-				if genDecl.Tok != token.TYPE {
-					continue
-				}
-				for _, spec := range genDecl.Specs {
-					typeSpec, ok := spec.(*ast.TypeSpec)
-					if !ok {
-						continue
-					}
-					if typeSpec.Name.Name != typeName {
-						continue
-					}
-					structType, ok := typeSpec.Type.(*ast.StructType)
-					if !ok {
-						continue
-					}
-					for _, field := range structType.Fields.List {
-						var alias string
-						var rawTag string
-						if field.Tag != nil {
-							rawTag = field.Tag.Value
-							alias = parseFieldAlias(rawTag)
-						}
-						_, ok := field.Type.(*ast.StarExpr)
-						for _, name := range field.Names {
-							fields = append(fields, fieldInfo{
-								Name:       name.Name,
-								Type:       exprToString(field.Type),
-								Tag:        rawTag,
-								Alias:      alias,
-								IsExported: name.IsExported(),
-								IsPtr:      ok,
-							})
-						}
-						// Handle anonymous fields (embedded structs)
-						if len(field.Names) == 0 {
-							fields = append(fields, fieldInfo{
-								Name:       exprToString(field.Type),
-								Type:       exprToString(field.Type),
-								Tag:        rawTag,
-								Alias:      alias,
-								IsExported: true,
-							})
-						}
-					}
-				}
-			}
-		}
-	}
-	return fields, nil
-}
+// 	var fields []fieldInfo
+// 	for _, pkg := range pkgs {
+// 		for _, file := range pkg.Files {
+// 			for _, decl := range file.Decls {
+// 				genDecl, ok := decl.(*ast.GenDecl)
+// 				if !ok {
+// 					continue
+// 				}
+// 				if genDecl.Tok != token.TYPE {
+// 					continue
+// 				}
+// 				for _, spec := range genDecl.Specs {
+// 					typeSpec, ok := spec.(*ast.TypeSpec)
+// 					if !ok {
+// 						continue
+// 					}
+// 					if typeSpec.Name.Name != typeName {
+// 						continue
+// 					}
+// 					structType, ok := typeSpec.Type.(*ast.StructType)
+// 					if !ok {
+// 						continue
+// 					}
+// 					for _, field := range structType.Fields.List {
+// 						var alias string
+// 						var rawTag string
+// 						if field.Tag != nil {
+// 							rawTag = field.Tag.Value
+// 							alias = parseFieldAlias(rawTag)
+// 						}
+// 						_, ok := field.Type.(*ast.StarExpr)
+// 						for _, name := range field.Names {
+// 							fields = append(fields, fieldInfo{
+// 								Name:       name.Name,
+// 								Type:       exprToString(field.Type),
+// 								Tag:        rawTag,
+// 								Alias:      alias,
+// 								IsExported: name.IsExported(),
+// 								IsPtr:      ok,
+// 							})
+// 						}
+// 						// Handle anonymous fields (embedded structs)
+// 						if len(field.Names) == 0 {
+// 							fields = append(fields, fieldInfo{
+// 								Name:       exprToString(field.Type),
+// 								Type:       exprToString(field.Type),
+// 								Tag:        rawTag,
+// 								Alias:      alias,
+// 								IsExported: true,
+// 							})
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// 	return fields, nil
+// }
 
-func getPkgDir(importPath string) (string, error) {
-	pkg, err := build.Import(importPath, "", build.FindOnly)
-	if err != nil {
-		return "", err
-	}
-	return pkg.Dir, nil
-}
+// func getPkgDir(importPath string) (string, error) {
+// 	pkg, err := build.Import(importPath, "", build.FindOnly)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return pkg.Dir, nil
+// }
 
 func parseFieldAlias(tag string) string {
 	t := reflect.StructTag(strings.Trim(tag, "`"))

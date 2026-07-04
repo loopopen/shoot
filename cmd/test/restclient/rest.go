@@ -22,6 +22,11 @@ type QueryUsersReq struct {
 
 type QueryUsersResp struct{}
 
+type Rest[T any] struct {
+	Data T      `json:"data"`
+	Code string `json:"code"`
+}
+
 type Client interface {
 	shoot.RestClient[Client]
 
@@ -53,6 +58,9 @@ type Client interface {
 
 	//shoot: Get("/users")
 	QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]alias.User, *http.Response, error)
+
+	//shoot: Get("/users")
+	QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]User], *http.Response, error)
 
 	//shoot: Put("/users/{id}")
 	UpdateUser(ctx context.Context, id int, user User) (*http.Response, error)
