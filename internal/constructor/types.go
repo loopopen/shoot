@@ -57,6 +57,7 @@ type TmplData struct {
 	TypeParamList     string
 	TypeParamNameList string
 	TypeMap           map[string]string
+	Mark              bool
 }
 
 func NewTmplData(cmdline, version string) *TmplData {
@@ -81,6 +82,7 @@ type Flags struct {
 	opt     bool
 	exp     bool
 	short   bool
+	mark    bool
 }
 
 type Field struct {
