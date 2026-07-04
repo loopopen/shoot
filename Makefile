@@ -1,14 +1,12 @@
 .PHONY: test release
 
-golden:
-	cd ./cmd/test && go generate ./...
-	go test ./cmd
-
 golden-up:
 	go test ./cmd -update
 
 test:
 	cd ./internal && go test ./...
+	cd ./cmd/test && go generate ./...
+	go test ./cmd
 
 gen-all-x:
 	cd ./examples/constructor-example && go generate ./...
@@ -21,7 +19,7 @@ gen-all-x:
 tag:
 	grep -o 'v[^"]*' ./internal/shoot/consts.go
 
-release: test golden
+release: test
 	sed -i '' "s/= \"v[^\"]*\"/= \"${tag}\"/" ./internal/shoot/consts.go
 	make gen-all-x
 	git add -A

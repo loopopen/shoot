@@ -61,4 +61,5 @@ func (g *Generator) makeNew() {
 	g.data.DefaultValueMap = defValueMap
 	g.data.Option = g.flags.opt
 	g.data.Short = g.flags.short
+	g.data.Mark = g.flags.mark
 }

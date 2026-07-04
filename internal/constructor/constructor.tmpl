@@ -153,5 +153,7 @@ type {{$Setter}} interface { {{"\n"}}
 {{- end -}}
 {{- end}}
 
+{{if .Mark -}}
 // ShootNew exists solely to fulfill the NewShooter interface contract
 func ({{$this}} {{$TypeName}}) ShootNew() { /*noop*/ }
+{{- end}}
