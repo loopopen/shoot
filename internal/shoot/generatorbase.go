@@ -110,6 +110,7 @@ func (g *GeneratorBase) ParseCommonFlags(sub *flag.FlagSet) {
 	r := sub.Bool("r", false, "raw source (alias for raw)")
 	version := sub.String("version", "", "pin version")
 	ver := sub.String("ver", "", "pin version (alias for version)")
+	postfix := sub.String("postfix", "", "postfix of generated file name")
 
 	args := flag.Args()
 	if len(args) <= 1 {
@@ -166,13 +167,20 @@ func (g *GeneratorBase) ParseCommonFlags(sub *flag.FlagSet) {
 		Verbose:   *v || *verbose,
 		Raw:       *r || *raw,
 		Version:   *ver,
+		Postfix:   *postfix,
 	}
 }
 
 func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
+	postfix := g.commonFlags.Postfix
+	if postfix == "" {
+		postfix = "go"
+	} else {
+		postfix = fmt.Sprintf("%s.go", postfix)
+	}
 	cmd := Shoot + g.subCmd
 	if pkgScope {
-		return fmt.Sprintf("%s.%s.go", cmd, typeName)
+		return fmt.Sprintf("%s.%s.%s", cmd, typeName, postfix)
 	}
 	fileName := g.commonFlags.FileName
 	if fileName == "" {
@@ -184,12 +192,12 @@ func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
 
 	gofile := strings.TrimSuffix(fileName, ".go")
 	if typeName == "" {
-		return fmt.Sprintf("%s.%s.go", gofile, cmd)
+		return fmt.Sprintf("%s.%s.%s", gofile, cmd, postfix)
 	}
 	if !ast.IsExported(typeName) {
 		typeName = "_" + typeName
 	}
-	return fmt.Sprintf("%s.%s.%s.go", gofile, cmd, strings.ToLower(typeName))
+	return fmt.Sprintf("%s.%s.%s.%s", gofile, cmd, strings.ToLower(typeName), postfix)
 }
 
 func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Package {

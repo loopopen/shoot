@@ -9,4 +9,5 @@ type CommonFlags struct {
 	TypeNames []string
 	FileName  string
 	Version   string
+	Postfix   string
 }
