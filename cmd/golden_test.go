@@ -84,9 +84,9 @@ var goldens_rest = []Golden{
 
 var goldens_map = []Golden{
 	{
-		cmd: "shoot map -path=../dest -type=Order",
+		cmd: "shoot map -path=../dest -postfix=x -type=Order",
 		names: []string{
-			"map_src.shootmap.order.go",
+			"map_src.shootmap.order.x.go",
 		},
 	},
 	{
