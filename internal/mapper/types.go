@@ -63,6 +63,8 @@ type TmplData struct {
 	WriteMethodName string //toModel
 	IsToOnly        bool
 	IsFromOnly      bool
+
+	Mark bool
 }
 
 func NewTmplData(cmdline, version string) *TmplData {
@@ -76,6 +78,7 @@ type Flags struct {
 	destTypes  map[string]string
 	alias      string
 	way        Way
+	mark       bool
 	ignoreCase bool
 }
 

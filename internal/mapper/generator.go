@@ -88,6 +88,7 @@ func (g *Generator) ParseFlags() {
 	destTypes := sub.String("to", "", "destination type names to map to (must align to -type)")
 	var way Way
 	sub.Var(&way, "way", "limit the mapping way(toonly/->, fromonly/<-, both/<->)")
+	mark := sub.Bool("mark", true, "generate mark function ShootNew to implement the NewShooter interface")
 	ic := sub.Bool("i", false, "enables case‑insensitive field name matching")
 
 	g.ParseCommonFlags(sub)
@@ -129,6 +130,7 @@ func (g *Generator) ParseFlags() {
 		destTypes:  typMap,
 		alias:      *alias,
 		way:        way,
+		mark:       *mark,
 		ignoreCase: *ic,
 	}
 }
@@ -197,6 +199,7 @@ func (g *Generator) MakeData(srcTypeName string) (any, bool) {
 	g.data.QualifiedDestTypeName = types.TypeString(destTyp, g.qualifier)
 	g.data.IsToOnly = g.flags.way == WayToOnly
 	g.data.IsFromOnly = g.flags.way == WayFromOnly
+	g.data.Mark = g.flags.mark
 	g.data.SetTypeName(srcTypeName)
 	g.data.SetPackageName(g.Pkg().Name)
 
