@@ -45,7 +45,7 @@ func (g *Generator) handleSelectorExpr(paramType *ast.SelectorExpr, name *ast.Id
 	st, ok := typ.Underlying().(*types.Struct)
 	if ok {
 		g.setBodyParamName(methodName, name.Name)
-		g.handleStruct2(st, name, methodName)
+		g.handleStruct(st, name, methodName)
 	}
 }
 
@@ -70,7 +70,7 @@ func extractFieldsFromTypes(st *types.Struct) []fieldInfo {
 	return fields
 }
 
-func (g *Generator) handleStruct2(st *types.Struct, name *ast.Ident, methodName string) {
+func (g *Generator) handleStruct(st *types.Struct, name *ast.Ident, methodName string) {
 	if g.data.IsParamPtrMap[methodName] == nil {
 		g.data.IsParamPtrMap[methodName] = make(map[string]bool)
 	}
@@ -153,7 +153,7 @@ func (g *Generator) handleIdent(paramType *ast.Ident, name *ast.Ident, methodNam
 	st, ok := typ.Underlying().(*types.Struct)
 	if ok {
 		g.setBodyParamName(methodName, name.Name)
-		g.handleStruct2(st, name, methodName)
+		g.handleStruct(st, name, methodName)
 	} else {
 		if shoot.Contains(g.data.PathParamsMap[methodName], name.Name) {
 			return
