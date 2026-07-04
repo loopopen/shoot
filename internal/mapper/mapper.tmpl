@@ -269,5 +269,7 @@ func ({{$s}} *{{.TypeName}}) {{$FromDest}}({{$d}} *{{.QualifiedDestTypeName}}) *
 }
 {{end}}
 
+{{if .Mark -}}
 // ShootMap exists solely to fulfill the MapShooter interface contract
 func ({{$s}} {{.TypeName}}) ShootMap() { /*noop*/ }
+{{- end}}
