@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/lopolopen/shoot/internal/global"
 	"github.com/lopolopen/shoot/internal/shoot"
 	"github.com/lopolopen/shoot/internal/tools/logx"
 	"golang.org/x/tools/go/packages"
@@ -359,21 +360,25 @@ func qualifiedName(t types.Type, qf types.Qualifier) (string, bool) {
 }
 
 func parseGetSetComment(doc string) (bool, bool) {
-	regGet := regexp.MustCompile(`(?im)^shoot:.*?\Wget(;.*|\s*)$`)
-	regSet := regexp.MustCompile(`(?im)^shoot:.*?\Wset(;.*|\s*)$`)
+	patGet := fmt.Sprintf(`(?im)^%s.*?\bget(;.*|\s*)$`, global.Sign)
+	regGet := regexp.MustCompile(patGet)
+	patSet := fmt.Sprintf(`(?im)^%s.*?\bset(;.*|\s*)$`, global.Sign)
+	regSet := regexp.MustCompile(patSet)
 	get := regGet.MatchString(doc)
 	set := regSet.MatchString(doc)
 	return get, set
 }
 
 func parseNewComment(doc string) bool {
-	regNew := regexp.MustCompile(`(?im)^shoot:.*?\Wnew(;.*|\s*)$`)
+	patNew := fmt.Sprintf(`(?im)^%s.*?\bnew(;.*|\s*)$`, global.Sign)
+	regNew := regexp.MustCompile(patNew)
 	new := regNew.MatchString(doc)
 	return new
 }
 
 func parseDefComment(doc string) (string, bool) {
-	regDef := regexp.MustCompile(`(?im)^shoot:.*?\Wdef(ault)?=([^;\n]+)(;.*|\s*)$`)
+	patDef := fmt.Sprintf(`(?im)^%s.*?\bdef(ault)?=([^;\n]+)(;.*|\s*)$`, global.Sign)
+	regDef := regexp.MustCompile(patDef)
 	ms := regDef.FindStringSubmatch(doc)
 	for idx, m := range ms {
 		if (m == "" || m == "ault") && idx+1 < len(ms) {
@@ -419,9 +424,11 @@ func parseGetterSetter(genDecl *ast.GenDecl) (bool, bool) {
 }
 
 func parseGetterSetterDoc(doc string) (bool, bool) {
-	regGet := regexp.MustCompile(`(?im)^shoot:.*?\Wgetter(;.*|\s*)$`)
-	regSet := regexp.MustCompile(`(?im)^shoot:.*?\Wsetter(;.*|\s*)$`)
-	get := regGet.MatchString(doc)
-	set := regSet.MatchString(doc)
-	return get, set
+	patGetter := fmt.Sprintf(`(?im)^%s.*?\bgetter(;.*|\s*)$`, global.Sign)
+	regGetter := regexp.MustCompile(patGetter)
+	patSetter := fmt.Sprintf(`(?im)^%s.*?\bsetter(;.*|\s*)$`, global.Sign)
+	regSetter := regexp.MustCompile(patSetter)
+	getter := regGetter.MatchString(doc)
+	setter := regSetter.MatchString(doc)
+	return getter, setter
 }

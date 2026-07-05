@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/lopolopen/shoot/internal/global"
 	"github.com/lopolopen/shoot/internal/tools/logx"
 )
 
@@ -244,7 +245,8 @@ func parseKV(str string) map[string]string {
 }
 
 func parsePath(doc string) (string, string, []string, bool) {
-	regReq := regexp.MustCompile(`(?im)^shoot:\W+(get|post|put|patch|delete)\((.*)\)\W*;?\W*$`)
+	patReq := fmt.Sprintf(`(?im)^%s\s*(get|post|put|patch|delete)\((.*)\)\W*;?\W*$`, global.Sign)
+	regReq := regexp.MustCompile(patReq)
 	ms := regReq.FindStringSubmatch(doc)
 	if len(ms) == 0 {
 		return "", "", nil, false
@@ -269,7 +271,8 @@ func parsePath(doc string) (string, string, []string, bool) {
 }
 
 func parseAlias(doc string) map[string]string {
-	regAlias := regexp.MustCompile(`(?m)^shoot:.*?\Walias=([^;\n]+)(;.*|\s*)$`)
+	patAlias := fmt.Sprintf(`(?m)^%s.*?\balias=([^;\n]+)(;.*|\s*)$`, global.Sign)
+	regAlias := regexp.MustCompile(patAlias)
 	ms := regAlias.FindStringSubmatch(doc)
 	if len(ms) == 0 {
 		return nil
