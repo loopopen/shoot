@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/shoot"
 )
 
 func (g *Generator) loadTypeMapperPkg(typeName string) string {

@@ -10,7 +10,7 @@ import (
 	"go/token"
 	"regexp"
 
-	"github.com/lopolopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/tools/logx"
 	"golang.org/x/tools/imports"
 )
 

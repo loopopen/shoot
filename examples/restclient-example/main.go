@@ -7,8 +7,8 @@ import (
 	"restclientexample/myclient"
 	"time"
 
-	"github.com/lopolopen/shoot"
-	"github.com/lopolopen/shoot/middleware"
+	"github.com/loopopen/shoot"
+	"github.com/loopopen/shoot/middleware"
 )
 
 func WaitMiddeleware(next http.RoundTripper) http.RoundTripper {

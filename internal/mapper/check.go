@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/tools/logx"
-	"github.com/lopolopen/shoot/internal/transfer"
+	"github.com/loopopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/transfer"
 )
 
 //tips: write src means read rest, and vice versa

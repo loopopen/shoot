@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/lopolopen/shoot"
-	"github.com/lopolopen/shoot/cmd/test/restclient/alias"
-	"github.com/lopolopen/shoot/cmd/test/restclient/dto"
+	"github.com/loopopen/shoot"
+	"github.com/loopopen/shoot/cmd/test/restclient/alias"
+	"github.com/loopopen/shoot/cmd/test/restclient/dto"
 )
 
 type User struct {

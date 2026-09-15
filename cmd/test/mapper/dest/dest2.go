@@ -2,7 +2,7 @@ package dest
 
 import "time"
 
-//go:generate go run github.com/lopolopen/shoot/cmd/shoot new -getset -type=Order2 -ver=test
+//go:generate go run github.com/loopopen/shoot/cmd/shoot new -getset -type=Order2 -ver=test
 
 type Order2 struct {
 	id        string

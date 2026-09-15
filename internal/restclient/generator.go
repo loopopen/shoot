@@ -6,7 +6,7 @@ import (
 	"go/ast"
 	"go/types"
 
-	"github.com/lopolopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/shoot"
 )
 
 const SubCmd = "rest"

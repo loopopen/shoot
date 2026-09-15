@@ -1,4 +1,4 @@
-//go:generate go run github.com/lopolopen/shoot/cmd/shoot new -getset -opt -short -type=RestConf -ver=v0.0.0
+//go:generate go run github.com/loopopen/shoot/cmd/shoot new -getset -opt -short -type=RestConf -ver=v0.0.0
 package shoot
 
 import (
@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lopolopen/shoot/middleware"
+	"github.com/loopopen/shoot/middleware"
 )
 
 // RestConf holds configuration parameters for initializing a RestClient.

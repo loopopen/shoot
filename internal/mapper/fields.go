@@ -5,7 +5,7 @@ import (
 	"go/types"
 	"regexp"
 
-	"github.com/lopolopen/shoot/internal/transfer"
+	"github.com/loopopen/shoot/internal/transfer"
 	"golang.org/x/tools/go/packages"
 )
 

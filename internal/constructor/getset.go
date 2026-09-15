@@ -3,7 +3,7 @@ package constructor
 import (
 	"go/types"
 
-	"github.com/lopolopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/shoot"
 )
 
 func (g *Generator) makeGetSet() {

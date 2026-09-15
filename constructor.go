@@ -1,6 +1,6 @@
 package shoot
 
-import "github.com/lopolopen/shoot/constraints"
+import "github.com/loopopen/shoot/constraints"
 
 type defaulter interface {
 	SetDefault()

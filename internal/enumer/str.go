@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/tools/logx"
 )
 
 func (g *Generator) makeStr(typeName string) {

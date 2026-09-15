@@ -11,7 +11,7 @@ import "encoding/json" {{"\n"}}
 import "database/sql/driver" {{"\n"}}
 {{- end -}}
 {{- if or .JSON .Text .SQL -}}
-import "github.com/lopolopen/shoot" {{"\n"}}
+import "github.com/loopopen/shoot" {{"\n"}}
 {{- end -}}
 {{- if .Gorm -}}
 import "gorm.io/gorm"

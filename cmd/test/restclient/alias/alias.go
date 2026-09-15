@@ -1,7 +1,7 @@
 package alias
 
 import (
-	"github.com/lopolopen/shoot/cmd/test/restclient/dto"
+	"github.com/loopopen/shoot/cmd/test/restclient/dto"
 )
 
 type User = dto.User
