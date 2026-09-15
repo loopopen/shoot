@@ -7,12 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/constructor"
-	"github.com/lopolopen/shoot/internal/enumer"
-	"github.com/lopolopen/shoot/internal/mapper"
-	"github.com/lopolopen/shoot/internal/restclient"
-	"github.com/lopolopen/shoot/internal/shoot"
-	"github.com/lopolopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/constructor"
+	"github.com/loopopen/shoot/internal/enumer"
+	"github.com/loopopen/shoot/internal/mapper"
+	"github.com/loopopen/shoot/internal/restclient"
+	"github.com/loopopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/tools/logx"
 )
 
 var subCmdMap = map[string]string{

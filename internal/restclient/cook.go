@@ -11,8 +11,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/global"
-	"github.com/lopolopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/global"
+	"github.com/loopopen/shoot/internal/tools/logx"
 )
 
 func (g *Generator) cookClient(typeName string) {

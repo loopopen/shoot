@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/lopolopen/shoot"
+	"github.com/loopopen/shoot"
 )
 
 type client struct {

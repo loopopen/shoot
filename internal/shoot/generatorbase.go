@@ -14,9 +14,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/lopolopen/shoot/internal/global"
-	"github.com/lopolopen/shoot/internal/tools/logx"
-	"github.com/lopolopen/shoot/internal/transfer"
+	"github.com/loopopen/shoot/internal/global"
+	"github.com/loopopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/transfer"
 	"golang.org/x/tools/go/packages"
 )
 

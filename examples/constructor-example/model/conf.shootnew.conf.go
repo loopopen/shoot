@@ -2,7 +2,7 @@
 
 package model
 
-import "github.com/lopolopen/shoot"
+import "github.com/loopopen/shoot"
 
 // NewConf constructs a new instance of type Conf
 func NewConf(name string, key1 string) *Conf {

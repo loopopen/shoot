@@ -3,7 +3,7 @@ package transfer_test
 import (
 	"testing"
 
-	"github.com/lopolopen/shoot/internal/transfer"
+	"github.com/loopopen/shoot/internal/transfer"
 )
 
 func TestFirstLowerLetter(t *testing.T) {

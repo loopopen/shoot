@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/lopolopen/shoot"
+	"github.com/loopopen/shoot"
 )
 
 //go:generate go tool shoot new -getset -json -file=$GOFILE

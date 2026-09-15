@@ -2,7 +2,7 @@
 
 package src
 
-import target "github.com/lopolopen/shoot/cmd/test/mapper/dest"
+import target "github.com/loopopen/shoot/cmd/test/mapper/dest"
 
 // ToTarget converts receiver to type target.Dest
 func (s *Src) ToTarget() *target.Dest {

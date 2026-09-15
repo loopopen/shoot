@@ -7,8 +7,8 @@ import (
 	"go/types"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/shoot"
-	"github.com/lopolopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/tools/logx"
 )
 
 const SubCmd = "new"

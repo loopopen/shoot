@@ -1,9 +1,9 @@
 <p align="center">
-  <img height="140" src="https://raw.githubusercontent.com/lopolopen/shoot/refs/heads/main/docs/logo.png" alt="GAP Logo">
+  <img height="140" src="https://raw.githubusercontent.com/loopopen/shoot/refs/heads/main/docs/logo.png" alt="GAP Logo">
 </p>
 
 # shoot
-[![Language](https://img.shields.io/badge/language-英文-blue.svg)](https://github.com/lopolopen/shoot/blob/main/README.md)
+[![Language](https://img.shields.io/badge/language-英文-blue.svg)](https://github.com/loopopen/shoot/blob/main/README.md)
 
 用于"go generate"的一组工具。
 
@@ -25,7 +25,7 @@ map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-type=<SrcType> | -file=<G
 
 ### 安装
 ```zsh
-go get -tool github.com/lopolopen/shoot/cmd/shoot@latest
+go get -tool github.com/loopopen/shoot/cmd/shoot@latest
 ```
 
 ### 生成指令示例：
@@ -108,7 +108,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lopolopen/shoot"
+	"github.com/loopopen/shoot"
 )
 
 type client struct {
@@ -216,8 +216,8 @@ func (o *Order) FromDomain(order_ *domain.Order) *Order {
 ```
 
 ## 更多示例：
-* [示例](https://github.com/lopolopen/shoot/tree/main/examples)
-* [shoot-examples](https://github.com/lopolopen/shoot-examples)
+* [示例](https://github.com/loopopen/shoot/tree/main/examples)
+* [shoot-examples](https://github.com/loopopen/shoot-examples)
 
 # 启发项目：
 * [stringer](https://pkg.go.dev/golang.org/x/tools/cmd/stringer)

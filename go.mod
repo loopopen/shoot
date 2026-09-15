@@ -1,8 +1,6 @@
-module github.com/lopolopen/shoot
+module github.com/loopopen/shoot
 
 go 1.24.0
-
-toolchain go1.24.6
 
 require (
 	github.com/sebdah/goldie/v2 v2.7.1

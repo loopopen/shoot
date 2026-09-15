@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lopolopen/shoot/cmd/test/ctor"
-	"github.com/lopolopen/shoot/internal/constructor"
-	"github.com/lopolopen/shoot/internal/enumer"
-	"github.com/lopolopen/shoot/internal/mapper"
-	"github.com/lopolopen/shoot/internal/restclient"
-	"github.com/lopolopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/cmd/test/ctor"
+	"github.com/loopopen/shoot/internal/constructor"
+	"github.com/loopopen/shoot/internal/enumer"
+	"github.com/loopopen/shoot/internal/mapper"
+	"github.com/loopopen/shoot/internal/restclient"
+	"github.com/loopopen/shoot/internal/shoot"
 	"github.com/sebdah/goldie/v2"
 )
 

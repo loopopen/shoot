@@ -5,7 +5,7 @@ package model
 import (
 	"encoding/json"
 
-	"github.com/lopolopen/shoot"
+	"github.com/loopopen/shoot"
 )
 
 // NewUser constructs a new instance of type User

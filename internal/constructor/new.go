@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/transfer"
+	"github.com/loopopen/shoot/internal/transfer"
 )
 
 func (g *Generator) makeNew() {

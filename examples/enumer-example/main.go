@@ -5,7 +5,7 @@ import (
 	"enumerexample/enums"
 	"fmt"
 
-	"github.com/lopolopen/shoot"
+	"github.com/loopopen/shoot"
 )
 
 type X struct {

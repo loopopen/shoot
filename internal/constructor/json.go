@@ -4,8 +4,8 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/shoot"
-	"github.com/lopolopen/shoot/internal/transfer"
+	"github.com/loopopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/transfer"
 )
 
 func (g *Generator) makeJson() {

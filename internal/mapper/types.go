@@ -5,7 +5,7 @@ import (
 	"go/types"
 	"strings"
 
-	"github.com/lopolopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/shoot"
 )
 
 type Way string

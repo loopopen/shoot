@@ -3,7 +3,7 @@ package src
 import (
 	"time"
 
-	"github.com/lopolopen/shoot/cmd/test/mapper/dest"
+	"github.com/loopopen/shoot/cmd/test/mapper/dest"
 )
 
 type Mapper struct {

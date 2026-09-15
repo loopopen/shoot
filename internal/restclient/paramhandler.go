@@ -6,9 +6,9 @@ import (
 	"go/types"
 	"net/http"
 
-	"github.com/lopolopen/shoot/internal/shoot"
-	"github.com/lopolopen/shoot/internal/tools/logx"
-	"github.com/lopolopen/shoot/internal/transfer"
+	"github.com/loopopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/transfer"
 )
 
 func (g *Generator) handleExpr(paramType ast.Expr, name *ast.Ident, file *ast.File, methodName, httpMethod string) {

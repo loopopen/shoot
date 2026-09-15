@@ -3,7 +3,7 @@ package shoot
 import (
 	"fmt"
 
-	"github.com/lopolopen/shoot/constraints"
+	"github.com/loopopen/shoot/constraints"
 )
 
 // ParseEnum attempts to convert a string into its corresponding enum value.

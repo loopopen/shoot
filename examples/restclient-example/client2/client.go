@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"restclientexample/client2/dto"
 
-	"github.com/lopolopen/shoot"
+	"github.com/loopopen/shoot"
 )
 
 //go:generate go tool shoot rest -type=Client
