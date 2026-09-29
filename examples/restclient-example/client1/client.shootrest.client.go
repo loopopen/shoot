@@ -352,10 +352,14 @@ func (_c *client) ShootRest() { /*noop*/ }
 
 func init() {
 	shoot.Register(func(conf shoot.RestConf) Client {
+		timeout, err := time.ParseDuration(conf.Timeout())
+		if err != nil {
+			panic(err)
+		}
 		return &client{
 			conf: &conf,
 			client: &http.Client{
-				Timeout:   time.Duration(conf.Timeout()) * time.Second,
+				Timeout:   timeout,
 				Transport: conf.BuildMiddleware(),
 			},
 		}

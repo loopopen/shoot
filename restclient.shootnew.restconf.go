@@ -2,12 +2,8 @@
 
 package shoot
 
-import (
-	"time"
-)
-
 // NewRestConf constructs a new instance of type RestConf
-func NewRestConf(baseUrl string, timeout time.Duration, enableLogging bool, defaultHeaders map[string]string) *RestConf {
+func NewRestConf(baseUrl string, timeout string, enableLogging bool, defaultHeaders map[string]string) *RestConf {
 	return &RestConf{
 		baseURL:        baseUrl,
 		timeout:        timeout,
@@ -32,7 +28,7 @@ func BaseURL(baseURL_ string) Option[RestConf, *RestConf] {
 }
 
 // Timeout is a configuration for the filed timeout
-func Timeout(timeout_ time.Duration) Option[RestConf, *RestConf] {
+func Timeout(timeout_ string) Option[RestConf, *RestConf] {
 	return func(r *RestConf) {
 		r.timeout = timeout_
 	}
@@ -58,7 +54,7 @@ func (r *RestConf) BaseURL() string {
 }
 
 // Timeout gets the value of field timeout
-func (r *RestConf) Timeout() time.Duration {
+func (r *RestConf) Timeout() string {
 	return r.timeout
 }
 
@@ -78,7 +74,7 @@ func (r *RestConf) SetBaseURL(baseURL_ string) {
 }
 
 // SetTimeout sets the value of field timeout
-func (r *RestConf) SetTimeout(timeout_ time.Duration) {
+func (r *RestConf) SetTimeout(timeout_ string) {
 	r.timeout = timeout_
 }
 
@@ -95,7 +91,7 @@ func (r *RestConf) SetDefaultHeaders(defaultHeaders_ map[string]string) {
 // RestConfGetter is read-only interface for RestConf type
 type RestConfGetter interface {
 	BaseURL() string
-	Timeout() time.Duration
+	Timeout() string
 	EnableLogging() bool
 	DefaultHeaders() map[string]string
 }
@@ -103,7 +99,7 @@ type RestConfGetter interface {
 // RestConfSetter is write-only interface for RestConf type
 type RestConfSetter interface {
 	SetBaseURL(string)
-	SetTimeout(time.Duration)
+	SetTimeout(string)
 	SetEnableLogging(bool)
 	SetDefaultHeaders(map[string]string)
 }
