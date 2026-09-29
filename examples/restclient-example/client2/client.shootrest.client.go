@@ -22,7 +22,7 @@ type client struct {
 	conf   *shoot.RestConf
 }
 
-func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*http.Response, error) {
+func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", id), 1)
 
@@ -48,25 +48,31 @@ func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*http.Res
 	if err != nil {
 		return nil, err
 	}
-	defer resp_.Body.Close()
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
+	if err != nil {
+		return response_, err
+	}
+	if closeErr_ != nil {
+		return response_, closeErr_
+	}
 
 	switch {
 	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
+		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
 	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
+		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
 	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
 		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
 	}
 	if err != nil {
-		return resp_, err
+		return response_, err
 	}
-	return resp_, nil
+	return response_, nil
 }
 
-func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*http.Response, error) {
+func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", id), 1)
 
@@ -92,22 +98,28 @@ func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*http
 	if err != nil {
 		return nil, err
 	}
-	defer resp_.Body.Close()
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
+	if err != nil {
+		return response_, err
+	}
+	if closeErr_ != nil {
+		return response_, closeErr_
+	}
 
 	switch {
 	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
+		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
 	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
+		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
 	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
 		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
 	}
 	if err != nil {
-		return resp_, err
+		return response_, err
 	}
-	return resp_, nil
+	return response_, nil
 }
 
 // ConfigHTTPClient allows customization of the underlying http.Client.

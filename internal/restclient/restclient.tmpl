@@ -15,6 +15,8 @@ type {{camelCase .TypeName}} struct{
 func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     {{- $errret := index $.ErrReturnMap . -}}
     {{- $result := index $.ReturnResultMap . -}}
+    {{- $wrappedResponse := index $.ResponseMap . -}}
+    {{- $streamResponse := index $.StreamResponseMap . -}}
     {{- $ptr := "" -}}
     {{- if $result.IsPtr -}}
     {{- $ptr = "&" -}}
@@ -95,38 +97,70 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     if err != nil {
         return {{$errret}}
     }
-    defer resp_.Body.Close()
+
+    {{- if $streamResponse}}
+    response_ := shoot.NewStreamResponse(resp_)
+    {{- else}}
+    responseBody_, err := io.ReadAll(resp_.Body)
+    closeErr_ := resp_.Body.Close()
+    {{- if $wrappedResponse}}
+    response_ := shoot.NewResponse(resp_, responseBody_)
+    {{- else}}
+    resp_.Body = io.NopCloser(bytes.NewReader(responseBody_))
+    response_ := resp_
+    {{- end}}
+    if err != nil {
+        {{- if not $result.Type}}
+        return response_, err
+        {{- else}}
+        return nil, response_, err
+        {{- end}}
+    }
+    if closeErr_ != nil {
+        {{- if not $result.Type}}
+        return response_, closeErr_
+        {{- else}}
+        return nil, response_, closeErr_
+        {{- end}}
+    }
+    {{- end}}
 
     switch {
         case resp_.StatusCode >= 500:
-            body_, _ := io.ReadAll(resp_.Body)
-            err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
+            {{- if $streamResponse}}
+            err = fmt.Errorf("server error %d", resp_.StatusCode)
+            {{- else}}
+            err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
+            {{- end}}
         case resp_.StatusCode >= 400:
-            body_, _ := io.ReadAll(resp_.Body)
-            err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
+            {{- if $streamResponse}}
+            err = fmt.Errorf("client error %d", resp_.StatusCode)
+            {{- else}}
+            err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
+            {{- end}}
         case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
             err = fmt.Errorf("not supported error %d",resp_.StatusCode)
     }{{- "\n" -}}
 
     {{- if not $result.Type -}}
     if err != nil {
-        return resp_, err
+        return response_, err
     }
-    return resp_, nil
+    return response_, nil
     {{- else -}}
     if err != nil {
-        return nil, resp_, err
+        return nil, response_, err
     }
 
     var r_ {{$result.Type}}
-    err = json.NewDecoder(resp_.Body).Decode(&r_)
+    err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
     if err == io.EOF {
         err = nil //ignore EOF errors caused by empty response body
     }
     if err != nil {
-        return nil, resp_, err
+        return nil, response_, err
     }
-    return {{$ptr}}r_, resp_, nil
+    return {{$ptr}}r_, response_, nil
     {{- end -}}
 }
 {{end}}
