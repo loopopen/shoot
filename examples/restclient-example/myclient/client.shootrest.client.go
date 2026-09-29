@@ -20,7 +20,7 @@ type client struct {
 	conf   *shoot.RestConf
 }
 
-func (_c *client) Get(ctx context.Context, key string) (*KV, *http.Response, error) {
+func (_c *client) Get(ctx context.Context, key string) (*KV, *shoot.Response, error) {
 	path_ := "/get"
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
@@ -44,34 +44,40 @@ func (_c *client) Get(ctx context.Context, key string) (*KV, *http.Response, err
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp_.Body.Close()
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
+	if err != nil {
+		return nil, response_, err
+	}
+	if closeErr_ != nil {
+		return nil, response_, closeErr_
+	}
 
 	switch {
 	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
+		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
 	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
+		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
 	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
 		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
 	}
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
 	}
 
 	var r_ KV
-	err = json.NewDecoder(resp_.Body).Decode(&r_)
+	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
 		err = nil //ignore EOF errors caused by empty response body
 	}
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
 	}
-	return &r_, resp_, nil
+	return &r_, response_, nil
 }
 
-func (_c *client) Set(ctx context.Context, kv *KV) (*http.Response, error) {
+func (_c *client) Set(ctx context.Context, kv *KV) (*shoot.Response, error) {
 	path_ := "/set"
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
@@ -97,22 +103,64 @@ func (_c *client) Set(ctx context.Context, kv *KV) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp_.Body.Close()
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
+	if err != nil {
+		return response_, err
+	}
+	if closeErr_ != nil {
+		return response_, closeErr_
+	}
 
 	switch {
 	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
+		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
 	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
+		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
 	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
 		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
 	}
 	if err != nil {
-		return resp_, err
+		return response_, err
 	}
-	return resp_, nil
+	return response_, nil
+}
+
+func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
+	path_ := "/download"
+
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
+	if err != nil {
+		return nil, err
+	}
+
+	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req_.Header.Add("Accept", "application/json")
+	req_.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+
+	resp_, err := _c.client.Do(req_)
+	if err != nil {
+		return nil, err
+	}
+	response_ := shoot.NewStreamResponse(resp_)
+
+	switch {
+	case resp_.StatusCode >= 500:
+		err = fmt.Errorf("server error %d", resp_.StatusCode)
+	case resp_.StatusCode >= 400:
+		err = fmt.Errorf("client error %d", resp_.StatusCode)
+	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
+		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
+	}
+	if err != nil {
+		return response_, err
+	}
+	return response_, nil
 }
 
 // ConfigHTTPClient allows customization of the underlying http.Client.

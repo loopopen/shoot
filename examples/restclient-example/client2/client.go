@@ -2,7 +2,6 @@ package client2
 
 import (
 	"context"
-	"net/http"
 	"restclientexample/client2/dto"
 
 	"github.com/loopopen/shoot"
@@ -14,8 +13,8 @@ type Client interface {
 	shoot.RestClient[Client]
 
 	//shoot: Put("/users/{id}")
-	UpdateUser1(ctx context.Context, id int, user User) (*http.Response, error)
+	UpdateUser1(ctx context.Context, id int, user User) (*shoot.Response, error)
 
 	//shoot: Put("/users/{id}")
-	UpdateUser2(ctx context.Context, id int, user dto.User) (*http.Response, error)
+	UpdateUser2(ctx context.Context, id int, user dto.User) (*shoot.Response, error)
 }

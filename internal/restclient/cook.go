@@ -31,6 +31,8 @@ func (g *Generator) cookClient(typeName string) {
 	})
 	g.data.ErrReturnMap = make(map[string]string)
 	g.data.CtxParamMap = make(map[string]string)
+	g.data.ResponseMap = make(map[string]bool)
+	g.data.StreamResponseMap = make(map[string]bool)
 	g.data.DefaultHeaders = map[string]map[string]string{
 		http.MethodGet: {
 			"Accept": "application/json",
@@ -142,8 +144,16 @@ func (g *Generator) cookClient(typeName string) {
 					}
 
 					second2last := exprToString(ftype.Results.List[n-2].Type)
-					if second2last != "*http.Response" {
-						logx.Fatalf("the second to last return value of method %s must be a http response pointer", methodName)
+					switch second2last {
+					case "*shoot.Response":
+						g.data.ResponseMap[methodName] = true
+					case "*shoot.StreamResponse":
+						g.data.StreamResponseMap[methodName] = true
+					case "*http.Response":
+						// Kept for source compatibility. New clients should return
+						// *shoot.Response so parsed bodies remain inspectable.
+					default:
+						logx.Fatalf("the second to last return value of method %s must be *shoot.Response, *shoot.StreamResponse, or *http.Response", methodName)
 					}
 					last := exprToString(ftype.Results.List[n-1].Type)
 					if last != "error" {
@@ -151,6 +161,9 @@ func (g *Generator) cookClient(typeName string) {
 					}
 
 					if n == 3 {
+						if g.data.StreamResponseMap[methodName] {
+							logx.Fatalf("method %s cannot return a decoded result with *shoot.StreamResponse", methodName)
+						}
 						r := ftype.Results.List[0]
 						if len(r.Names) > 0 {
 							logx.Fatalf("method %s with named return list is not supported", methodName)
