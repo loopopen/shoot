@@ -17,7 +17,7 @@ gen-all-x:
 	cd ./examples/mapper-example3 && go generate ./...
 
 tag:
-	grep -o 'v[^"]*' ./internal/shoot/consts.go
+	@grep -o 'v[^"]*' ./internal/shoot/consts.go
 
 release: test
 	sed -i '' "s/= \"v[^\"]*\"/= \"${tag}\"/" ./internal/shoot/consts.go
