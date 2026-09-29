@@ -2,7 +2,6 @@ package restclient
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/loopopen/shoot"
 	"github.com/loopopen/shoot/cmd/test/restclient/alias"
@@ -32,36 +31,39 @@ type Client interface {
 
 	//shoot: Get("/users/{id}")
 	//shoot: alias={userID:id}
-	GetUser(ctx context.Context, userID string) (*User, *http.Response, error)
+	GetUser(ctx context.Context, userID string) (*User, *shoot.Response, error)
 
 	//shoot: Get("/users")
 	//shoot: alias={pageSize:size},{pageIdx:page_idx}
-	QueryUsers(ctx context.Context, key string, pageSize, pageIdx int) (*QueryUsersResp, *http.Response, error)
+	QueryUsers(ctx context.Context, key string, pageSize, pageIdx int) (*QueryUsersResp, *shoot.Response, error)
 
 	//shoot: Get("/users")
-	QueryUsers2(ctx context.Context, params map[string]string) (*QueryUsersResp, *http.Response, error)
+	QueryUsers2(ctx context.Context, params map[string]string) (*QueryUsersResp, *shoot.Response, error)
 
 	//shoot: Get("/users")
-	QueryUsers3(ctx context.Context, params *map[string]string) (*QueryUsersResp, *http.Response, error)
+	QueryUsers3(ctx context.Context, params *map[string]string) (*QueryUsersResp, *shoot.Response, error)
 
 	//shoot: Get("/users")
-	QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUsersResp, *http.Response, error)
+	QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUsersResp, *shoot.Response, error)
 
 	//shoot: Get("/users")
-	QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUsersResp, *http.Response, error)
+	QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUsersResp, *shoot.Response, error)
 
 	//shoot: Get("/users")
-	QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, *http.Response, error)
+	QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, *shoot.Response, error)
 
 	//shoot: Get("/users")
-	QueryUsers7(ctx context.Context, req *dto.QueryUsersReq) ([]dto.User, *http.Response, error)
+	QueryUsers7(ctx context.Context, req *dto.QueryUsersReq) ([]dto.User, *shoot.Response, error)
 
 	//shoot: Get("/users")
-	QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]alias.User, *http.Response, error)
+	QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]alias.User, *shoot.Response, error)
 
 	//shoot: Get("/users")
-	QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]User], *http.Response, error)
+	QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]User], *shoot.Response, error)
 
 	//shoot: Put("/users/{id}")
-	UpdateUser(ctx context.Context, id int, user User) (*http.Response, error)
+	UpdateUser(ctx context.Context, id int, user User) (*shoot.Response, error)
+
+	//shoot: Get("/download")
+	Download(ctx context.Context) (*shoot.StreamResponse, error)
 }

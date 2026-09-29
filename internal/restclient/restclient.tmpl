@@ -15,6 +15,8 @@ type {{camelCase .TypeName}} struct{
 func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     {{- $errret := index $.ErrReturnMap . -}}
     {{- $result := index $.ReturnResultMap . -}}
+    {{- $wrappedResponse := index $.ResponseMap . -}}
+    {{- $streamResponse := index $.StreamResponseMap . -}}
     {{- $ptr := "" -}}
     {{- if $result.IsPtr -}}
     {{- $ptr = "&" -}}
@@ -95,38 +97,56 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     if err != nil {
         return {{$errret}}
     }
-    defer resp_.Body.Close()
 
-    switch {
-        case resp_.StatusCode >= 500:
-            body_, _ := io.ReadAll(resp_.Body)
-            err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
-        case resp_.StatusCode >= 400:
-            body_, _ := io.ReadAll(resp_.Body)
-            err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
-        case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-            err = fmt.Errorf("not supported error %d",resp_.StatusCode)
-    }{{- "\n" -}}
+    {{- if $streamResponse}}
+    response_ := shoot.NewStreamResponse(resp_)
+    {{- else}}
+    responseBody_, err := io.ReadAll(resp_.Body)
+    closeErr_ := resp_.Body.Close()
+    {{- if $wrappedResponse}}
+    response_ := shoot.NewResponse(resp_, responseBody_)
+    {{- else}}
+    resp_.Body = io.NopCloser(bytes.NewReader(responseBody_))
+    response_ := resp_
+    {{- end}}
+    if err != nil {
+        {{- if not $result.Type}}
+        return response_, err
+        {{- else}}
+        return nil, response_, err
+        {{- end}}
+    }
+    if closeErr_ != nil {
+        {{- if not $result.Type}}
+        return response_, closeErr_
+        {{- else}}
+        return nil, response_, closeErr_
+        {{- end}}
+    }
+    {{- end}}
 
-    {{- if not $result.Type -}}
-    if err != nil {
-        return resp_, err
+    {{if not $result.Type}}
+    return response_, nil
+    {{else}}
+    {{- if or $wrappedResponse $streamResponse}}
+    if !response_.IsSuccess() {
+        return nil, response_, nil
     }
-    return resp_, nil
-    {{- else -}}
-    if err != nil {
-        return nil, resp_, err
+    {{- else}}
+    if resp_.StatusCode < http.StatusOK || resp_.StatusCode >= http.StatusMultipleChoices {
+        return nil, response_, nil
     }
+    {{- end}}
 
     var r_ {{$result.Type}}
-    err = json.NewDecoder(resp_.Body).Decode(&r_)
+    err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
     if err == io.EOF {
         err = nil //ignore EOF errors caused by empty response body
     }
     if err != nil {
-        return nil, resp_, err
+        return nil, response_, err
     }
-    return {{$ptr}}r_, resp_, nil
+    return {{$ptr}}r_, response_, nil
     {{- end -}}
 }
 {{end}}
@@ -142,10 +162,14 @@ func (_c *{{camelCase .TypeName}}) ShootRest() { /*noop*/ }
 
 func init() {
 	shoot.Register(func(conf shoot.RestConf) {{.TypeName}} {
+        timeout, err := time.ParseDuration(conf.Timeout())
+        if err != nil {
+            panic(err)
+        }
 		return &{{camelCase .TypeName}}{
 			conf: &conf,
 			client: &http.Client{
-				Timeout: time.Duration(conf.Timeout()) * time.Second,
+				Timeout: timeout,
                 Transport: conf.BuildMiddleware(),
 			},
 		}

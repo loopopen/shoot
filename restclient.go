@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"time"
 
 	"github.com/loopopen/shoot/middleware"
 )
@@ -13,7 +12,7 @@ import (
 // RestConf holds configuration parameters for initializing a RestClient.
 type RestConf struct {
 	baseURL       string
-	timeout       time.Duration
+	timeout       string
 	enableLogging bool
 	//todo: enableTrace    bool
 	defaultHeaders map[string]string

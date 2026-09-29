@@ -22,7 +22,7 @@ type client struct {
 	conf   *shoot.RestConf
 }
 
-func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, pageIdx *int) (*User, *http.Response, error) {
+func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, pageIdx *int) (*User, *shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", userID), 1)
 
@@ -50,34 +50,32 @@ func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, page
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp_.Body.Close()
-
-	switch {
-	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
+	}
+	if closeErr_ != nil {
+		return nil, response_, closeErr_
+	}
+
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ User
-	err = json.NewDecoder(resp_.Body).Decode(&r_)
+	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
 		err = nil //ignore EOF errors caused by empty response body
 	}
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
 	}
-	return &r_, resp_, nil
+	return &r_, response_, nil
 }
 
-func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.QueryUsersResp, *http.Response, error) {
+func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.QueryUsersResp, *shoot.Response, error) {
 	path_ := "/users"
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
@@ -103,34 +101,32 @@ func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.Q
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp_.Body.Close()
-
-	switch {
-	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
+	}
+	if closeErr_ != nil {
+		return nil, response_, closeErr_
+	}
+
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ dto.QueryUsersResp
-	err = json.NewDecoder(resp_.Body).Decode(&r_)
+	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
 		err = nil //ignore EOF errors caused by empty response body
 	}
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
 	}
-	return &r_, resp_, nil
+	return &r_, response_, nil
 }
 
-func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.QueryBooksResp, *http.Response, error) {
+func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.QueryBooksResp, *shoot.Response, error) {
 	path_ := "/books"
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
@@ -157,34 +153,32 @@ func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.Q
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp_.Body.Close()
-
-	switch {
-	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
+	}
+	if closeErr_ != nil {
+		return nil, response_, closeErr_
+	}
+
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ dto.QueryBooksResp
-	err = json.NewDecoder(resp_.Body).Decode(&r_)
+	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
 		err = nil //ignore EOF errors caused by empty response body
 	}
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
 	}
-	return &r_, resp_, nil
+	return &r_, response_, nil
 }
 
-func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.QueryBooksResp, *http.Response, error) {
+func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.QueryBooksResp, *shoot.Response, error) {
 	path_ := "/books"
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
@@ -215,34 +209,32 @@ func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.Quer
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp_.Body.Close()
-
-	switch {
-	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
+	}
+	if closeErr_ != nil {
+		return nil, response_, closeErr_
+	}
+
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ dto.QueryBooksResp
-	err = json.NewDecoder(resp_.Body).Decode(&r_)
+	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
 		err = nil //ignore EOF errors caused by empty response body
 	}
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
 	}
-	return &r_, resp_, nil
+	return &r_, response_, nil
 }
 
-func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[string]interface{}) (*dto.Book, *http.Response, error) {
+func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[string]interface{}) (*dto.Book, *shoot.Response, error) {
 	path_ := "/groups/{id}/books"
 	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", groupID), 1)
 
@@ -269,34 +261,32 @@ func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[strin
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp_.Body.Close()
-
-	switch {
-	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
+	}
+	if closeErr_ != nil {
+		return nil, response_, closeErr_
+	}
+
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ dto.Book
-	err = json.NewDecoder(resp_.Body).Decode(&r_)
+	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
 		err = nil //ignore EOF errors caused by empty response body
 	}
 	if err != nil {
-		return nil, resp_, err
+		return nil, response_, err
 	}
-	return &r_, resp_, nil
+	return &r_, response_, nil
 }
 
-func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*http.Response, error) {
+func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", id), 1)
 
@@ -323,22 +313,17 @@ func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*http.Resp
 	if err != nil {
 		return nil, err
 	}
-	defer resp_.Body.Close()
-
-	switch {
-	case resp_.StatusCode >= 500:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 400:
-		body_, _ := io.ReadAll(resp_.Body)
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(body_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
 	if err != nil {
-		return resp_, err
+		return response_, err
 	}
-	return resp_, nil
+	if closeErr_ != nil {
+		return response_, closeErr_
+	}
+
+	return response_, nil
 }
 
 // ConfigHTTPClient allows customization of the underlying http.Client.
@@ -352,10 +337,14 @@ func (_c *client) ShootRest() { /*noop*/ }
 
 func init() {
 	shoot.Register(func(conf shoot.RestConf) Client {
+		timeout, err := time.ParseDuration(conf.Timeout())
+		if err != nil {
+			panic(err)
+		}
 		return &client{
 			conf: &conf,
 			client: &http.Client{
-				Timeout:   time.Duration(conf.Timeout()) * time.Second,
+				Timeout:   timeout,
 				Transport: conf.BuildMiddleware(),
 			},
 		}
