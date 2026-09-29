@@ -53,16 +53,8 @@ func (_c *client) GetUser(ctx context.Context, userID string) (*User, *shoot.Res
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ User
@@ -111,16 +103,8 @@ func (_c *client) QueryUsers(ctx context.Context, key string, pageSize int, page
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ QueryUsersResp
@@ -169,16 +153,8 @@ func (_c *client) QueryUsers2(ctx context.Context, params map[string]string) (*Q
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ QueryUsersResp
@@ -227,16 +203,8 @@ func (_c *client) QueryUsers3(ctx context.Context, params *map[string]string) (*
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ QueryUsersResp
@@ -285,16 +253,8 @@ func (_c *client) QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUse
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ QueryUsersResp
@@ -343,16 +303,8 @@ func (_c *client) QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUs
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ QueryUsersResp
@@ -401,16 +353,8 @@ func (_c *client) QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, 
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ []User
@@ -459,16 +403,8 @@ func (_c *client) QueryUsers7(ctx context.Context, req *dto.QueryUsersReq) ([]dt
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ []dto.User
@@ -517,16 +453,8 @@ func (_c *client) QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ []alias.User
@@ -575,16 +503,8 @@ func (_c *client) QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ Rest[[]User]
@@ -634,17 +554,6 @@ func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Res
 		return response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return response_, err
-	}
 	return response_, nil
 }
 
@@ -669,17 +578,6 @@ func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
 	}
 	response_ := shoot.NewStreamResponse(resp_)
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d", resp_.StatusCode)
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d", resp_.StatusCode)
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return response_, err
-	}
 	return response_, nil
 }
 

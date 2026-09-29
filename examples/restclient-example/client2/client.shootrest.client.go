@@ -58,17 +58,6 @@ func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*shoot.Re
 		return response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return response_, err
-	}
 	return response_, nil
 }
 
@@ -108,17 +97,6 @@ func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*shoo
 		return response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return response_, err
-	}
 	return response_, nil
 }
 

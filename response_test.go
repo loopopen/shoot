@@ -41,6 +41,26 @@ func TestResponseParsedBody(t *testing.T) {
 	}
 }
 
+func TestResponseIsSuccess(t *testing.T) {
+	tests := []struct {
+		statusCode int
+		want       bool
+	}{
+		{statusCode: http.StatusOK, want: true},
+		{statusCode: http.StatusNoContent, want: true},
+		{statusCode: http.StatusFound, want: false},
+		{statusCode: http.StatusBadRequest, want: false},
+		{statusCode: http.StatusInternalServerError, want: false},
+	}
+
+	for _, tt := range tests {
+		response := NewResponse(&http.Response{StatusCode: tt.statusCode}, nil)
+		if got := response.IsSuccess(); got != tt.want {
+			t.Errorf("status %d: IsSuccess() = %t, want %t", tt.statusCode, got, tt.want)
+		}
+	}
+}
+
 func TestStreamResponse(t *testing.T) {
 	rawBody := &trackingReadCloser{Reader: strings.NewReader("stream")}
 	response := NewStreamResponse(&http.Response{
