@@ -60,16 +60,8 @@ func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, page
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ User
@@ -119,16 +111,8 @@ func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.Q
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ dto.QueryUsersResp
@@ -179,16 +163,8 @@ func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.Q
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ dto.QueryBooksResp
@@ -243,16 +219,8 @@ func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.Quer
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ dto.QueryBooksResp
@@ -303,16 +271,8 @@ func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[strin
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ dto.Book
@@ -363,17 +323,6 @@ func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Res
 		return response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return response_, err
-	}
 	return response_, nil
 }
 

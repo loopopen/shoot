@@ -54,16 +54,8 @@ func (_c *client) Get(ctx context.Context, key string) (*KV, *shoot.Response, er
 		return nil, response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return nil, response_, err
+	if !response_.IsSuccess() {
+		return nil, response_, nil
 	}
 
 	var r_ KV
@@ -113,17 +105,6 @@ func (_c *client) Set(ctx context.Context, kv *KV) (*shoot.Response, error) {
 		return response_, closeErr_
 	}
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return response_, err
-	}
 	return response_, nil
 }
 
@@ -149,17 +130,6 @@ func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
 	}
 	response_ := shoot.NewStreamResponse(resp_)
 
-	switch {
-	case resp_.StatusCode >= 500:
-		err = fmt.Errorf("server error %d", resp_.StatusCode)
-	case resp_.StatusCode >= 400:
-		err = fmt.Errorf("client error %d", resp_.StatusCode)
-	case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-		err = fmt.Errorf("not supported error %d", resp_.StatusCode)
-	}
-	if err != nil {
-		return response_, err
-	}
 	return response_, nil
 }
 

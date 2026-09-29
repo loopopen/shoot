@@ -125,32 +125,18 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     }
     {{- end}}
 
-    switch {
-        case resp_.StatusCode >= 500:
-            {{- if $streamResponse}}
-            err = fmt.Errorf("server error %d", resp_.StatusCode)
-            {{- else}}
-            err = fmt.Errorf("server error %d: %s", resp_.StatusCode, string(responseBody_))
-            {{- end}}
-        case resp_.StatusCode >= 400:
-            {{- if $streamResponse}}
-            err = fmt.Errorf("client error %d", resp_.StatusCode)
-            {{- else}}
-            err = fmt.Errorf("client error %d: %s", resp_.StatusCode, string(responseBody_))
-            {{- end}}
-        case resp_.StatusCode >= 300 || resp_.StatusCode < 200:
-            err = fmt.Errorf("not supported error %d",resp_.StatusCode)
-    }{{- "\n" -}}
-
-    {{- if not $result.Type -}}
-    if err != nil {
-        return response_, err
-    }
+    {{if not $result.Type}}
     return response_, nil
-    {{- else -}}
-    if err != nil {
-        return nil, response_, err
+    {{else}}
+    {{- if or $wrappedResponse $streamResponse}}
+    if !response_.IsSuccess() {
+        return nil, response_, nil
     }
+    {{- else}}
+    if resp_.StatusCode < http.StatusOK || resp_.StatusCode >= http.StatusMultipleChoices {
+        return nil, response_, nil
+    }
+    {{- end}}
 
     var r_ {{$result.Type}}
     err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
