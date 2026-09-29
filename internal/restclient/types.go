@@ -18,12 +18,14 @@ type TmplData struct {
 		Type  string
 		IsPtr bool
 	} // method may return one result or not
-	ErrReturnMap    map[string]string
-	BodyParamMap    map[string]string
-	QueryDictMap    map[string]string
-	DefaultHeaders  map[string]map[string]string
-	CtxParamMap     map[string]string
-	BodyHTTPMethods []string
+	ErrReturnMap      map[string]string
+	BodyParamMap      map[string]string
+	QueryDictMap      map[string]string
+	DefaultHeaders    map[string]map[string]string
+	CtxParamMap       map[string]string
+	BodyHTTPMethods   []string
+	ResponseMap       map[string]bool
+	StreamResponseMap map[string]bool
 }
 
 func NewTmplData(cmdline, version string) *TmplData {

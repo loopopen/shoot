@@ -21,7 +21,7 @@ func WaitMiddeleware(next http.RoundTripper) http.RoundTripper {
 func main() {
 	myC := shoot.NewRest[myclient.Client](
 		shoot.BaseURL("http://localhost:8080"),
-		shoot.Timeout(3000*time.Millisecond),
+		shoot.Timeout("3000ms"),
 		shoot.EnableLogging(true),
 		shoot.Use(WaitMiddeleware),
 	)
