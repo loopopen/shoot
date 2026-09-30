@@ -122,8 +122,13 @@ func (g *Generator) cookClient(typeName string) {
 					}
 					if ftype.Params != nil {
 						for _, param := range ftype.Params.List {
+							if len(param.Names) == 0 {
+								logx.Fatalf("method %s has an unnamed parameter; all REST client parameters must be named", methodName)
+							}
 							for _, name := range param.Names {
-								g.handleExpr(param.Type, name, f, methodName, httpMethod)
+								if err := g.handleExpr(param.Type, name, methodName, httpMethod); err != nil {
+									logx.Fatalf("%s", err)
+								}
 								if _, ok := param.Type.(*ast.StarExpr); ok {
 									g.data.IsParamPtrMap[methodName][name.Name] = true
 								}
