@@ -17,4 +17,13 @@ type Client interface {
 
 	//shoot: Put("/users/{id}")
 	UpdateUser2(ctx context.Context, id int, user dto.User) (*shoot.Response, error)
+
+	//shoot: Post("/ping")
+	PostNoBody() (*shoot.Response, error)
+
+	//shoot: Post("/enabled")
+	SetEnabled(ctx context.Context, enabled bool) (*shoot.Response, error)
+
+	//shoot: Patch("/users/{id}/labels")
+	ReplaceLabels(ctx context.Context, id int, labels map[string]string) (*shoot.Response, error)
 }

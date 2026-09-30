@@ -4,49 +4,49 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"net/http"
 
 	"github.com/loopopen/shoot/internal/shoot"
-	"github.com/loopopen/shoot/internal/tools/logx"
 	"github.com/loopopen/shoot/internal/transfer"
 )
 
-func (g *Generator) handleExpr(paramType ast.Expr, name *ast.Ident, file *ast.File, methodName, httpMethod string) {
+func (g *Generator) handleExpr(paramType ast.Expr, name *ast.Ident, methodName, httpMethod string) error {
+	if g.isContextParam(paramType) {
+		g.data.CtxParamMap[methodName] = name.Name
+		return nil
+	}
+	if shoot.Contains(g.data.PathParamsMap[methodName], name.Name) {
+		return nil
+	}
+	if shoot.Contains(g.data.BodyHTTPMethods, httpMethod) {
+		return g.setBodyParamName(methodName, name.Name)
+	}
+
 	switch t := paramType.(type) {
 	case *ast.SelectorExpr:
-		// fmt.Println("::", "SelectorExpr")
-		g.handleSelectorExpr(t, name, methodName)
+		return g.handleSelectorExpr(t, name, methodName)
 	case *ast.Ident:
-		// fmt.Println("::", "Ident")
-		g.handleIdent(t, name, methodName)
+		return g.handleIdent(t, name, methodName)
 	case *ast.MapType:
-		// fmt.Println("::", "MapType")
-		g.handleMapType(name, methodName, httpMethod)
+		return g.handleMapType(t, name, methodName)
 	case *ast.StarExpr:
-		// fmt.Println("::", "StarExpr")
-		g.handleExpr(t.X, name, file, methodName, httpMethod)
+		return g.handleExpr(t.X, name, methodName, httpMethod)
 	default:
-		logx.Fatalf("unsupported param type %T of method %s", t, methodName)
+		return fmt.Errorf("unsupported parameter %q with type %T in method %s", name.Name, t, methodName)
 	}
 }
 
-func (g *Generator) handleSelectorExpr(paramType *ast.SelectorExpr, name *ast.Ident, methodName string) {
+func (g *Generator) handleSelectorExpr(paramType *ast.SelectorExpr, name *ast.Ident, methodName string) error {
 	typ := g.Pkg().TypesInfo.Types[paramType].Type
-	named, ok := typ.(*types.Named)
-	if ok {
-		obj := named.Obj()
-		pkgPath := obj.Pkg().Path()
-		if pkgPath == "context" && obj.Name() == "Context" {
-			g.data.CtxParamMap[methodName] = name.Name
-			return
-		}
-	}
-
-	st, ok := typ.Underlying().(*types.Struct)
-	if ok {
-		g.setBodyParamName(methodName, name.Name)
+	switch underlying := typ.Underlying().(type) {
+	case *types.Struct:
+		st := underlying
 		g.handleStruct(st, name, methodName)
+		return nil
+	case *types.Map:
+		return g.handleQueryMapType(underlying, name, methodName)
 	}
+	g.data.QueryParamsMap[methodName] = append(g.data.QueryParamsMap[methodName], name.Name)
+	return nil
 }
 
 func extractFieldsFromTypes(st *types.Struct) []fieldInfo {
@@ -102,96 +102,56 @@ func (g *Generator) handleStruct(st *types.Struct, name *ast.Ident, methodName s
 	}
 }
 
-// func (g *Generator) handleStruct(paramType ast.Expr, paramTypeName string, name *ast.Ident, methodName string) {
-// 	typ := g.Pkg().TypesInfo.Types[paramType].Type
-// 	named, ok := typ.(*types.Named)
-// 	if !ok {
-// 		return
-// 	}
-
-// 	if g.data.IsParamPtrMap[methodName] == nil {
-// 		g.data.IsParamPtrMap[methodName] = make(map[string]bool)
-// 	}
-// 	if g.data.AliasMap[methodName] == nil {
-// 		g.data.AliasMap[methodName] = make(map[string]string)
-// 	}
-
-// 	obj := named.Obj()
-// 	pkgPath := obj.Pkg().Path()
-// 	fullPath, err := getPkgDir(pkgPath)
-// 	if err != nil {
-// 		logx.Fatalf("get pkg dir: %s", err)
-// 	}
-// 	fields, err := extractStructFields(fullPath, paramTypeName)
-// 	if err != nil {
-// 		logx.Fatalf("extract struct fields: %s", err)
-// 	}
-// 	for _, f := range fields {
-// 		var key, value string
-// 		if f.IsExported {
-// 			key = transfer.ToCamelCase(f.Name)
-// 			value = fmt.Sprintf("%s.%s", name.Name, f.Name)
-// 		} else {
-// 			key = f.Name
-// 			value = fmt.Sprintf("%s.%s()", name.Name, transfer.ToPascalCase(f.Name))
-// 		}
-// 		if f.IsPtr {
-// 			g.data.IsParamPtrMap[methodName][value] = true
-// 		}
-// 		g.data.QueryParamsMap[methodName] = append(g.data.QueryParamsMap[methodName], value)
-
-// 		if f.Alias != "" {
-// 			g.data.AliasMap[methodName][value] = f.Alias
-// 		} else {
-// 			g.data.AliasMap[methodName][value] = key
-// 		}
-// 	}
-// }
-
-func (g *Generator) handleIdent(paramType *ast.Ident, name *ast.Ident, methodName string) {
+func (g *Generator) handleIdent(paramType *ast.Ident, name *ast.Ident, methodName string) error {
 	typ := g.Pkg().TypesInfo.Types[paramType].Type
-	st, ok := typ.Underlying().(*types.Struct)
-	if ok {
-		g.setBodyParamName(methodName, name.Name)
+	switch underlying := typ.Underlying().(type) {
+	case *types.Struct:
+		st := underlying
 		g.handleStruct(st, name, methodName)
-	} else {
-		if shoot.Contains(g.data.PathParamsMap[methodName], name.Name) {
-			return
-		}
+	case *types.Map:
+		return g.handleQueryMapType(underlying, name, methodName)
+	default:
 		g.data.QueryParamsMap[methodName] = append(g.data.QueryParamsMap[methodName], name.Name) //basic type
 	}
+	return nil
 }
 
-func (g *Generator) handleMapType(name *ast.Ident, methodName string, httpMethod string) {
-	if httpMethod == http.MethodGet || httpMethod == http.MethodDelete {
-		g.data.QueryDictMap[methodName] = name.Name
-	} else {
-		//todo: error
+func (g *Generator) handleMapType(paramType *ast.MapType, name *ast.Ident, methodName string) error {
+	typ, ok := g.Pkg().TypesInfo.TypeOf(paramType).Underlying().(*types.Map)
+	if !ok {
+		return fmt.Errorf("parameter %q of method %s is not a map", name.Name, methodName)
 	}
+	return g.handleQueryMapType(typ, name, methodName)
 }
 
-func (g *Generator) setBodyParamName(methodName, paramName string) {
-	if _, ok := g.data.BodyParamMap[methodName]; ok {
-		logx.Fatalf("ambiguous body binding of method %s", methodName)
+func (g *Generator) handleQueryMapType(typ *types.Map, name *ast.Ident, methodName string) error {
+	key, ok := typ.Key().Underlying().(*types.Basic)
+	if !ok || key.Kind() != types.String {
+		return fmt.Errorf("query map parameter %q of method %s must have string keys", name.Name, methodName)
+	}
+	if previous, ok := g.data.QueryDictMap[methodName]; ok {
+		return fmt.Errorf("method %s has multiple query map parameters %q and %q", methodName, previous, name.Name)
+	}
+	g.data.QueryDictMap[methodName] = name.Name
+	return nil
+}
+
+func (g *Generator) setBodyParamName(methodName, paramName string) error {
+	if previous, ok := g.data.BodyParamMap[methodName]; ok {
+		return fmt.Errorf("method %s has ambiguous body parameters %q and %q; POST, PUT, and PATCH methods accept at most one non-path parameter", methodName, previous, paramName)
 	}
 	g.data.BodyParamMap[methodName] = paramName
+	return nil
 }
 
-func (g *Generator) getUnderlyingType(expr ast.Expr) types.Type {
-	var ident *ast.Ident
-	switch t := expr.(type) {
-	case *ast.Ident:
-		ident = t
-	case *ast.SelectorExpr:
-		ident = t.Sel
-	case *ast.StarExpr:
-		return g.getUnderlyingType(t.X)
-	default:
-		return nil
+func (g *Generator) isContextParam(expr ast.Expr) bool {
+	typ := g.Pkg().TypesInfo.TypeOf(expr)
+	if typ == nil {
+		return false
 	}
-
-	if obj, ok := g.Pkg().TypesInfo.Uses[ident]; ok {
-		return obj.Type().Underlying()
+	named, ok := types.Unalias(typ).(*types.Named)
+	if !ok || named.Obj().Pkg() == nil {
+		return false
 	}
-	return nil
+	return named.Obj().Pkg().Path() == "context" && named.Obj().Name() == "Context"
 }
