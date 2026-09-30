@@ -101,3 +101,15 @@ shoot: headers=
 		})
 	}
 }
+
+func TestSetBodyParamNameRejectsAmbiguousBinding(t *testing.T) {
+	g := &Generator{data: NewTmplData("test", "test")}
+	g.data.BodyParamMap = make(map[string]string)
+
+	if err := g.setBodyParamName("Update", "payload"); err != nil {
+		t.Fatalf("first body parameter returned error: %v", err)
+	}
+	if err := g.setBodyParamName("Update", "options"); err == nil {
+		t.Fatal("second body parameter did not return an ambiguity error")
+	}
+}

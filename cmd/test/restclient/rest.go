@@ -64,6 +64,15 @@ type Client interface {
 	//shoot: Put("/users/{id}")
 	UpdateUser(ctx context.Context, id int, user User) (*shoot.Response, error)
 
+	//shoot: Post("/ping")
+	PostNoBody() (*shoot.Response, error)
+
+	//shoot: Post("/enabled")
+	SetEnabled(ctx context.Context, enabled bool) (*shoot.Response, error)
+
+	//shoot: Patch("/users/{id}/labels")
+	ReplaceLabels(ctx context.Context, id int, labels map[string]string) (*shoot.Response, error)
+
 	//shoot: Get("/download")
 	Download(ctx context.Context) (*shoot.StreamResponse, error)
 }

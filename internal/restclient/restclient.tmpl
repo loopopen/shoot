@@ -41,15 +41,18 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     {{$body := "nil"}}
     {{if in $httpmethod $.BodyHTTPMethods}}
     {{$p := index $.BodyParamMap .}}
+    {{if $p}}
     bodyJson_, err := json.Marshal({{$p}})
     if err != nil {
         return {{$errret}}
     }
     {{$body = "bytes.NewReader(bodyJson_)"}}
     {{end}}
+    {{end}}
 
-    {{if $.CtxParamMap}}
-    req_, err := http.NewRequestWithContext({{index $.CtxParamMap .}}, "{{$httpmethod}}", url_, {{$body}})
+    {{$ctx := index $.CtxParamMap .}}
+    {{if $ctx}}
+    req_, err := http.NewRequestWithContext({{$ctx}}, "{{$httpmethod}}", url_, {{$body}})
     {{else}}
     req_, err := http.NewRequest("{{$httpmethod}}", url_, {{$body}})
     {{end -}}
@@ -79,9 +82,17 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     {{- end -}}
     {{- end -}}
     {{- if $qd -}}
+    {{- if index $isPtrMap $qd -}}
+    if {{$qd}} != nil {
+        for k, v := range *{{$qd}} {
+            query_.Set(k, fmt.Sprintf("%v", v))
+        }
+    }{{"\n"}}
+    {{- else -}}
     for k, v := range {{$qd}} {
         query_.Set(k, fmt.Sprintf("%v", v))
     }{{"\n"}}
+    {{- end -}}
     {{- end -}}
     {{- if or $qs $qd -}}
     req_.URL.RawQuery = query_.Encode(){{"\n"}}

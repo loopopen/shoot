@@ -100,6 +100,116 @@ func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*shoo
 	return response_, nil
 }
 
+func (_c *client) PostNoBody() (*shoot.Response, error) {
+	path_ := "/ping"
+
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
+	if err != nil {
+		return nil, err
+	}
+
+	req_, err := http.NewRequest("POST", url_, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req_.Header.Add("Accept", "application/json")
+	req_.Header.Add("Content-Type", "application/json")
+
+	resp_, err := _c.client.Do(req_)
+	if err != nil {
+		return nil, err
+	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
+	if err != nil {
+		return response_, err
+	}
+	if closeErr_ != nil {
+		return response_, closeErr_
+	}
+
+	return response_, nil
+}
+
+func (_c *client) SetEnabled(ctx context.Context, enabled bool) (*shoot.Response, error) {
+	path_ := "/enabled"
+
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
+	if err != nil {
+		return nil, err
+	}
+
+	bodyJson_, err := json.Marshal(enabled)
+	if err != nil {
+		return nil, err
+	}
+
+	req_, err := http.NewRequestWithContext(ctx, "POST", url_, bytes.NewReader(bodyJson_))
+	if err != nil {
+		return nil, err
+	}
+
+	req_.Header.Add("Accept", "application/json")
+	req_.Header.Add("Content-Type", "application/json")
+
+	resp_, err := _c.client.Do(req_)
+	if err != nil {
+		return nil, err
+	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
+	if err != nil {
+		return response_, err
+	}
+	if closeErr_ != nil {
+		return response_, closeErr_
+	}
+
+	return response_, nil
+}
+
+func (_c *client) ReplaceLabels(ctx context.Context, id int, labels map[string]string) (*shoot.Response, error) {
+	path_ := "/users/{id}/labels"
+	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", id), 1)
+
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
+	if err != nil {
+		return nil, err
+	}
+
+	bodyJson_, err := json.Marshal(labels)
+	if err != nil {
+		return nil, err
+	}
+
+	req_, err := http.NewRequestWithContext(ctx, "PATCH", url_, bytes.NewReader(bodyJson_))
+	if err != nil {
+		return nil, err
+	}
+
+	req_.Header.Add("Accept", "application/json")
+	req_.Header.Add("Content-Type", "application/json")
+
+	resp_, err := _c.client.Do(req_)
+	if err != nil {
+		return nil, err
+	}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	response_ := shoot.NewResponse(resp_, responseBody_)
+	if err != nil {
+		return response_, err
+	}
+	if closeErr_ != nil {
+		return response_, closeErr_
+	}
+
+	return response_, nil
+}
+
 // ConfigHTTPClient allows customization of the underlying http.Client.
 func (_c *client) ConfigHTTPClient(config func(*http.Client)) Client {
 	config(_c.client)
