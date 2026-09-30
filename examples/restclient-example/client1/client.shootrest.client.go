@@ -24,7 +24,7 @@ type client struct {
 
 func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, pageIdx *int) (*User, *shoot.Response, error) {
 	path_ := "/users/{id}"
-	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", userID), 1)
+	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(userID)), 1)
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
@@ -236,7 +236,7 @@ func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.Quer
 
 func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[string]interface{}) (*dto.Book, *shoot.Response, error) {
 	path_ := "/groups/{id}/books"
-	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", groupID), 1)
+	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(groupID)), 1)
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
@@ -288,7 +288,7 @@ func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[strin
 
 func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
-	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", id), 1)
+	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(id)), 1)
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {

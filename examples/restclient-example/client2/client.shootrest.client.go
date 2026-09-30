@@ -24,7 +24,7 @@ type client struct {
 
 func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
-	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", id), 1)
+	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(id)), 1)
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
@@ -63,7 +63,7 @@ func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*shoot.Re
 
 func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
-	path_ = strings.Replace(path_, "{id}", fmt.Sprintf("%v", id), 1)
+	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(id)), 1)
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
