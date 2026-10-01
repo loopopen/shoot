@@ -14,6 +14,13 @@ func (g *Generator) handleExpr(paramType ast.Expr, name *ast.Ident, methodName, 
 		g.data.CtxParamMap[methodName] = name.Name
 		return nil
 	}
+	if g.isRequestOptionsParam(paramType) {
+		if previous, ok := g.data.RequestOptionsMap[methodName]; ok {
+			return fmt.Errorf("method %s has multiple request option parameters %q and %q", methodName, previous, name.Name)
+		}
+		g.data.RequestOptionsMap[methodName] = name.Name
+		return nil
+	}
 	if shoot.Contains(g.data.PathParamsMap[methodName], name.Name) {
 		return nil
 	}
@@ -33,6 +40,19 @@ func (g *Generator) handleExpr(paramType ast.Expr, name *ast.Ident, methodName, 
 	default:
 		return fmt.Errorf("unsupported parameter %q with type %T in method %s", name.Name, t, methodName)
 	}
+}
+
+func (g *Generator) isRequestOptionsParam(expr ast.Expr) bool {
+	ellipsis, ok := expr.(*ast.Ellipsis)
+	if !ok {
+		return false
+	}
+	typ := g.Pkg().TypesInfo.TypeOf(ellipsis.Elt)
+	named, ok := types.Unalias(typ).(*types.Named)
+	if !ok || named.Obj().Pkg() == nil {
+		return false
+	}
+	return named.Obj().Pkg().Path() == shoot.SelfPkgPath && named.Obj().Name() == "RequestOption"
 }
 
 func (g *Generator) handleSelectorExpr(paramType *ast.SelectorExpr, name *ast.Ident, methodName string) error {

@@ -19,10 +19,10 @@ type Client interface {
 	shoot.RestClient[Client]
 
 	//shoot: Get("/get")
-	Get(ctx context.Context, key string) (*KV, *shoot.Response, error)
+	Get(ctx context.Context, key string, opts ...shoot.RequestOption) (*KV, *shoot.Response, error)
 
 	//shoot: Post("/set")
-	Set(ctx context.Context, kv *KV) (*shoot.Response, error)
+	Set(ctx context.Context, kv *KV, opts ...shoot.RequestOption) (*shoot.Response, error)
 
 	//shoot: Get("/download")
 	//shoot: headers={Content-Type:application/zip}

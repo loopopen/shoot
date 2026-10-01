@@ -22,7 +22,10 @@ type TmplData struct {
 	BodyParamMap      map[string]string
 	QueryDictMap      map[string]string
 	DefaultHeaders    map[string]map[string]string
+	StaticHeaders     map[string]string
+	MethodHeadersMap  map[string]map[string]string
 	CtxParamMap       map[string]string
+	RequestOptionsMap map[string]string
 	BodyHTTPMethods   []string
 	ResponseMap       map[string]bool
 	StreamResponseMap map[string]bool
