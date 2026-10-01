@@ -1,6 +1,6 @@
 package ctor
 
-//go:generate go tool shoot new -getset -json -file=$GOFILE -ver=test
+//go:generate go run github.com/loopopen/shoot/cmd/shoot new -getset -json -file=$GOFILE -ver=test
 
 type BaseJSON struct {
 	z string
