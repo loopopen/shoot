@@ -32,7 +32,12 @@ func main() {
 		panic(err)
 	}
 
-	kv, _, err := myC.Get(ctx, "foo")
+	kv, _, err := myC.Get(
+		ctx,
+		"foo",
+		shoot.WithHeader("X-Request-ID", fmt.Sprintf("request-%d", time.Now().UnixNano())),
+		shoot.WithTimeout(2*time.Second),
+	)
 	if err != nil {
 		panic(err)
 	}

@@ -31,8 +31,11 @@ func (g *Generator) cookClient(typeName string) {
 	})
 	g.data.ErrReturnMap = make(map[string]string)
 	g.data.CtxParamMap = make(map[string]string)
+	g.data.RequestOptionsMap = make(map[string]string)
 	g.data.ResponseMap = make(map[string]bool)
 	g.data.StreamResponseMap = make(map[string]bool)
+	g.data.StaticHeaders = make(map[string]string)
+	g.data.MethodHeadersMap = make(map[string]map[string]string)
 	g.data.DefaultHeaders = map[string]map[string]string{
 		http.MethodGet: {
 			"Accept": "application/json",
@@ -68,9 +71,7 @@ func (g *Generator) cookClient(typeName string) {
 					if field.Doc != nil {
 						headers := parseHeaders(field.Doc.Text())
 						for k, v := range headers {
-							for _, headers := range g.data.DefaultHeaders {
-								headers[k] = v
-							}
+							g.data.StaticHeaders[k] = v
 						}
 					}
 				} else {
@@ -82,6 +83,7 @@ func (g *Generator) cookClient(typeName string) {
 					doc := field.Doc.Text()
 					methodName := field.Names[0].Name
 					g.data.SigMap[methodName] = methodSignature(field) //full signature
+					g.data.MethodHeadersMap[methodName] = parseHeaders(doc)
 
 					if field.Doc == nil {
 						logx.Warnf("method %s without comments will be ignored", methodName)

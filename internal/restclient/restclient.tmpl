@@ -7,8 +7,9 @@ import (
 )
 
 type {{camelCase .TypeName}} struct{
-    client *http.Client
-	conf   *shoot.RestConf
+    client         *http.Client
+	conf           *shoot.RestConf
+    defaultTimeout time.Duration
 }
 
 {{range $item := .MethodList}}
@@ -101,8 +102,34 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
 
     {{- "\n" -}}
     {{- range $key, $value := (index $.DefaultHeaders $httpmethod) -}}
-    req_.Header.Add("{{$key}}", "{{$value}}"){{"\n"}}
+    req_.Header.Set("{{$key}}", "{{$value}}"){{"\n"}}
     {{- end}}
+
+    for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+        req_.Header.Set(headerName_, headerValue_)
+    }
+
+    {{range $key, $value := $.StaticHeaders}}
+    req_.Header.Set("{{$key}}", "{{$value}}"){{"\n"}}
+    {{end}}
+    {{range $key, $value := (index $.MethodHeadersMap $item)}}
+    req_.Header.Set("{{$key}}", "{{$value}}"){{"\n"}}
+    {{end}}
+
+    {{$requestOptions := index $.RequestOptionsMap $item}}
+    {{if $requestOptions}}
+    cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, {{$requestOptions}}...)
+    {{else}}
+    cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+    {{end}}
+    if err != nil {
+        return {{$errret}}
+    }
+    defer func() {
+        if cleanupRequest_ != nil {
+            cleanupRequest_()
+        }
+    }()
 
     resp_, err := _c.client.Do(req_)
     if err != nil {
@@ -110,7 +137,8 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     }
 
     {{- if $streamResponse}}
-    response_ := shoot.NewStreamResponse(resp_)
+    response_ := shoot.NewStreamResponse(resp_, cleanupRequest_)
+    cleanupRequest_ = nil
     {{- else}}
     responseBody_, err := io.ReadAll(resp_.Body)
     closeErr_ := resp_.Body.Close()
@@ -178,9 +206,9 @@ func init() {
             panic(err)
         }
 		return &{{camelCase .TypeName}}{
-			conf: &conf,
+			conf:           &conf,
+			defaultTimeout: timeout,
 			client: &http.Client{
-				Timeout: timeout,
                 Transport: conf.BuildMiddleware(),
 			},
 		}
