@@ -71,10 +71,6 @@ func (_c *client) Get(ctx context.Context, key string, opts ...shoot.RequestOpti
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ KV
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {

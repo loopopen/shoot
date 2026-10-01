@@ -77,10 +77,6 @@ func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, page
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ User
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -142,10 +138,6 @@ func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.Q
 	}
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
-	}
-
-	if !response_.IsSuccess() {
-		return nil, response_, nil
 	}
 
 	var r_ dto.QueryUsersResp
@@ -210,10 +202,6 @@ func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.Q
 	}
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
-	}
-
-	if !response_.IsSuccess() {
-		return nil, response_, nil
 	}
 
 	var r_ dto.QueryBooksResp
@@ -284,10 +272,6 @@ func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.Quer
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ dto.QueryBooksResp
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -350,10 +334,6 @@ func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[strin
 	}
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
-	}
-
-	if !response_.IsSuccess() {
-		return nil, response_, nil
 	}
 
 	var r_ dto.Book

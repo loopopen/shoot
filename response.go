@@ -96,8 +96,8 @@ func (r *Response) IsSuccess() bool {
 	return r.StatusCode() >= http.StatusOK && r.StatusCode() < http.StatusMultipleChoices
 }
 
-// IsError reports whether the status code is 4xx or 5xx.
-func (r *Response) IsError() bool {
+// IsFailure reports whether the status code is 4xx or 5xx.
+func (r *Response) IsFailure() bool {
 	return r.StatusCode() >= http.StatusBadRequest
 }
 
@@ -202,8 +202,8 @@ func (r *StreamResponse) IsSuccess() bool {
 	return r.StatusCode() >= http.StatusOK && r.StatusCode() < http.StatusMultipleChoices
 }
 
-// IsError reports whether the status code is 4xx or 5xx.
-func (r *StreamResponse) IsError() bool {
+// IsFailure reports whether the status code is 4xx or 5xx.
+func (r *StreamResponse) IsFailure() bool {
 	return r.StatusCode() >= http.StatusBadRequest
 }
 
