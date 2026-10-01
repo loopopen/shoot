@@ -35,7 +35,7 @@ tag:
 
 release: test
 	sed -i '' "s/= \"v[^\"]*\"/= \"${tag}\"/" ./internal/shoot/consts.go
-	make gen-all-x
+	make gen-modules
 	git add -A
 	git commit -m"chore: ${tag}"
 	git tag ${tag}
