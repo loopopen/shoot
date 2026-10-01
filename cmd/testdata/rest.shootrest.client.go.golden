@@ -19,11 +19,12 @@ import (
 )
 
 type client struct {
-	client *http.Client
-	conf   *shoot.RestConf
+	client         *http.Client
+	conf           *shoot.RestConf
+	defaultTimeout time.Duration
 }
 
-func (_c *client) GetUser(ctx context.Context, userID string) (*User, *shoot.Response, error) {
+func (_c *client) GetUser(ctx context.Context, userID string, opts ...shoot.RequestOption) (*User, *shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(userID)), 1)
 
@@ -37,7 +38,22 @@ func (_c *client) GetUser(ctx context.Context, userID string) (*User, *shoot.Res
 		return nil, nil, err
 	}
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -87,7 +103,22 @@ func (_c *client) QueryUsers(ctx context.Context, key string, pageSize int, page
 	query_.Set("page_idx", fmt.Sprintf("%v", pageIdx))
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -137,7 +168,22 @@ func (_c *client) QueryUsers2(ctx context.Context, params map[string]string) (*Q
 	}
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -189,7 +235,22 @@ func (_c *client) QueryUsers3(ctx context.Context, params *map[string]string) (*
 	}
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -239,7 +300,22 @@ func (_c *client) QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUse
 	query_.Set("page_idx", fmt.Sprintf("%v", req.PageIdx))
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -289,7 +365,22 @@ func (_c *client) QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUs
 	query_.Set("page_idx", fmt.Sprintf("%v", req.PageIdx))
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -339,7 +430,22 @@ func (_c *client) QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, 
 	query_.Set("page_idx", fmt.Sprintf("%v", req.PageIdx))
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -389,7 +495,22 @@ func (_c *client) QueryUsers7(ctx context.Context, req *dto.QueryUsersReq) ([]dt
 	query_.Set("page_idx", fmt.Sprintf("%v", req.PageIdx))
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -439,7 +560,22 @@ func (_c *client) QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]
 	query_.Set("page_idx", fmt.Sprintf("%v", req.PageIdx))
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -489,7 +625,22 @@ func (_c *client) QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]
 	query_.Set("page_idx", fmt.Sprintf("%v", req.PageIdx))
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -520,7 +671,7 @@ func (_c *client) QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]
 	return &r_, response_, nil
 }
 
-func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Response, error) {
+func (_c *client) UpdateUser(ctx context.Context, id int, user User, opts ...shoot.RequestOption) (*shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(id)), 1)
 
@@ -539,8 +690,23 @@ func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Res
 		return nil, err
 	}
 
-	req_.Header.Add("Accept", "application/json")
-	req_.Header.Add("Content-Type", "application/json")
+	req_.Header.Set("Accept", "application/json")
+	req_.Header.Set("Content-Type", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -572,8 +738,23 @@ func (_c *client) PostNoBody() (*shoot.Response, error) {
 		return nil, err
 	}
 
-	req_.Header.Add("Accept", "application/json")
-	req_.Header.Add("Content-Type", "application/json")
+	req_.Header.Set("Accept", "application/json")
+	req_.Header.Set("Content-Type", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -610,8 +791,23 @@ func (_c *client) SetEnabled(ctx context.Context, enabled bool) (*shoot.Response
 		return nil, err
 	}
 
-	req_.Header.Add("Accept", "application/json")
-	req_.Header.Add("Content-Type", "application/json")
+	req_.Header.Set("Accept", "application/json")
+	req_.Header.Set("Content-Type", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -649,8 +845,23 @@ func (_c *client) ReplaceLabels(ctx context.Context, id int, labels map[string]s
 		return nil, err
 	}
 
-	req_.Header.Add("Accept", "application/json")
-	req_.Header.Add("Content-Type", "application/json")
+	req_.Header.Set("Accept", "application/json")
+	req_.Header.Set("Content-Type", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -682,13 +893,29 @@ func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
 		return nil, err
 	}
 
-	req_.Header.Add("Accept", "application/json")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, err
 	}
-	response_ := shoot.NewStreamResponse(resp_)
+	response_ := shoot.NewStreamResponse(resp_, cleanupRequest_)
+	cleanupRequest_ = nil
 
 	return response_, nil
 }
@@ -709,9 +936,9 @@ func init() {
 			panic(err)
 		}
 		return &client{
-			conf: &conf,
+			conf:           &conf,
+			defaultTimeout: timeout,
 			client: &http.Client{
-				Timeout:   timeout,
 				Transport: conf.BuildMiddleware(),
 			},
 		}

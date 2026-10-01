@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // Response wraps the response returned by net/http.
@@ -117,9 +118,35 @@ type StreamResponse struct {
 	RawResponse *http.Response
 }
 
-// NewStreamResponse constructs a StreamResponse for generated clients.
-func NewStreamResponse(rawResponse *http.Response) *StreamResponse {
+// NewStreamResponse constructs a StreamResponse for generated clients. An
+// optional cleanup function runs once when the response body is closed.
+func NewStreamResponse(rawResponse *http.Response, cleanups ...func()) *StreamResponse {
+	if len(cleanups) > 0 && cleanups[0] != nil {
+		if rawResponse == nil || rawResponse.Body == nil {
+			cleanups[0]()
+		} else {
+			rawResponse.Body = &cleanupReadCloser{
+				ReadCloser: rawResponse.Body,
+				cleanup:    cleanups[0],
+			}
+		}
+	}
 	return &StreamResponse{RawResponse: rawResponse}
+}
+
+type cleanupReadCloser struct {
+	io.ReadCloser
+	cleanup  func()
+	once     sync.Once
+	closeErr error
+}
+
+func (r *cleanupReadCloser) Close() error {
+	r.once.Do(func() {
+		r.closeErr = r.ReadCloser.Close()
+		r.cleanup()
+	})
+	return r.closeErr
 }
 
 // Body returns the underlying response stream. The caller must close it.

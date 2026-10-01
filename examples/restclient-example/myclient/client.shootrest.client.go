@@ -16,11 +16,12 @@ import (
 )
 
 type client struct {
-	client *http.Client
-	conf   *shoot.RestConf
+	client         *http.Client
+	conf           *shoot.RestConf
+	defaultTimeout time.Duration
 }
 
-func (_c *client) Get(ctx context.Context, key string) (*KV, *shoot.Response, error) {
+func (_c *client) Get(ctx context.Context, key string, opts ...shoot.RequestOption) (*KV, *shoot.Response, error) {
 	path_ := "/get"
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
@@ -37,8 +38,24 @@ func (_c *client) Get(ctx context.Context, key string) (*KV, *shoot.Response, er
 	query_.Set("key", fmt.Sprintf("%v", key))
 	req_.URL.RawQuery = query_.Encode()
 
-	req_.Header.Add("Accept", "application/json")
-	req_.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -69,7 +86,7 @@ func (_c *client) Get(ctx context.Context, key string) (*KV, *shoot.Response, er
 	return &r_, response_, nil
 }
 
-func (_c *client) Set(ctx context.Context, kv *KV) (*shoot.Response, error) {
+func (_c *client) Set(ctx context.Context, kv *KV, opts ...shoot.RequestOption) (*shoot.Response, error) {
 	path_ := "/set"
 
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
@@ -87,9 +104,25 @@ func (_c *client) Set(ctx context.Context, kv *KV) (*shoot.Response, error) {
 		return nil, err
 	}
 
-	req_.Header.Add("Accept", "application/json")
-	req_.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
-	req_.Header.Add("Content-Type", "application/json")
+	req_.Header.Set("Accept", "application/json")
+	req_.Header.Set("Content-Type", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
@@ -121,14 +154,33 @@ func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
 		return nil, err
 	}
 
-	req_.Header.Add("Accept", "application/json")
-	req_.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+	req_.Header.Set("Accept", "application/json")
+
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+
+	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+
+	req_.Header.Set("Content-Type", "application/zip")
+
+	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if cleanupRequest_ != nil {
+			cleanupRequest_()
+		}
+	}()
 
 	resp_, err := _c.client.Do(req_)
 	if err != nil {
 		return nil, err
 	}
-	response_ := shoot.NewStreamResponse(resp_)
+	response_ := shoot.NewStreamResponse(resp_, cleanupRequest_)
+	cleanupRequest_ = nil
 
 	return response_, nil
 }
@@ -149,9 +201,9 @@ func init() {
 			panic(err)
 		}
 		return &client{
-			conf: &conf,
+			conf:           &conf,
+			defaultTimeout: timeout,
 			client: &http.Client{
-				Timeout:   timeout,
 				Transport: conf.BuildMiddleware(),
 			},
 		}
