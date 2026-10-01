@@ -31,7 +31,7 @@ type Client interface {
 
 	//shoot: Get("/users/{id}")
 	//shoot: alias={userID:id}
-	GetUser(ctx context.Context, userID string) (*User, *shoot.Response, error)
+	GetUser(ctx context.Context, userID string, opts ...shoot.RequestOption) (*User, *shoot.Response, error)
 
 	//shoot: Get("/users")
 	//shoot: alias={pageSize:size},{pageIdx:page_idx}
@@ -62,7 +62,7 @@ type Client interface {
 	QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]User], *shoot.Response, error)
 
 	//shoot: Put("/users/{id}")
-	UpdateUser(ctx context.Context, id int, user User) (*shoot.Response, error)
+	UpdateUser(ctx context.Context, id int, user User, opts ...shoot.RequestOption) (*shoot.Response, error)
 
 	//shoot: Post("/ping")
 	PostNoBody() (*shoot.Response, error)

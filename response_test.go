@@ -63,10 +63,13 @@ func TestResponseIsSuccess(t *testing.T) {
 
 func TestStreamResponse(t *testing.T) {
 	rawBody := &trackingReadCloser{Reader: strings.NewReader("stream")}
+	cleanupCalls := 0
 	response := NewStreamResponse(&http.Response{
 		Status:     "200 OK",
 		StatusCode: http.StatusOK,
 		Body:       rawBody,
+	}, func() {
+		cleanupCalls++
 	})
 
 	body, err := io.ReadAll(response.Body())
@@ -84,5 +87,11 @@ func TestStreamResponse(t *testing.T) {
 	}
 	if !rawBody.closed {
 		t.Fatal("Close() did not close the underlying response body")
+	}
+	if err := response.Close(); err != nil {
+		t.Fatalf("second Close() error = %v", err)
+	}
+	if cleanupCalls != 1 {
+		t.Fatalf("cleanup calls = %d, want 1", cleanupCalls)
 	}
 }
