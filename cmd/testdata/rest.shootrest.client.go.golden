@@ -69,10 +69,6 @@ func (_c *client) GetUser(ctx context.Context, userID string, opts ...shoot.Requ
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ User
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -134,10 +130,6 @@ func (_c *client) QueryUsers(ctx context.Context, key string, pageSize int, page
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ QueryUsersResp
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -197,10 +189,6 @@ func (_c *client) QueryUsers2(ctx context.Context, params map[string]string) (*Q
 	}
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
-	}
-
-	if !response_.IsSuccess() {
-		return nil, response_, nil
 	}
 
 	var r_ QueryUsersResp
@@ -266,10 +254,6 @@ func (_c *client) QueryUsers3(ctx context.Context, params *map[string]string) (*
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ QueryUsersResp
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -329,10 +313,6 @@ func (_c *client) QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUse
 	}
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
-	}
-
-	if !response_.IsSuccess() {
-		return nil, response_, nil
 	}
 
 	var r_ QueryUsersResp
@@ -396,10 +376,6 @@ func (_c *client) QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUs
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ QueryUsersResp
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -459,10 +435,6 @@ func (_c *client) QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, 
 	}
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
-	}
-
-	if !response_.IsSuccess() {
-		return nil, response_, nil
 	}
 
 	var r_ []User
@@ -526,10 +498,6 @@ func (_c *client) QueryUsers7(ctx context.Context, req *dto.QueryUsersReq) ([]dt
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ []dto.User
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -591,10 +559,6 @@ func (_c *client) QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]
 		return nil, response_, closeErr_
 	}
 
-	if !response_.IsSuccess() {
-		return nil, response_, nil
-	}
-
 	var r_ []alias.User
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -654,10 +618,6 @@ func (_c *client) QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]
 	}
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
-	}
-
-	if !response_.IsSuccess() {
-		return nil, response_, nil
 	}
 
 	var r_ Rest[[]User]

@@ -33,7 +33,7 @@ func TestResponseParsedBody(t *testing.T) {
 	if got := response.StatusCode(); got != http.StatusOK {
 		t.Fatalf("StatusCode() = %d, want %d", got, http.StatusOK)
 	}
-	if !response.IsSuccess() || response.IsError() {
+	if !response.IsSuccess() || response.IsFailure() {
 		t.Fatal("expected a successful response")
 	}
 	if got := response.Size(); got != 8 {
@@ -43,20 +43,24 @@ func TestResponseParsedBody(t *testing.T) {
 
 func TestResponseIsSuccess(t *testing.T) {
 	tests := []struct {
-		statusCode int
-		want       bool
+		statusCode  int
+		wantSuccess bool
+		wantFailure bool
 	}{
-		{statusCode: http.StatusOK, want: true},
-		{statusCode: http.StatusNoContent, want: true},
-		{statusCode: http.StatusFound, want: false},
-		{statusCode: http.StatusBadRequest, want: false},
-		{statusCode: http.StatusInternalServerError, want: false},
+		{statusCode: http.StatusOK, wantSuccess: true, wantFailure: false},
+		{statusCode: http.StatusNoContent, wantSuccess: true, wantFailure: false},
+		{statusCode: http.StatusFound, wantSuccess: false, wantFailure: false},
+		{statusCode: http.StatusBadRequest, wantSuccess: false, wantFailure: true},
+		{statusCode: http.StatusInternalServerError, wantSuccess: false, wantFailure: true},
 	}
 
 	for _, tt := range tests {
 		response := NewResponse(&http.Response{StatusCode: tt.statusCode}, nil)
-		if got := response.IsSuccess(); got != tt.want {
-			t.Errorf("status %d: IsSuccess() = %t, want %t", tt.statusCode, got, tt.want)
+		if got := response.IsSuccess(); got != tt.wantSuccess {
+			t.Errorf("status %d: IsSuccess() = %t, want %t", tt.statusCode, got, tt.wantSuccess)
+		}
+		if got := response.IsFailure(); got != tt.wantFailure {
+			t.Errorf("status %d: IsFailure() = %t, want %t", tt.statusCode, got, tt.wantFailure)
 		}
 	}
 }

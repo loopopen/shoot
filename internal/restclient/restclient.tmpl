@@ -167,16 +167,6 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     {{if not $result.Type}}
     return response_, nil
     {{else}}
-    {{- if or $wrappedResponse $streamResponse}}
-    if !response_.IsSuccess() {
-        return nil, response_, nil
-    }
-    {{- else}}
-    if resp_.StatusCode < http.StatusOK || resp_.StatusCode >= http.StatusMultipleChoices {
-        return nil, response_, nil
-    }
-    {{- end}}
-
     var r_ {{$result.Type}}
     err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
     if err == io.EOF {
