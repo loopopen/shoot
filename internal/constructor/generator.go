@@ -60,6 +60,7 @@ func (g *Generator) ParseFlags() {
 	exp := sub.Bool("exp", false, "“constructor parameters include exported fields (alias for -exported)")
 	short := sub.Bool("short", false, "shorter config function name (no 'OfType' suffix)")
 	mark := sub.Bool("mark", true, "generate mark function ShootNew to implement the NewShooter interface")
+	sign := sub.String("sign", shoot.Sign, "instruction sign")
 
 	g.ParseCommonFlags(sub)
 
@@ -75,6 +76,7 @@ func (g *Generator) ParseFlags() {
 		exp:     *exp || *exported,
 		short:   *short,
 		mark:    *mark,
+		sign:    *sign,
 	}
 }
 

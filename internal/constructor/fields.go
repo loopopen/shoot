@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/loopopen/shoot/internal/global"
 	"github.com/loopopen/shoot/internal/shoot"
 	"github.com/loopopen/shoot/internal/tools/logx"
 	"golang.org/x/tools/go/packages"
@@ -44,7 +43,7 @@ func (g *Generator) parseFields(typeName string) types.Type {
 					}
 
 					if gd.Doc != nil {
-						getter, setter := parseGetterSetter(gd)
+						getter, setter := parseGetterSetter(gd, g.flags.sign)
 						g.getter = getter
 						g.setter = setter
 					}
@@ -117,7 +116,7 @@ func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, f
 		// if f.Tag != nil {
 		// }
 
-		isNew := parseNewComment(f.Doc.Text())
+		isNew := parseNewComment(f.Doc.Text(), g.flags.sign)
 		if isNew {
 			g.hasNew = isNew
 		}
@@ -149,9 +148,9 @@ func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, f
 
 			var get, set bool
 			if g.flags.getset {
-				get, set = parseGetSet(f, name.Name)
+				get, set = parseGetSet(f, name.Name, g.flags.sign)
 			}
-			defv := parseDef(f)
+			defv := parseDef(f, g.flags.sign)
 			var tag string
 			if g.flags.json && f.Tag != nil {
 				tag = parseJSONTag(f.Tag.Value)
@@ -174,11 +173,11 @@ func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, f
 	}
 }
 
-func parseGetSet(f *ast.Field, name string) (bool, bool) {
+func parseGetSet(f *ast.Field, name, sign string) (bool, bool) {
 	var get, set bool
 	var g, s bool
 	if f.Doc != nil {
-		g, s = parseGetSetComment(f.Doc.Text())
+		g, s = parseGetSetComment(f.Doc.Text(), sign)
 		if g == s {
 			get = true
 			set = true
@@ -199,9 +198,9 @@ func parseGetSet(f *ast.Field, name string) (bool, bool) {
 	return get, set
 }
 
-func parseDef(f *ast.Field) string {
+func parseDef(f *ast.Field, sign string) string {
 	if f.Doc != nil {
-		v, ok := parseDefComment(f.Doc.Text())
+		v, ok := parseDefComment(f.Doc.Text(), sign)
 		if ok {
 			return strings.TrimSpace(v)
 		}
@@ -359,25 +358,26 @@ func qualifiedName(t types.Type, qf types.Qualifier) (string, bool) {
 	return name, isPtr
 }
 
-func parseGetSetComment(doc string) (bool, bool) {
-	patGet := fmt.Sprintf(`(?im)^%s.*?\bget(;.*|\s*)$`, global.Sign)
+func parseGetSetComment(doc, sign string) (bool, bool) {
+	sign = regexp.QuoteMeta(sign)
+	patGet := fmt.Sprintf(`(?im)^%s.*?\bget(;.*|\s*)$`, sign)
 	regGet := regexp.MustCompile(patGet)
-	patSet := fmt.Sprintf(`(?im)^%s.*?\bset(;.*|\s*)$`, global.Sign)
+	patSet := fmt.Sprintf(`(?im)^%s.*?\bset(;.*|\s*)$`, sign)
 	regSet := regexp.MustCompile(patSet)
 	get := regGet.MatchString(doc)
 	set := regSet.MatchString(doc)
 	return get, set
 }
 
-func parseNewComment(doc string) bool {
-	patNew := fmt.Sprintf(`(?im)^%s.*?\bnew(;.*|\s*)$`, global.Sign)
+func parseNewComment(doc, sign string) bool {
+	patNew := fmt.Sprintf(`(?im)^%s.*?\bnew(;.*|\s*)$`, regexp.QuoteMeta(sign))
 	regNew := regexp.MustCompile(patNew)
 	new := regNew.MatchString(doc)
 	return new
 }
 
-func parseDefComment(doc string) (string, bool) {
-	patDef := fmt.Sprintf(`(?im)^%s.*?\bdef(ault)?=([^;\n]+)(;.*|\s*)$`, global.Sign)
+func parseDefComment(doc, sign string) (string, bool) {
+	patDef := fmt.Sprintf(`(?im)^%s.*?\bdef(ault)?=([^;\n]+)(;.*|\s*)$`, regexp.QuoteMeta(sign))
 	regDef := regexp.MustCompile(patDef)
 	ms := regDef.FindStringSubmatch(doc)
 	for idx, m := range ms {
@@ -406,10 +406,10 @@ func parseNewTag(tag string) string {
 	return matches[1]
 }
 
-func parseGetterSetter(genDecl *ast.GenDecl) (bool, bool) {
+func parseGetterSetter(genDecl *ast.GenDecl, sign string) (bool, bool) {
 	var getter, setter bool
 	if genDecl.Doc != nil {
-		g, s := parseGetterSetterDoc(genDecl.Doc.Text())
+		g, s := parseGetterSetterDoc(genDecl.Doc.Text(), sign)
 		if g == s {
 			getter = true
 			setter = true
@@ -423,10 +423,11 @@ func parseGetterSetter(genDecl *ast.GenDecl) (bool, bool) {
 	return getter, setter
 }
 
-func parseGetterSetterDoc(doc string) (bool, bool) {
-	patGetter := fmt.Sprintf(`(?im)^%s.*?\bgetter(;.*|\s*)$`, global.Sign)
+func parseGetterSetterDoc(doc, sign string) (bool, bool) {
+	sign = regexp.QuoteMeta(sign)
+	patGetter := fmt.Sprintf(`(?im)^%s.*?\bgetter(;.*|\s*)$`, sign)
 	regGetter := regexp.MustCompile(patGetter)
-	patSetter := fmt.Sprintf(`(?im)^%s.*?\bsetter(;.*|\s*)$`, global.Sign)
+	patSetter := fmt.Sprintf(`(?im)^%s.*?\bsetter(;.*|\s*)$`, sign)
 	regSetter := regexp.MustCompile(patSetter)
 	getter := regGetter.MatchString(doc)
 	setter := regSetter.MatchString(doc)

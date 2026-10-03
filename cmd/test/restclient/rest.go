@@ -29,50 +29,50 @@ type Rest[T any] struct {
 type Client interface {
 	shoot.RestClient[Client]
 
-	//shoot: Get("/users/{id}")
-	//shoot: alias={userID:id}
+	//@Get("/users/{id}")
+	//@alias={userID:id}
 	GetUser(ctx context.Context, userID string, opts ...shoot.RequestOption) (*User, *shoot.Response, error)
 
-	//shoot: Get("/users")
-	//shoot: alias={pageSize:size},{pageIdx:page_idx}
+	//@Get("/users")
+	//@alias={pageSize:size},{pageIdx:page_idx}
 	QueryUsers(ctx context.Context, key string, pageSize, pageIdx int) (*QueryUsersResp, *shoot.Response, error)
 
-	//shoot: Get("/users")
+	//@Get("/users")
 	QueryUsers2(ctx context.Context, params map[string]string) (*QueryUsersResp, *shoot.Response, error)
 
-	//shoot: Get("/users")
+	//@Get("/users")
 	QueryUsers3(ctx context.Context, params *map[string]string) (*QueryUsersResp, *shoot.Response, error)
 
-	//shoot: Get("/users")
+	//@Get("/users")
 	QueryUsers4(ctx context.Context, req QueryUsersReq) (*QueryUsersResp, *shoot.Response, error)
 
-	//shoot: Get("/users")
+	//@Get("/users")
 	QueryUsers5(ctx context.Context, req *QueryUsersReq) (*QueryUsersResp, *shoot.Response, error)
 
-	//shoot: Get("/users")
+	//@Get("/users")
 	QueryUsers6(ctx context.Context, req *QueryUsersReq) ([]User, *shoot.Response, error)
 
-	//shoot: Get("/users")
+	//@Get("/users")
 	QueryUsers7(ctx context.Context, req *dto.QueryUsersReq) ([]dto.User, *shoot.Response, error)
 
-	//shoot: Get("/users")
+	//@Get("/users")
 	QueryUsers8(ctx context.Context, req *alias.QueryUsersReq) ([]alias.User, *shoot.Response, error)
 
-	//shoot: Get("/users")
+	//@Get("/users")
 	QueryUsers9(ctx context.Context, req *QueryUsersReq) (*Rest[[]User], *shoot.Response, error)
 
-	//shoot: Put("/users/{id}")
+	//@Put("/users/{id}")
 	UpdateUser(ctx context.Context, id int, user User, opts ...shoot.RequestOption) (*shoot.Response, error)
 
-	//shoot: Post("/ping")
+	//@Post("/ping")
 	PostNoBody() (*shoot.Response, error)
 
-	//shoot: Post("/enabled")
+	//@Post("/enabled")
 	SetEnabled(ctx context.Context, enabled bool) (*shoot.Response, error)
 
-	//shoot: Patch("/users/{id}/labels")
+	//@Patch("/users/{id}/labels")
 	ReplaceLabels(ctx context.Context, id int, labels map[string]string) (*shoot.Response, error)
 
-	//shoot: Get("/download")
+	//@Get("/download")
 	Download(ctx context.Context) (*shoot.StreamResponse, error)
 }

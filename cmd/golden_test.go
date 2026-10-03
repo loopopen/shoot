@@ -35,7 +35,7 @@ var goldens_new = []Golden{
 		},
 	},
 	{
-		cmd: "shoot new -opt -sign=@ -type=Conf",
+		cmd: "shoot new -opt -sign=shoot: -type=Conf",
 		names: []string{
 			"new_opt.shootnew.conf.go",
 		},

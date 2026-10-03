@@ -16,8 +16,8 @@ var tmplTxt string
 
 type Generator struct {
 	*shoot.GeneratorBase
-	// flags *Flags
-	data *TmplData
+	flags *Flags
+	data  *TmplData
 }
 
 func New() *Generator {
@@ -29,8 +29,10 @@ func New() *Generator {
 
 func (g *Generator) ParseFlags() {
 	sub := flag.NewFlagSet(SubCmd, flag.ExitOnError)
+	sign := sub.String("sign", shoot.Sign, "instruction sign")
 
 	g.ParseCommonFlags(sub)
+	g.flags = &Flags{sign: *sign}
 }
 
 func (g *Generator) MakeData(typeName string) (any, bool) {

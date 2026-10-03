@@ -3,7 +3,7 @@ package model
 //go:generate go tool shoot new -exp -opt -getset -json -tagcase=camel -file=$GOFILE
 
 type User struct {
-	//shoot: get
+	//@get
 	id     string
 	name   string
 	gender int
@@ -12,7 +12,7 @@ type User struct {
 }
 
 type Book struct {
-	//shoot: new
+	//@new
 	name    string
 	writers []string
 	Remarks string

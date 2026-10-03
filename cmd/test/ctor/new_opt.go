@@ -1,9 +1,9 @@
 package ctor
 
 type Conf struct {
-	//@new
+	//shoot: new
 	name string
 	host []string
-	//@def=80
+	//shoot: def=80
 	port int
 }

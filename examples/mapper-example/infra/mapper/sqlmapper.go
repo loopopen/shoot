@@ -6,7 +6,7 @@ import (
 )
 
 type SQLMapper struct {
-	//shoot: mapper
+	//shoot: mapperper
 }
 
 //todo: receiver must be pointer type
