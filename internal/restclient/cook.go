@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/loopopen/shoot/internal/global"
 	"github.com/loopopen/shoot/internal/tools/logx"
 )
 
@@ -69,7 +68,7 @@ func (g *Generator) cookClient(typeName string) {
 				//todo:
 				if len(field.Names) == 0 {
 					if field.Doc != nil {
-						headers := parseHeaders(field.Doc.Text())
+						headers := parseHeaders(field.Doc.Text(), g.flags.sign)
 						for k, v := range headers {
 							g.data.StaticHeaders[k] = v
 						}
@@ -83,14 +82,14 @@ func (g *Generator) cookClient(typeName string) {
 					doc := field.Doc.Text()
 					methodName := field.Names[0].Name
 					g.data.SigMap[methodName] = methodSignature(field) //full signature
-					g.data.MethodHeadersMap[methodName] = parseHeaders(doc)
+					g.data.MethodHeadersMap[methodName] = parseHeaders(doc, g.flags.sign)
 
 					if field.Doc == nil {
 						logx.Warnf("method %s without comments will be ignored", methodName)
 						continue
 					}
 
-					httpMethod, path, pathParams, ok := parsePath(doc) //pathParams ~ [id]
+					httpMethod, path, pathParams, ok := parsePath(doc, g.flags.sign) //pathParams ~ [id]
 					if !ok {
 						logx.Warnf("method %s with bad comments will be ignored", methodName)
 						continue
@@ -101,8 +100,8 @@ func (g *Generator) cookClient(typeName string) {
 					g.data.HTTPMethodMap[methodName] = httpMethod //http mehod
 					g.data.PathMap[methodName] = path             //http path
 
-					asMap := parseAlias(doc)             //userID -> id
-					reversMap := make(map[string]string) //id -> userID
+					asMap := parseAlias(doc, g.flags.sign) //userID -> id
+					reversMap := make(map[string]string)   //id -> userID
 					for k, v := range asMap {
 						reversMap[v] = k
 					}
@@ -238,9 +237,9 @@ func formatFieldList(fl *ast.FieldList) string {
 	return strings.Join(parts, ", ")
 }
 
-func parseHeaders(doc string) map[string]string {
+func parseHeaders(doc, sign string) map[string]string {
 	headers := make(map[string]string)
-	regHeaders := regexp.MustCompile(`shoot:.*?\Wheaders=((?:\s*{[^\n]+},?)+)`)
+	regHeaders := regexp.MustCompile(regexp.QuoteMeta(sign) + `.*?\bheaders=((?:\s*{[^\n]+},?)+)`)
 	ms := regHeaders.FindStringSubmatch(doc)
 	if len(ms) > 0 {
 		kvMap := parseKV(ms[1])
@@ -264,8 +263,8 @@ func parseKV(str string) map[string]string {
 	return kvMap
 }
 
-func parsePath(doc string) (string, string, []string, bool) {
-	patReq := fmt.Sprintf(`(?im)^%s\s*(get|post|put|patch|delete)\((.*)\)\W*;?\W*$`, global.Sign)
+func parsePath(doc, sign string) (string, string, []string, bool) {
+	patReq := fmt.Sprintf(`(?im)^%s\s*(get|post|put|patch|delete)\((.*)\)\W*;?\W*$`, regexp.QuoteMeta(sign))
 	regReq := regexp.MustCompile(patReq)
 	ms := regReq.FindStringSubmatch(doc)
 	if len(ms) == 0 {
@@ -290,8 +289,8 @@ func parsePath(doc string) (string, string, []string, bool) {
 	return method, path, pathParams, true
 }
 
-func parseAlias(doc string) map[string]string {
-	patAlias := fmt.Sprintf(`(?m)^%s.*?\balias=([^;\n]+)(;.*|\s*)$`, global.Sign)
+func parseAlias(doc, sign string) map[string]string {
+	patAlias := fmt.Sprintf(`(?m)^%s.*?\balias=([^;\n]+)(;.*|\s*)$`, regexp.QuoteMeta(sign))
 	regAlias := regexp.MustCompile(patAlias)
 	ms := regAlias.FindStringSubmatch(doc)
 	if len(ms) == 0 {

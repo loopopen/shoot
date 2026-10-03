@@ -83,6 +83,7 @@ type Flags struct {
 	exp     bool
 	short   bool
 	mark    bool
+	sign    string
 }
 
 type Field struct {

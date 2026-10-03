@@ -3,6 +3,8 @@ package restclient
 import (
 	"reflect"
 	"testing"
+
+	"github.com/loopopen/shoot/internal/shoot"
 )
 
 func Test_parsePath(t *testing.T) {
@@ -20,7 +22,7 @@ func Test_parsePath(t *testing.T) {
 		{
 			name: "normal case with quotes",
 			args: args{
-				doc: `shoot: Get("/api/users{id}")`,
+				doc: shoot.Sign + `Get("/api/users{id}")`,
 			},
 			want:  "GET",
 			want1: "/api/users{id}",
@@ -30,7 +32,7 @@ func Test_parsePath(t *testing.T) {
 		{
 			name: "normal case without quotes",
 			args: args{
-				doc: `shoot: Get(/api/users{id})`,
+				doc: shoot.Sign + `Get(/api/users{id})`,
 			},
 			want:  "GET",
 			want1: "/api/users{id}",
@@ -40,7 +42,7 @@ func Test_parsePath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, got3 := parsePath(tt.args.doc)
+			got, got1, got2, got3 := parsePath(tt.args.doc, shoot.Sign)
 			if got != tt.want {
 				t.Errorf("parsePath() got = %v, want %v", got, tt.want)
 			}
@@ -69,8 +71,7 @@ func Test_parseHeaders(t *testing.T) {
 		{
 			name: "multi-line",
 			args: args{
-				doc: `
-shoot: headers=
+				doc: shoot.Sign + `headers=
  {Content-Type:application/json},
  {Accept:application/json},`,
 			},
@@ -82,7 +83,7 @@ shoot: headers=
 		{
 			name: "one-line",
 			args: args{
-				doc: `shoot: headers={A:a},{B:b}`,
+				doc: shoot.Sign + `headers={A:a},{B:b}`,
 			},
 			want: map[string]string{
 				"A": "a",
@@ -92,7 +93,7 @@ shoot: headers=
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := parseHeaders(tt.args.doc)
+			got := parseHeaders(tt.args.doc, shoot.Sign)
 			for k, v := range tt.want {
 				if v != got[k] {
 					t.Errorf("value of %s got = %s, want %s", k, got[k], v)

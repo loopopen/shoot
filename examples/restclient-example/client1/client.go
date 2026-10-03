@@ -37,31 +37,31 @@ type QueryBooksReq struct {
 }
 
 type Client interface {
-	//shoot: headers={Tenant-Id:123}
+	//@headers={Tenant-Id:123}
 	shoot.RestClient[Client]
 
-	//shoot: Get("/users/{id}")
-	//shoot: alias={userID:id},{pageSize:size},{pageIdx:page_idx}
+	//@Get("/users/{id}")
+	//@alias={userID:id},{pageSize:size},{pageIdx:page_idx}
 	GetUser(ctx context.Context, userID string, pageSize int, pageIdx *int) (*User, *shoot.Response, error)
 
-	//shoot: Post("/users")
+	//@Post("/users")
 	QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.QueryUsersResp, *shoot.Response, error)
 
-	// //shoot: Post("/users2")
-	// //shoot: headers={Content-Type:application/x-www-form-urlencoded}                           //todo: support this
+	// //@Post("/users2")
+	// //@headers={Content-Type:application/x-www-form-urlencoded}                           //todo: support this
 	// QueryUsers2(ctx context.Context, req dto.QueryUsersReq) (*dto.QueryUsersResp, *shoot.Response, error)
 
-	//shoot: Get("/books")
+	//@Get("/books")
 	QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.QueryBooksResp, *shoot.Response, error)
 
-	//shoot: Get("/books")
+	//@Get("/books")
 	QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.QueryBooksResp, *shoot.Response, error)
 
-	//shoot: Get("/groups/{id}/books")
-	//shoot: alias={groupID:id}
+	//@Get("/groups/{id}/books")
+	//@alias={groupID:id}
 	QueryBooks2(ctx context.Context, groupID int, params map[string]interface{}) (*dto.Book, *shoot.Response, error) //todo: return array?
 
-	//shoot: Put("/users/{id}")
+	//@Put("/users/{id}")
 	UpdateUser(ctx context.Context, id int, user User) (*shoot.Response, error)
 
 	NoComment(ctx context.Context)

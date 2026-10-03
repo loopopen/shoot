@@ -15,16 +15,16 @@ type KV struct {
 }
 
 type Client interface {
-	//shoot: headers={Authorization:Basic dXNlcm5hbWU6cGFzc3dvcmQ=}
+	//@headers={Authorization:Basic dXNlcm5hbWU6cGFzc3dvcmQ=}
 	shoot.RestClient[Client]
 
-	//shoot: Get("/get")
+	//@Get("/get")
 	Get(ctx context.Context, key string, opts ...shoot.RequestOption) (*KV, *shoot.Response, error)
 
-	//shoot: Post("/set")
+	//@Post("/set")
 	Set(ctx context.Context, kv *KV, opts ...shoot.RequestOption) (*shoot.Response, error)
 
-	//shoot: Get("/download")
-	//shoot: headers={Content-Type:application/zip}
+	//@Get("/download")
+	//@headers={Content-Type:application/zip}
 	Download(ctx context.Context) (*shoot.StreamResponse, error)
 }

@@ -12,9 +12,9 @@ type Order struct {
 	// status       enums.OrderStatus
 	orderingTime string `map:"orderTime"`
 	address      *OrderAddress
-	//shoot: get
+	//@get
 	x string
-	//shoot: set
+	//@set
 	y string
 }
 

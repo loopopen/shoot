@@ -37,4 +37,6 @@ func NewTmplData(cmdline, version string) *TmplData {
 	}
 }
 
-// type Flags struct{}
+type Flags struct {
+	sign string
+}

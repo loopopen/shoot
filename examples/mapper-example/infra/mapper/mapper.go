@@ -7,7 +7,7 @@ import (
 )
 
 type Mapper struct {
-	//shoot: map
+	//shoot: mapper
 }
 
 func (Mapper) StringToDecimal(s string) decimal.Decimal {

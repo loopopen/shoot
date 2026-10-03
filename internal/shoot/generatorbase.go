@@ -14,7 +14,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/loopopen/shoot/internal/global"
 	"github.com/loopopen/shoot/internal/tools/logx"
 	"github.com/loopopen/shoot/internal/transfer"
 	"golang.org/x/tools/go/packages"
@@ -112,7 +111,6 @@ func (g *GeneratorBase) ParseCommonFlags(sub *flag.FlagSet) {
 	version := sub.String("version", "", "pin version")
 	ver := sub.String("ver", "", "pin version (alias for version)")
 	postfix := sub.String("postfix", "", "postfix of generated file name")
-	sign := sub.String("sign", "shoot:", "instruction sign")
 
 	args := flag.Args()
 	if len(args) <= 1 {
@@ -171,7 +169,6 @@ func (g *GeneratorBase) ParseCommonFlags(sub *flag.FlagSet) {
 		Version:   *ver,
 		Postfix:   *postfix,
 	}
-	global.Sign = *sign
 }
 
 func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
