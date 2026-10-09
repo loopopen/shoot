@@ -11,12 +11,14 @@ import (
 
 // RestConf holds configuration parameters for initializing a RestClient.
 type RestConf struct {
-	baseURL       string
+	baseURL string
+	//@def="0"
 	timeout       string
 	enableLogging bool
 	//todo: enableTrace    bool
 	defaultHeaders map[string]string
 	_middlewares   []middleware.Middleware
+	retry          RetryConfig
 }
 
 // BuildMiddleware constructs the middleware chain by wrapping the default HTTP transport.
@@ -35,6 +37,14 @@ func (r *RestConf) BuildMiddleware() http.RoundTripper {
 func Use(middleware middleware.Middleware) Option[RestConf, *RestConf] {
 	return func(r *RestConf) {
 		r._middlewares = append(r._middlewares, middleware)
+	}
+}
+
+// WithRetry sets the client-level retry policy. Request options can override
+// the count, wait, strategy, idempotency, and conditions for one call.
+func WithRetry(cfg RetryConfig) Option[RestConf, *RestConf] {
+	return func(r *RestConf) {
+		r.retry = cfg
 	}
 }
 

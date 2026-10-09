@@ -19,11 +19,16 @@ func WaitMiddeleware(next http.RoundTripper) http.RoundTripper {
 }
 
 func main() {
+	startServer()
+
 	myC := shoot.NewRest[myclient.Client](
 		shoot.BaseURL("http://localhost:8080"),
-		shoot.Timeout("3000ms"),
+		shoot.Timeout("0ms"),
 		shoot.EnableLogging(true),
 		shoot.Use(WaitMiddeleware),
+		shoot.WithRetry(shoot.RetryConfig{
+			Count: 3,
+		}),
 	)
 
 	ctx := context.Background()
@@ -32,14 +37,14 @@ func main() {
 		panic(err)
 	}
 
-	kv, _, err := myC.Get(
+	kv, resp, err := myC.Get(
 		ctx,
 		"foo",
 		shoot.WithHeader("X-Request-ID", fmt.Sprintf("request-%d", time.Now().UnixNano())),
-		shoot.WithTimeout(2*time.Second),
+		// shoot.WithTimeout(2*time.Second),
 	)
 	if err != nil {
-		panic(err)
+		panic(string(resp.Body()))
 	}
 	fmt.Printf("%+v\n", *kv)
 }

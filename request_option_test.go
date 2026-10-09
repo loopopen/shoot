@@ -19,11 +19,11 @@ func newRequest(t *testing.T) *http.Request {
 
 func applyOptions(t *testing.T, req *http.Request, options ...RequestOption) func() {
 	t.Helper()
-	cleanup, err := ApplyRequestOptions(req, 0, options...)
+	call, err := ApplyRequestOptions(req, 0, options...)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return cleanup
+	return call.Cancel
 }
 
 func TestRequestHeaderOptions(t *testing.T) {
@@ -105,9 +105,9 @@ func TestWithCookies(t *testing.T) {
 	}
 }
 
-func TestWithTimeoutCleansUpContext(t *testing.T) {
+func TestWithDeadlineCleansUpContext(t *testing.T) {
 	req := newRequest(t)
-	cleanup := applyOptions(t, req, WithTimeout(time.Hour))
+	cleanup := applyOptions(t, req, WithDeadline(time.Now().Add(time.Hour)))
 	if _, ok := req.Context().Deadline(); !ok {
 		t.Fatal("request context has no deadline")
 	}
@@ -123,54 +123,51 @@ func TestWithTimeoutCleansUpContext(t *testing.T) {
 	}
 }
 
-func TestClientDefaultTimeoutAppliesWithoutRequestOption(t *testing.T) {
+func TestClientDefaultTimeoutStaysPerAttempt(t *testing.T) {
 	req := newRequest(t)
-	started := time.Now()
-	cleanup, err := ApplyRequestOptions(req, time.Hour)
+	call, err := ApplyRequestOptions(req, time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup()
+	defer call.Cancel()
 
-	deadline, ok := req.Context().Deadline()
-	if !ok {
-		t.Fatal("request context has no deadline")
+	if _, ok := req.Context().Deadline(); ok {
+		t.Fatal("per-attempt timeout was attached to the parent context")
 	}
-	remaining := deadline.Sub(started)
-	if remaining < 59*time.Minute || remaining > 61*time.Minute {
-		t.Fatalf("remaining timeout = %v, want about 1h", remaining)
+	if call.attemptTimeout != time.Hour {
+		t.Fatalf("attempt timeout = %v, want 1h", call.attemptTimeout)
 	}
 }
 
 func TestRequestTimeoutOverridesClientDefault(t *testing.T) {
 	req := newRequest(t)
-	started := time.Now()
-	cleanup, err := ApplyRequestOptions(req, time.Minute, WithTimeout(2*time.Hour))
+	call, err := ApplyRequestOptions(req, time.Minute, WithTimeout(2*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup()
+	defer call.Cancel()
 
-	deadline, ok := req.Context().Deadline()
-	if !ok {
-		t.Fatal("request context has no deadline")
+	if _, ok := req.Context().Deadline(); ok {
+		t.Fatal("per-attempt timeout was attached to the parent context")
 	}
-	remaining := deadline.Sub(started)
-	if remaining < 119*time.Minute || remaining > 121*time.Minute {
-		t.Fatalf("remaining timeout = %v, want about 2h", remaining)
+	if call.attemptTimeout != 2*time.Hour {
+		t.Fatalf("attempt timeout = %v, want 2h", call.attemptTimeout)
 	}
 }
 
 func TestRequestTimeoutCanDisableClientDefault(t *testing.T) {
 	req := newRequest(t)
-	cleanup, err := ApplyRequestOptions(req, time.Minute, WithTimeout(0))
+	call, err := ApplyRequestOptions(req, time.Minute, WithTimeout(0))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup()
+	defer call.Cancel()
 
 	if _, ok := req.Context().Deadline(); ok {
 		t.Fatal("request context unexpectedly has a deadline")
+	}
+	if call.attemptTimeout != 0 {
+		t.Fatalf("attempt timeout = %v, want 0", call.attemptTimeout)
 	}
 }
 
@@ -178,11 +175,11 @@ func TestUpstreamContextCanExpireBeforeRequestTimeout(t *testing.T) {
 	parent, cancelParent := context.WithTimeout(context.Background(), time.Hour)
 	defer cancelParent()
 	req := newRequest(t).WithContext(parent)
-	cleanup, err := ApplyRequestOptions(req, time.Minute, WithTimeout(2*time.Hour))
+	call, err := ApplyRequestOptions(req, time.Minute, WithTimeout(2*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup()
+	defer call.Cancel()
 
 	got, ok := req.Context().Deadline()
 	want, _ := parent.Deadline()
@@ -206,7 +203,7 @@ func TestWithDeadline(t *testing.T) {
 func TestWithRequestModifierError(t *testing.T) {
 	req := newRequest(t)
 	wantErr := context.Canceled
-	cleanup, err := ApplyRequestOptions(
+	call, err := ApplyRequestOptions(
 		req,
 		0,
 		WithTimeout(time.Hour),
@@ -214,7 +211,7 @@ func TestWithRequestModifierError(t *testing.T) {
 			return wantErr
 		}),
 	)
-	defer cleanup()
+	defer call.Cancel()
 	if err != wantErr {
 		t.Fatalf("error = %v, want %v", err, wantErr)
 	}

@@ -163,10 +163,21 @@ func Example() error {
 * `WithQueryParam` 和 `WithQueryParams`
 * `WithCookie` 和 `WithCookies`
 * `WithTimeout` 和 `WithDeadline`
+* `WithRetryCount`、`WithRetryWait`、`WithRetryStrategy`、
+  `WithRetryCondition`、`WithAllowNonIdempotentRetry` 和
+  `WithoutDefaultRetryConditions`
 * 使用 `WithRequestModifier` 自定义修改请求
 
 请求选项的优先级高于生成器默认值、客户端级默认请求头和 `@headers` 指令。
-`WithTimeout` 传入非正时长，可为该次请求禁用客户端级超时。
+`shoot.Timeout` 和 `WithTimeout` 限制单次尝试。调用方的 context 和
+`WithDeadline` 限制整次调用，包括重试以及重试之间的等待。`WithTimeout`
+传入非正时长，可为该次请求禁用客户端级的单次尝试超时。
+
+`shoot.WithRetry` 设置客户端级策略。`RetryConfig.Count` 是额外尝试次数。
+重试发生在 `http.Client.Do` 之外。默认只重试幂等方法，条件是临时网络错误、
+单次尝试超时、HTTP 429，以及除 501 以外的 HTTP 500 及以上。POST 和 PATCH
+只有在策略或该次请求允许时才会重试。429 和 503 上的 `Retry-After` 会覆盖退避。
+默认退避是带抖动的有上限指数延迟。
 
 生成的客户端会对路径参数做 URL 转义。`GET` 和 `DELETE` 中未用于路径的参数
 会成为查询参数，查询参数 map 的键必须是字符串。`POST`、`PUT` 和 `PATCH`
