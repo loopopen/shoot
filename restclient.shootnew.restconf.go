@@ -59,7 +59,7 @@ func Retry(retry_ RetryConfig) Option[RestConf, *RestConf] {
 
 // SetDefault sets the default values
 func (r *RestConf) SetDefault() {
-	r.timeout = "0s"
+	r.timeout = "0"
 }
 
 // BaseURL gets the value of field baseURL
