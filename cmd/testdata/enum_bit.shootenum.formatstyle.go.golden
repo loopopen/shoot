@@ -59,7 +59,7 @@ func (f FormatStyle) String() string {
 			break
 		}
 		if f_.Has(v_) {
-			fmt.Fprintf(&buf, ", %s", _formatStyle_map[v_])
+			fmt.Fprintf(&buf, ", %s", _formatStyle_string_map[v_])
 			f_ = f_.Remove(v_)
 		}
 	}

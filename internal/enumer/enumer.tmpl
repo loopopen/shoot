@@ -64,7 +64,7 @@ func ({{$this}} {{.TypeName}}) String() string {
 			break
 		}
 		if {{$this}}_.Has(v_) {
-			fmt.Fprintf(&buf, ", %s", _{{camelCase .TypeName}}_map[v_])
+			fmt.Fprintf(&buf, ", %s", _{{camelCase .TypeName}}_string_map[v_])
 			{{$this}}_ = {{$this}}_.Remove(v_)
 		}
 	}
