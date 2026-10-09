@@ -53,7 +53,6 @@ func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, page
 	req_.Header.Set("Tenant-Id", "123")
 
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
-
 	if err != nil {
 		return nil, nil, err
 	}
@@ -112,7 +111,6 @@ func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.Q
 	req_.Header.Set("Tenant-Id", "123")
 
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
-
 	if err != nil {
 		return nil, nil, err
 	}
@@ -172,7 +170,6 @@ func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.Q
 	req_.Header.Set("Tenant-Id", "123")
 
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
-
 	if err != nil {
 		return nil, nil, err
 	}
@@ -236,7 +233,6 @@ func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.Quer
 	req_.Header.Set("Tenant-Id", "123")
 
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
-
 	if err != nil {
 		return nil, nil, err
 	}
@@ -296,7 +292,6 @@ func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[strin
 	req_.Header.Set("Tenant-Id", "123")
 
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
-
 	if err != nil {
 		return nil, nil, err
 	}
@@ -356,7 +351,6 @@ func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Res
 	req_.Header.Set("Tenant-Id", "123")
 
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
-
 	if err != nil {
 		return nil, err
 	}

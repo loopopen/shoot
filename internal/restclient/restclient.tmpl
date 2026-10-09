@@ -121,7 +121,7 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, {{$requestOptions}}...)
     {{else}}
     call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
-    {{end}}
+    {{- end}}
     if err != nil {
         return {{$errret}}
     }
@@ -135,7 +135,7 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
     {{- if $streamResponse}}
     response_ := shoot.NewStreamResponse(resp_, call_.Cancel)
     call_ = shoot.Call{}
-    {{- else}}
+    {{else}}
     responseBody_, err := io.ReadAll(resp_.Body)
     closeErr_ := resp_.Body.Close()
     {{- if $wrappedResponse}}
