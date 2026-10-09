@@ -7,8 +7,7 @@ MODULES := \
 	examples/mapper-example \
 	examples/mapper-example2 \
 	examples/mapper-example3 \
-	examples/restclient-example \
-	examples/restclient-example-server
+	examples/restclient-example
 
 tidy-modules:
 	@for dir in $(MODULES); do \

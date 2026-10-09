@@ -164,11 +164,24 @@ be named; placing it last is recommended. Available options are:
 * `WithQueryParam` and `WithQueryParams`
 * `WithCookie` and `WithCookies`
 * `WithTimeout` and `WithDeadline`
+* `WithRetryCount`, `WithRetryWait`, `WithRetryStrategy`,
+  `WithRetryCondition`, `WithAllowNonIdempotentRetry`, and
+  `WithoutDefaultRetryConditions`
 * `WithRequestModifier` for custom request mutations
 
 Request options take precedence over generated defaults, client-level default
-headers, and `@headers` instructions. A non-positive `WithTimeout` disables the
-client-level timeout for that request.
+headers, and `@headers` instructions. `shoot.Timeout` and `WithTimeout` bound
+each attempt. The caller's context and `WithDeadline` bound the whole call,
+including retries and the waits between them. A non-positive `WithTimeout`
+disables the client-level per-attempt timeout.
+
+`shoot.WithRetry` sets the client-level policy. `RetryConfig.Count` is the
+number of additional attempts. Retries run outside `http.Client.Do`. By
+default only idempotent methods are retried, on temporary network errors,
+per-attempt timeouts, HTTP 429, and HTTP 500 and above except 501. POST and
+PATCH retry only when the policy or the request allows it. A `Retry-After`
+header on 429 and 503 overrides the backoff. The default backoff is capped
+exponential delay with jitter.
 
 Generated clients URL-escape path parameters. `GET` and `DELETE` parameters
 that are not used in the path become query parameters; a query map must have

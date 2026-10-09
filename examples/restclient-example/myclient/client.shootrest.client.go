@@ -46,18 +46,14 @@ func (_c *client) Get(ctx context.Context, key string, opts ...shoot.RequestOpti
 
 	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 
-	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
 
 	if err != nil {
 		return nil, nil, err
 	}
-	defer func() {
-		if cleanupRequest_ != nil {
-			cleanupRequest_()
-		}
-	}()
+	defer call_.Cancel()
 
-	resp_, err := _c.client.Do(req_)
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -109,18 +105,14 @@ func (_c *client) Set(ctx context.Context, kv *KV, opts ...shoot.RequestOption) 
 
 	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 
-	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
 
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if cleanupRequest_ != nil {
-			cleanupRequest_()
-		}
-	}()
+	defer call_.Cancel()
 
-	resp_, err := _c.client.Do(req_)
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
 	}
@@ -160,23 +152,19 @@ func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
 
 	req_.Header.Set("Content-Type", "application/zip")
 
-	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if cleanupRequest_ != nil {
-			cleanupRequest_()
-		}
-	}()
+	defer call_.Cancel()
 
-	resp_, err := _c.client.Do(req_)
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
 	}
-	response_ := shoot.NewStreamResponse(resp_, cleanupRequest_)
-	cleanupRequest_ = nil
+	response_ := shoot.NewStreamResponse(resp_, call_.Cancel)
+	call_ = shoot.Call{}
 
 	return response_, nil
 }

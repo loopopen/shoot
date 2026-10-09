@@ -49,18 +49,14 @@ func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*shoot.Re
 		req_.Header.Set(headerName_, headerValue_)
 	}
 
-	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if cleanupRequest_ != nil {
-			cleanupRequest_()
-		}
-	}()
+	defer call_.Cancel()
 
-	resp_, err := _c.client.Do(req_)
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
 	}
@@ -103,18 +99,14 @@ func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*shoo
 		req_.Header.Set(headerName_, headerValue_)
 	}
 
-	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if cleanupRequest_ != nil {
-			cleanupRequest_()
-		}
-	}()
+	defer call_.Cancel()
 
-	resp_, err := _c.client.Do(req_)
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
 	}
@@ -151,18 +143,14 @@ func (_c *client) PostNoBody() (*shoot.Response, error) {
 		req_.Header.Set(headerName_, headerValue_)
 	}
 
-	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if cleanupRequest_ != nil {
-			cleanupRequest_()
-		}
-	}()
+	defer call_.Cancel()
 
-	resp_, err := _c.client.Do(req_)
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
 	}
@@ -204,18 +192,14 @@ func (_c *client) SetEnabled(ctx context.Context, enabled bool) (*shoot.Response
 		req_.Header.Set(headerName_, headerValue_)
 	}
 
-	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if cleanupRequest_ != nil {
-			cleanupRequest_()
-		}
-	}()
+	defer call_.Cancel()
 
-	resp_, err := _c.client.Do(req_)
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
 	}
@@ -258,18 +242,14 @@ func (_c *client) ReplaceLabels(ctx context.Context, id int, labels map[string]s
 		req_.Header.Set(headerName_, headerValue_)
 	}
 
-	cleanupRequest_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if cleanupRequest_ != nil {
-			cleanupRequest_()
-		}
-	}()
+	defer call_.Cancel()
 
-	resp_, err := _c.client.Do(req_)
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
 	}

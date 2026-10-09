@@ -3,17 +3,19 @@
 package shoot
 
 // NewRestConf constructs a new instance of type RestConf
-func NewRestConf(baseUrl string, timeout string, enableLogging bool, defaultHeaders map[string]string) *RestConf {
+func NewRestConf(baseUrl string, timeout string, enableLogging bool, defaultHeaders map[string]string, retry RetryConfig) *RestConf {
 	return &RestConf{
 		baseURL:        baseUrl,
 		timeout:        timeout,
 		enableLogging:  enableLogging,
 		defaultHeaders: defaultHeaders,
+		retry:          retry,
 	}
 }
 
 // With initializes this instance using the functional options pattern
 func (r *RestConf) With(opts ...Option[RestConf, *RestConf]) *RestConf {
+	r.SetDefault()
 	for _, opt := range opts {
 		opt(r)
 	}
@@ -48,6 +50,18 @@ func DefaultHeaders(defaultHeaders_ map[string]string) Option[RestConf, *RestCon
 	}
 }
 
+// Retry is a configuration for the filed retry
+func Retry(retry_ RetryConfig) Option[RestConf, *RestConf] {
+	return func(r *RestConf) {
+		r.retry = retry_
+	}
+}
+
+// SetDefault sets the default values
+func (r *RestConf) SetDefault() {
+	r.timeout = "0s"
+}
+
 // BaseURL gets the value of field baseURL
 func (r *RestConf) BaseURL() string {
 	return r.baseURL
@@ -66,6 +80,11 @@ func (r *RestConf) EnableLogging() bool {
 // DefaultHeaders gets the value of field defaultHeaders
 func (r *RestConf) DefaultHeaders() map[string]string {
 	return r.defaultHeaders
+}
+
+// Retry gets the value of field retry
+func (r *RestConf) Retry() RetryConfig {
+	return r.retry
 }
 
 // SetBaseURL sets the value of field baseURL
@@ -88,12 +107,18 @@ func (r *RestConf) SetDefaultHeaders(defaultHeaders_ map[string]string) {
 	r.defaultHeaders = defaultHeaders_
 }
 
+// SetRetry sets the value of field retry
+func (r *RestConf) SetRetry(retry_ RetryConfig) {
+	r.retry = retry_
+}
+
 // RestConfGetter is read-only interface for RestConf type
 type RestConfGetter interface {
 	BaseURL() string
 	Timeout() string
 	EnableLogging() bool
 	DefaultHeaders() map[string]string
+	Retry() RetryConfig
 }
 
 // RestConfSetter is write-only interface for RestConf type
@@ -102,6 +127,7 @@ type RestConfSetter interface {
 	SetTimeout(string)
 	SetEnableLogging(bool)
 	SetDefaultHeaders(map[string]string)
+	SetRetry(RetryConfig)
 }
 
 // ShootNew exists solely to fulfill the NewShooter interface contract
