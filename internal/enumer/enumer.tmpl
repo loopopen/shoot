@@ -144,15 +144,24 @@ func ({{$this}} {{.TypeName}}) Value() (driver.Value, error) {
 
 //Scan implements the driver.Scanner interface for {{.TypeName}}
 func ({{$this}} *{{.TypeName}}) Scan(value interface{}) error {
-	data, ok := value.([]byte)
-	if !ok {
+	if value == nil {
+		*{{$this}} = 0
+		return nil
+	}
+	var s_ string
+	switch v_ := value.(type) {
+	case []byte:
+		s_ = string(v_)
+	case string:
+		s_ = v_
+	default:
 		return errors.New("bad enum type")
 	}
-	e_, err := shoot.ParseEnum[{{.TypeName}}](string(data))
+	e_, err := shoot.ParseEnum[{{.TypeName}}](s_)
 	if err != nil {
 		return err
 	}
-	*{{$this}}  = e_
+	*{{$this}} = e_
 	return nil
 }
 {{end}}
