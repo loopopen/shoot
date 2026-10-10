@@ -223,7 +223,7 @@ func (g *Generator) makeSubMap(f1, f2 *Field, typ1, typ2 types.Type, isSlice boo
 					} else {
 						f2.CanMap = true
 					}
-					f2.Type = qualifiedTypeName(typ2, g.flags.alias)
+					f2.Type = g.qualifiedTypeName(typ2)
 					f1.IsPtr = isPtr1
 					f2.IsPtr = isPtr2
 					g.writeDestSet.Adds(f2.Name)
