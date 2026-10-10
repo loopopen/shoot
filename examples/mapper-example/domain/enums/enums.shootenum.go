@@ -113,11 +113,20 @@ func (o OrderStatus) Value() (driver.Value, error) {
 
 // Scan implements the driver.Scanner interface for OrderStatus
 func (o *OrderStatus) Scan(value interface{}) error {
-	data, ok := value.([]byte)
-	if !ok {
+	if value == nil {
+		*o = 0
+		return nil
+	}
+	var s_ string
+	switch v_ := value.(type) {
+	case []byte:
+		s_ = string(v_)
+	case string:
+		s_ = v_
+	default:
 		return errors.New("bad enum type")
 	}
-	e_, err := shoot.ParseEnum[OrderStatus](string(data))
+	e_, err := shoot.ParseEnum[OrderStatus](s_)
 	if err != nil {
 		return err
 	}

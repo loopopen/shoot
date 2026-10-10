@@ -4,6 +4,7 @@ MODULES := \
 	. \
 	examples/constructor-example \
 	examples/enumer-example \
+	examples/enumer-example2 \
 	examples/mapper-example \
 	examples/mapper-example2 \
 	examples/mapper-example3 \
