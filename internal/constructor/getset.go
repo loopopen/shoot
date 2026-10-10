@@ -55,26 +55,26 @@ func (g *Generator) makeGetSet() {
 				named, ok := shoot.AssignableToIface(f.typ, set)
 				if ok {
 					setIfaces = append(setIfaces, types.TypeString(named, g.qualifier))
-				}
 
-				iface, ok := named.Underlying().(*types.Interface)
-				if ok {
-					for i := 0; i < iface.NumMethods(); i++ {
-						fn := iface.Method(i)
-						sig := fn.Type().(*types.Signature)
-						params := sig.Params()
-						results := sig.Results()
-						if results != nil && results.Len() > 0 {
-							continue
+					iface, ok := named.Underlying().(*types.Interface)
+					if ok {
+						for i := 0; i < iface.NumMethods(); i++ {
+							fn := iface.Method(i)
+							sig := fn.Type().(*types.Signature)
+							params := sig.Params()
+							results := sig.Results()
+							if results != nil && results.Len() > 0 {
+								continue
+							}
+							if params == nil || params.Len() == 0 || params.Len() > 1 {
+								continue
+							}
+							g.getsetMethods = append(g.getsetMethods, shoot.Func{
+								Name:  fn.Name(),
+								Param: params.At(0).Type(),
+								Path:  fn.Name(),
+							})
 						}
-						if params == nil || params.Len() == 0 || params.Len() > 1 {
-							continue
-						}
-						g.getsetMethods = append(g.getsetMethods, shoot.Func{
-							Name:  fn.Name(),
-							Param: params.At(0).Type(),
-							Path:  fn.Name(),
-						})
 					}
 				}
 			}
