@@ -37,4 +37,7 @@ func main() {
 	if shoot.TryParseEnum("Green", &l) {
 		fmt.Println(l)
 	}
+
+	var e enums.OutOfOrder
+	fmt.Println(e.Strings())
 }

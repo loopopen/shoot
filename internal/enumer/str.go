@@ -97,7 +97,7 @@ func (g *Generator) makeStr(typeName string) {
 					if !isInt && !isUint {
 						logx.Fatalf("internal error: value of %s is not an integer: %s", n, value.String())
 					}
-					if !isInt {
+					if !isUint {
 						u64 = uint64(i64)
 					}
 					v := Value{
@@ -119,15 +119,18 @@ func (g *Generator) makeStr(typeName string) {
 	}
 
 	var nameList []string
-	valueMap := make(map[string]int64)
+	valueMap := make(map[string]Value)
 	strMap := make(map[string]string)
 	sort.Slice(values, func(i, j int) bool {
+		if values[i].signed {
+			return int64(values[i].value) < int64(values[j].value)
+		}
 		return values[i].value < values[j].value
 	})
 	var enums []string
 	for _, v := range values {
 		nameList = append(nameList, v.name)
-		valueMap[v.name] = int64(v.value)
+		valueMap[v.name] = v
 		shortName := strings.TrimPrefix(v.name, typeName)
 		strMap[v.name] = shortName
 		enums = append(enums, fmt.Sprintf("'%s'", shortName))
@@ -142,10 +145,14 @@ func (g *Generator) makeStr(typeName string) {
 
 	g.RegisterTransfer("valueof", func(key string) interface{} {
 		v := valueMap[key]
-		if v >= 0 {
-			return fmt.Sprintf("%d", v)
+		if v.signed {
+			i := int64(v.value)
+			if i < 0 {
+				return fmt.Sprintf("(%d)", i)
+			}
+			return fmt.Sprintf("%d", i)
 		}
-		return fmt.Sprintf("(%d)", v)
+		return fmt.Sprintf("%d", v.value)
 	})
 
 	g.RegisterTransfer("strof", func(key string) interface{} {

@@ -27,14 +27,12 @@ test: tidy-modules gen-modules
 	cd ./cmd/test && go generate ./...
 	go test ./cmd
 
-
-
 tag:
 	@grep -o 'v[^"]*' ./internal/shoot/consts.go
 
 release: test
-	sed "s/= \"v[^\"]*\"/= \"${tag}\"/" ./internal/shoot/consts.go > ./internal/shoot/consts.go.tmp
-	mv ./internal/shoot/consts.go.tmp ./internal/shoot/consts.go
+	@sed "s/= \"v[^\"]*\"/= \"${tag}\"/" ./internal/shoot/consts.go > ./internal/shoot/consts.go.tmp
+	@mv ./internal/shoot/consts.go.tmp ./internal/shoot/consts.go
 	make gen-modules
 	git add -A
 	git commit -m"chore: ${tag}"
