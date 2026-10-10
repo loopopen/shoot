@@ -119,7 +119,7 @@ func makeCtorMatch(g *Generator, expFields []*Field, ctorParams []*Field, tagMap
 				p.CanAssign = true
 			} else if conv {
 				p.IsConv = true
-				p.Type = qualifiedTypeName(p.typ, g.flags.alias)
+				p.Type = g.qualifiedTypeName(p.typ)
 			}
 			if same || conv {
 				p.Target = f //ref:01; Target has different meanings

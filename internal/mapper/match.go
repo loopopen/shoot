@@ -30,7 +30,7 @@ func (g *Generator) makeTypeMatch() {
 					f2.CanAssign = true
 				} else if conv {
 					f2.IsConv = true
-					f2.Type = qualifiedTypeName(f2.typ, g.flags.alias)
+					f2.Type = g.qualifiedTypeName(f2.typ)
 				}
 			}
 
@@ -44,24 +44,15 @@ func (g *Generator) makeTypeMatch() {
 					f1.CanAssign = true
 				} else if convback {
 					f1.IsConv = true
-					f1.Type = qualifiedTypeName(f1.typ, g.flags.alias)
+					f1.Type = g.qualifiedTypeName(f1.typ)
 				}
 			}
 		}
 	}
 }
 
-func qualifiedTypeName(t types.Type, alias string) string {
-	qualifier := func(pkg *types.Package) string {
-		if alias != "" {
-			return alias
-		}
-		if pkg == nil {
-			return ""
-		}
-		return pkg.Name()
-	}
-	return types.TypeString(t, qualifier)
+func (g *Generator) qualifiedTypeName(t types.Type) string {
+	return types.TypeString(t, g.qualifier)
 }
 
 func canNameMatch(f1, f2 *Field, tagMap map[string]string, ignoreCase bool) bool {

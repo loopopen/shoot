@@ -8,6 +8,7 @@ MODULES := \
 	examples/mapper-example \
 	examples/mapper-example2 \
 	examples/mapper-example3 \
+	examples/mapper-example4 \
 	examples/restclient-example
 
 tidy-modules:
