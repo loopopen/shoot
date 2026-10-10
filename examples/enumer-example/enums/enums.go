@@ -20,3 +20,12 @@ const (
 	StatusProcessing
 	StatusSucceeded
 )
+
+type OutOfOrder int32
+
+const (
+	OutOfOrderC OutOfOrder = 3
+	OutOfOrderA OutOfOrder = 1
+	OutOfOrderX OutOfOrder = -1
+	OutOfOrderB OutOfOrder = 2
+)

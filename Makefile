@@ -27,8 +27,6 @@ test: tidy-modules gen-modules
 	cd ./cmd/test && go generate ./...
 	go test ./cmd
 
-
-
 tag:
 	@grep -o 'v[^"]*' ./internal/shoot/consts.go
 
