@@ -215,6 +215,15 @@ func (g *Generator) makeSubMap(f1, f2 *Field, typ1, typ2 types.Type, isSlice boo
 			pkgpath2 := n2.Obj().Pkg().Path()
 
 			if pkgpath1 == g.Pkg().PkgPath && pkgpath2 == g.destPkg.PkgPath {
+				// Recursive mapping calls To<Dest>() / From<Dest>(), which are
+				// generated only for struct types. Named scalar types (for example,
+				// type ID int) must fall through to the normal conversion matching.
+				if _, ok := n1.Underlying().(*types.Struct); !ok {
+					return
+				}
+				if _, ok := n2.Underlying().(*types.Struct); !ok {
+					return
+				}
 				if !g.writeDestSet.Has(f2.Name) && !f2.IsGet {
 					//f2 = f1.ToDest()
 					f1.Target = f2

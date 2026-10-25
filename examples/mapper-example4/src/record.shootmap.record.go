@@ -10,7 +10,7 @@ func (r *Record) ToDest() *dest.Record {
 		return nil
 	}
 	record_ := new(dest.Record)
-	record_.Label = *r.Label.ToDest()
+	record_.Label = dest.Label(r.Label)
 	return record_
 }
 
@@ -24,7 +24,7 @@ func (r *Record) FromDest(record_ *dest.Record) *Record {
 	} else {
 		*r = Record{}
 	}
-	r.Label = *new(Label).FromDest(&record_.Label)
+	r.Label = Label(record_.Label)
 	return r
 }
 
