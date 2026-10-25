@@ -8,9 +8,9 @@ import (
 )
 
 type Order struct {
-	ID        string
-	Amount    decimal.Decimal
-	Status    enums.OrderStatus
-	OrderTime time.Time
-	Address   OrderAddress
+	ID        string            //订单ID
+	Amount    decimal.Decimal   //订单金额
+	Status    enums.OrderStatus //订单状态
+	OrderTime time.Time         //下单时间
+	Address   OrderAddress      //收货地址
 }

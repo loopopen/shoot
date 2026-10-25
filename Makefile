@@ -1,47 +1,48 @@
-.PHONY: test release test-modules
+TAG ?=
 
-MODULES := \
-	. \
-	examples/constructor-example \
-	examples/enumer-example \
-	examples/enumer-example2 \
-	examples/mapper-example \
-	examples/mapper-example2 \
-	examples/mapper-example3 \
-	examples/mapper-example4 \
-	examples/restclient-example
+.PHONY: tidy tidy-modules gen-modules test-modules test golden-up tag check-tag release push
+
+# Keep module operations aligned with the Go workspace source of truth.
+MODULES := $(shell go work edit -json | awk -F'"' '/"DiskPath":/ { print $$4 }')
+
+define run-in-modules
+	@set -e; \
+	for dir in $(MODULES); do \
+		printf '%s\n' "==> $$dir"; \
+		(cd "$$dir" && $(1)); \
+	done
+endef
 
 tidy-modules:
-	@for dir in $(MODULES); do \
-		(cd $$dir && GOWORK=off go mod tidy) || exit 1; \
-	done
+	$(call run-in-modules,GOWORK=off go mod tidy)
 
 gen-modules:
-	@for dir in $(MODULES); do \
-		(cd $$dir && go generate ./...) || exit 1; \
-	done
+	$(call run-in-modules,GOWORK=off go generate ./...)
+
+test-modules:
+	$(call run-in-modules,GOWORK=off go test ./...)
 
 golden-up:
 	go test ./cmd -update
 
-test: tidy-modules gen-modules
-	cd ./internal && go test ./...
-	cd ./cmd/test && go generate ./...
-	go test ./cmd
+test: tidy-modules gen-modules test-modules
 
 tag:
 	@grep -o 'v[^"]*' ./internal/shoot/consts.go
 
-release: test
-	@sed "s/= \"v[^\"]*\"/= \"${tag}\"/" ./internal/shoot/consts.go > ./internal/shoot/consts.go.tmp
+check-tag:
+	@test -n "$(TAG)" || { echo "TAG is required (for example: make release TAG=v1.2.3)" >&2; exit 2; }
+
+release: check-tag
+	$(MAKE) test
+	@sed "s/= \"v[^\"]*\"/= \"$(TAG)\"/" ./internal/shoot/consts.go > ./internal/shoot/consts.go.tmp
 	@mv ./internal/shoot/consts.go.tmp ./internal/shoot/consts.go
-	make gen-modules
+	$(MAKE) gen-modules
 	git add -A
-	git commit -m"chore: ${tag}"
-	git tag ${tag}
+	git commit -m "chore: $(TAG)"
+	git tag $(TAG)
 
 push:
 	git push && git push --tags
 
 tidy: tidy-modules
-# 	docker run --rm -v $(PWD):/app -w /app golang:1.24 sh -c "go mod tidy"
