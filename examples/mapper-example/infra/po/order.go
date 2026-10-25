@@ -13,13 +13,13 @@ import (
 type Order struct {
 	*mapper.SQLMapper
 	*gorm.Model
-	ID        string            `gorm:"primarykey"`
-	Amount    decimal.Decimal   `gorm:"type:decimal(20,2)"`
-	Status    enums.OrderStatus `gorm:"type:enum('Pending', 'Completed', 'Canceled')"`
+	ID        string            `gorm:"primarykey"`                                    // 订单ID
+	Amount    decimal.Decimal   `gorm:"type:decimal(20,2)"`                            // 订单金额
+	Status    enums.OrderStatus `gorm:"type:enum('Pending', 'Completed', 'Canceled')"` // 订单状态
 	City      string
 	Street    string
 	Room      string
-	OrderTime time.Time
+	OrderTime time.Time // 下单时间
 	// OrderTime sql.Null[time.Time]
 }
 
