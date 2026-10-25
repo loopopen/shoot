@@ -57,6 +57,7 @@ type Generator struct {
 
 	srcCtorParams  []*Field
 	destCtorParams []*Field
+	commentUpdates map[string]map[int]string
 }
 
 func New() *Generator {
@@ -192,6 +193,7 @@ func (g *Generator) MakeData(srcTypeName string) (any, bool) {
 	g.makeCtorMatch()
 	g.makeTypeMismatch() //priority: mismatch > match
 	g.makeTypeMatch()
+	g.collectCommentUpdates()
 
 	g.data.DestPkgName = g.destPkg.Name
 	g.data.DestPkgPath = g.destPkg.PkgPath

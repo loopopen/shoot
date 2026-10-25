@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"fmt"
+	"go/ast"
 	"go/types"
 	"strings"
 
@@ -85,6 +86,7 @@ type Flags struct {
 type Field struct {
 	Name        string //ID
 	Path        string //Model.ID
+	node        *ast.Field
 	typ         types.Type
 	depth       int32
 	backingName string

@@ -101,6 +101,7 @@ func (g *Generator) extractTopFiels(pkg *packages.Package, st *ast.StructType, t
 				appendOrReplace(fields, &Field{
 					Name:  name.Name,
 					Path:  name.Name,
+					node:  f,
 					typ:   obj.Type(),
 					depth: 0,
 				})
@@ -158,6 +159,7 @@ func appendOrReplace(fields *[]*Field, field *Field) {
 			f = (*fields)[i]
 			if field.depth < f.depth {
 				f.Path = field.Path
+				f.node = field.node
 				f.typ = field.typ
 				f.depth = field.depth
 				break

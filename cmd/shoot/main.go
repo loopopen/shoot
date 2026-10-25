@@ -77,6 +77,11 @@ func main() {
 		notedownSrc(fname, src)
 		fileNames = append(fileNames, fname)
 	}
+	if updater, ok := g.(interface{ ApplySourceChanges() error }); ok {
+		if err := updater.ApplySourceChanges(); err != nil {
+			logx.Fatal(err)
+		}
+	}
 
 	if len(srcMap) == 0 {
 		logx.Warnf("nothing generated: [%s]", strings.Join(flag.Args(), " "))
