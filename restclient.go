@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 
+	"github.com/docker/go-units"
 	"github.com/loopopen/shoot/middleware"
 )
 
@@ -15,6 +17,8 @@ type RestConf struct {
 	//@def="0"
 	timeout       string
 	enableLogging bool
+	//@def="10m"
+	maxResponseSize string
 	//todo: enableTrace    bool
 	defaultHeaders map[string]string
 	_middlewares   []middleware.Middleware
@@ -22,6 +26,7 @@ type RestConf struct {
 }
 
 // BuildMiddleware constructs the middleware chain by wrapping the default HTTP transport.
+// The response-size limit is outermost so it applies to the body the caller reads.
 func (r *RestConf) BuildMiddleware() http.RoundTripper {
 	t := http.DefaultTransport
 	for i := len(r._middlewares) - 1; i >= 0; i-- {
@@ -30,7 +35,20 @@ func (r *RestConf) BuildMiddleware() http.RoundTripper {
 	if r.enableLogging {
 		t = middleware.LoggingMiddleware(t)
 	}
-	return t
+	limit, err := parseByteSize(r.maxResponseSize)
+	if err != nil {
+		panic(err)
+	}
+	return middleware.ResponseLimitMiddleware(limit)(t)
+}
+
+// parseByteSize parses a byte size such as "20m" or "1g" with units.RAMInBytes.
+// An empty value means no limit. "0" is also no limit.
+func parseByteSize(s string) (int64, error) {
+	if strings.TrimSpace(s) == "" {
+		return 0, nil
+	}
+	return units.RAMInBytes(s)
 }
 
 // Use returns an Option function that applies the given middleware to a RestConf instance.

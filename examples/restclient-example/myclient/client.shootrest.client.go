@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/loopopen/shoot"
+	"github.com/loopopen/shoot/middleware"
 )
 
 type client struct {
@@ -123,6 +124,7 @@ func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
 	}
 	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 	req_.Header.Set("Content-Type", "application/zip")
+	req_ = req_.WithContext(middleware.SkipDefaultResponseLimit(req_.Context()))
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err

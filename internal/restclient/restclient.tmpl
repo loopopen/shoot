@@ -131,6 +131,9 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
 	{{- end}}
 
 	{{- /* call */}}
+	{{- if $streamResponse}}
+	req_ = req_.WithContext(middleware.SkipDefaultResponseLimit(req_.Context()))
+	{{- end}}
 	{{- if $requestOptions}}
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, {{$requestOptions}}...)
 	{{- else}}
