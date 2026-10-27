@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/loopopen/shoot/internal/constructor"
@@ -72,10 +73,12 @@ func main() {
 	g.ParseFlags()
 	g.LoadPackage()
 	srcMap := g.Generate(g)
+	dir := outputDir(g)
 	var fileNames []string
 	for fname, src := range srcMap {
-		notedownSrc(fname, src)
-		fileNames = append(fileNames, fname)
+		outPath := filepath.Join(dir, fname)
+		notedownSrc(dir, outPath, src)
+		fileNames = append(fileNames, outPath)
 	}
 	if updater, ok := g.(interface{ ApplySourceChanges() error }); ok {
 		if err := updater.ApplySourceChanges(); err != nil {
@@ -99,9 +102,17 @@ func main() {
 	}
 }
 
-func notedownSrc(fileName string, src []byte) {
-	// write to tmpfile first
-	tmpFile, err := os.CreateTemp(".", fmt.Sprintf(".%s_", fileName))
+func outputDir(g shoot.Generator) string {
+	withDir, ok := g.(interface{ CommonFlags() *shoot.CommonFlags })
+	if !ok || withDir.CommonFlags() == nil || withDir.CommonFlags().Dir == "" {
+		return "."
+	}
+	return withDir.CommonFlags().Dir
+}
+
+func notedownSrc(dir, fileName string, src []byte) {
+	// write to tmpfile first, in the same directory as the output
+	tmpFile, err := os.CreateTemp(dir, fmt.Sprintf(".%s_", filepath.Base(fileName)))
 	defer func() {
 		if tmpFile != nil {
 			_ = tmpFile.Close()

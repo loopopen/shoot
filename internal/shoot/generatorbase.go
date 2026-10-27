@@ -191,6 +191,9 @@ func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
 	}
 
 	gofile := strings.TrimSuffix(fileName, ".go")
+	if gofile == "" {
+		panic("cannot find source file name")
+	}
 	if typeName == "" {
 		return fmt.Sprintf("%s.%s.%s", gofile, cmd, postfix)
 	}
@@ -248,6 +251,9 @@ func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Pac
 					break end
 				}
 			}
+		}
+		if g.allInOneFile == "" {
+			panic(fmt.Sprintf("cannot find source file name for %q", cf.CmdLine))
 		}
 	}
 
@@ -439,7 +445,7 @@ func (g *GeneratorBase) Clean() error {
 		return nil
 	}
 
-	genfile := g.fileName("", false)
+	genfile := filepath.Join(g.commonFlags.Dir, g.fileName("", false))
 	pattern := fmt.Sprintf("*.%s%s*.go", Shoot, g.subCmd)
 	glob := filepath.Join(g.commonFlags.Dir, pattern)
 	matches, err := filepath.Glob(glob)
@@ -447,7 +453,7 @@ func (g *GeneratorBase) Clean() error {
 		return err
 	}
 	for _, file := range matches {
-		if file == genfile {
+		if filepath.Clean(file) == filepath.Clean(genfile) {
 			continue
 		}
 		isAIO, err := isAllInOneFile(file)
