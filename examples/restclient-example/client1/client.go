@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"restclientexample/client1/dto"
+	"time"
 
 	"github.com/loopopen/shoot"
 )
@@ -29,11 +30,11 @@ type User struct {
 
 type QueryBooksReq struct {
 	name      *string
-	language  string `shoot:"alias=lang,omitempty"`
-	PageSize  int    `shoot:"alias=page_size"`
+	language  string `rest:"alias=lang,omitempty"`
+	PageSize  int    `rest:"alias=page_size"`
 	PageIndex *int
-	// PubDate   time.Time `shoot:"dateformat=2006-01-02"` //todo: support this
-	// Ignore    string    `shoot:"-"`                     //todo: support this
+	Ignore    string    `rest:"-"`
+	PubDate   time.Time `rest:"alias=pub_date,dateformat=2006-01-02"`
 }
 
 type Client interface {
