@@ -3,183 +3,192 @@
 package {{.PackageName}}
 
 import (
-    "github.com/loopopen/shoot"
+	"github.com/loopopen/shoot"
 )
 
-type {{camelCase .TypeName}} struct{
-    client         *http.Client
+type {{camelCase .TypeName}} struct {
+	client         *http.Client
 	conf           *shoot.RestConf
-    defaultTimeout time.Duration
+	defaultTimeout time.Duration
 }
-
 {{range $item := .MethodList}}
 func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
-    {{- $errret := index $.ErrReturnMap . -}}
-    {{- $result := index $.ReturnResultMap . -}}
-    {{- $wrappedResponse := index $.ResponseMap . -}}
-    {{- $streamResponse := index $.StreamResponseMap . -}}
-    {{- $ptr := "" -}}
-    {{- if $result.IsPtr -}}
-    {{- $ptr = "&" -}}
-    {{- end -}}
-    
-    path_ := "{{index $.PathMap .}}"{{"\n"}}
-    {{- $pms := index $.PathParamsMap . -}}
-    {{- if $pms -}}
-    {{- range $pms -}}
-    {{- $key := . -}}
-    {{- $alias := index (index $.AliasMap $item) . -}}
-    {{- if $alias -}}{{- $key = $alias -}}{{- end -}}
-    path_ = strings.Replace(path_, "{{printf "{%s}" $key}}", url.PathEscape(fmt.Sprint({{.}})), 1){{"\n"}}
-    {{- end}}
-    {{end}}
+	{{- $errret := index $.ErrReturnMap .}}
+	{{- $result := index $.ReturnResultMap .}}
+	{{- $wrappedResponse := index $.ResponseMap .}}
+	{{- $streamResponse := index $.StreamResponseMap .}}
+	{{- $httpmethod := index $.HTTPMethodMap .}}
+	{{- $ctx := index $.CtxParamMap .}}
+	{{- $requestOptions := index $.RequestOptionsMap .}}
+	{{- $ptr := ""}}
+	{{- if $result.IsPtr}}
+	{{- $ptr = "&"}}
+	{{- end}}
 
-    url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
-    if err != nil {
-        return {{$errret}}
-    }
-    {{$httpmethod := index $.HTTPMethodMap $item}}
-    {{$body := "nil"}}
-    {{if in $httpmethod $.BodyHTTPMethods}}
-    {{$p := index $.BodyParamMap .}}
-    {{if $p}}
-    bodyJson_, err := json.Marshal({{$p}})
-    if err != nil {
-        return {{$errret}}
-    }
-    {{$body = "bytes.NewReader(bodyJson_)"}}
-    {{end}}
-    {{end}}
+	{{- /* path */}}
+	path_ := "{{index $.PathMap .}}"
+	{{- $pms := index $.PathParamsMap .}}
+	{{- if $pms}}
+	{{- range $pms}}
+	{{- $key := .}}
+	{{- $alias := index (index $.AliasMap $item) .}}
+	{{- if $alias}}
+	{{- $key = $alias}}
+	{{- end}}
+	path_ = strings.Replace(path_, "{{printf "{%s}" $key}}", url.PathEscape(fmt.Sprint({{.}})), 1)
+	{{- end}}
+	{{- end}}
 
-    {{$ctx := index $.CtxParamMap .}}
-    {{if $ctx}}
-    req_, err := http.NewRequestWithContext({{$ctx}}, "{{$httpmethod}}", url_, {{$body}})
-    {{else}}
-    req_, err := http.NewRequest("{{$httpmethod}}", url_, {{$body}})
-    {{end -}}
-    if err != nil {
-        return {{$errret}}
-    }{{- "\n" -}}
+	{{- /* url */}}
+	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
+	if err != nil {
+		return {{$errret}}
+	}
 
-    {{- "\n" -}}
-    {{- if not (in $httpmethod $.BodyHTTPMethods) -}}
-    {{- $qs := index $.QueryParamsMap $item -}}
-    {{- $qd := index $.QueryDictMap $item -}}
-    {{- $isPtrMap := index $.IsParamPtrMap $item -}}
-    {{- if or $qs $qd -}}
-    query_ := req_.URL.Query(){{"\n"}}
-    {{- end -}}
-    {{- if $qs -}}
-    {{- range $key := $qs -}}
-    {{- $alias := index (index $.AliasMap $item) $key -}}
-    {{- if not $alias}}{{$alias = $key}}{{end -}}
-    {{- if index $isPtrMap $key -}}
-    if {{$key}} != nil {
-        query_.Set("{{$alias}}", fmt.Sprintf("%v", *{{$key}}))
-    }{{"\n"}}
-    {{- else -}}
-    query_.Set("{{$alias}}", fmt.Sprintf("%v",{{$key}})){{"\n"}}
-    {{- end -}}
-    {{- end -}}
-    {{- end -}}
-    {{- if $qd -}}
-    {{- if index $isPtrMap $qd -}}
-    if {{$qd}} != nil {
-        for k, v := range *{{$qd}} {
-            query_.Set(k, fmt.Sprintf("%v", v))
-        }
-    }{{"\n"}}
-    {{- else -}}
-    for k, v := range {{$qd}} {
-        query_.Set(k, fmt.Sprintf("%v", v))
-    }{{"\n"}}
-    {{- end -}}
-    {{- end -}}
-    {{- if or $qs $qd -}}
-    req_.URL.RawQuery = query_.Encode(){{"\n"}}
-    {{- end -}}
-    {{- end -}}
+	{{- /* json body */}}
+	{{- $body := "nil"}}
+	{{- if in $httpmethod $.BodyHTTPMethods}}
+	{{- $p := index $.BodyParamMap .}}
+	{{- if $p}}
+	bodyJson_, err := json.Marshal({{$p}})
+	if err != nil {
+		return {{$errret}}
+	}
+	{{- $body = "bytes.NewReader(bodyJson_)"}}
+	{{- end}}
+	{{- end}}
 
-    {{- "\n" -}}
-    {{- range $key, $value := (index $.DefaultHeaders $httpmethod) -}}
-    req_.Header.Set("{{$key}}", "{{$value}}"){{"\n"}}
-    {{- end}}
+	{{- /* request */}}
+	{{- if $ctx}}
+	req_, err := http.NewRequestWithContext({{$ctx}}, "{{$httpmethod}}", url_, {{$body}})
+	{{- else}}
+	req_, err := http.NewRequest("{{$httpmethod}}", url_, {{$body}})
+	{{- end}}
+	if err != nil {
+		return {{$errret}}
+	}
 
-    for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
-        req_.Header.Set(headerName_, headerValue_)
-    }
+	{{- /* query */}}
+	{{- if not (in $httpmethod $.BodyHTTPMethods)}}
+	{{- $qs := index $.QueryParamsMap $item}}
+	{{- $qd := index $.QueryDictMap $item}}
+	{{- $isPtrMap := index $.IsParamPtrMap $item}}
+	{{- if or $qs $qd}}
+	query_ := req_.URL.Query()
+	{{- if $qs}}
+	{{- range $key := $qs}}
+	{{- $alias := index (index $.AliasMap $item) $key}}
+	{{- if not $alias}}
+	{{- $alias = $key}}
+	{{- end}}
+	{{- if index $isPtrMap $key}}
+	if {{$key}} != nil {
+		query_.Set("{{$alias}}", fmt.Sprintf("%v", *{{$key}}))
+	}
+	{{- else}}
+	query_.Set("{{$alias}}", fmt.Sprintf("%v",{{$key}}))
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- if $qd}}
+	{{- if index $isPtrMap $qd}}
+	if {{$qd}} != nil {
+		for k, v := range *{{$qd}} {
+			query_.Set(k, fmt.Sprintf("%v", v))
+		}
+	}
+	{{- else}}
+	for k, v := range {{$qd}} {
+		query_.Set(k, fmt.Sprintf("%v", v))
+	}
+	{{- end}}
+	{{- end}}
+	req_.URL.RawQuery = query_.Encode()
+	{{- end}}
+	{{- end}}
 
-    {{range $key, $value := $.StaticHeaders}}
-    req_.Header.Set("{{$key}}", "{{$value}}"){{"\n"}}
-    {{end}}
-    {{range $key, $value := (index $.MethodHeadersMap $item)}}
-    req_.Header.Set("{{$key}}", "{{$value}}"){{"\n"}}
-    {{end}}
+	{{- /* headers */}}
+	{{- $defaults := index $.DefaultHeaders $item}}
+	{{- with index $defaults "Accept"}}
+	req_.Header.Set("Accept", "{{.}}")
+	{{- end}}
+	{{- with index $defaults "Content-Type"}}
+	req_.Header.Set("Content-Type", "{{.}}")
+	{{- end}}
+	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
+		req_.Header.Set(headerName_, headerValue_)
+	}
+	{{- range $key, $value := $.StaticHeaders}}
+	req_.Header.Set("{{$key}}", "{{$value}}")
+	{{- end}}
+	{{- range $key, $value := index $.MethodHeadersMap $item}}
+	req_.Header.Set("{{$key}}", "{{$value}}")
+	{{- end}}
 
-    {{$requestOptions := index $.RequestOptionsMap $item}}
-    {{if $requestOptions}}
-    call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, {{$requestOptions}}...)
-    {{else}}
-    call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
-    {{- end}}
-    if err != nil {
-        return {{$errret}}
-    }
-    defer call_.Cancel()
+	{{- /* call */}}
+	{{- if $requestOptions}}
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, {{$requestOptions}}...)
+	{{- else}}
+	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
+	{{- end}}
+	if err != nil {
+		return {{$errret}}
+	}
+	defer call_.Cancel()
 
-    resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
-    if err != nil {
-        return {{$errret}}
-    }
+	{{- /* response */}}
+	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
+	if err != nil {
+		return {{$errret}}
+	}
+	{{- if $streamResponse}}
+	response_ := shoot.NewStreamResponse(resp_, call_.Cancel)
+	call_ = shoot.Call{}
+	{{- else}}
+	responseBody_, err := io.ReadAll(resp_.Body)
+	closeErr_ := resp_.Body.Close()
+	{{- if $wrappedResponse}}
+	response_ := shoot.NewResponse(resp_, responseBody_)
+	{{- else}}
+	resp_.Body = io.NopCloser(bytes.NewReader(responseBody_))
+	response_ := resp_
+	{{- end}}
+	if err != nil {
+		{{- if not $result.Type}}
+		return response_, err
+		{{- else}}
+		return nil, response_, err
+		{{- end}}
+	}
+	if closeErr_ != nil {
+		{{- if not $result.Type}}
+		return response_, closeErr_
+		{{- else}}
+		return nil, response_, closeErr_
+		{{- end}}
+	}
+	{{- end}}
 
-    {{- if $streamResponse}}
-    response_ := shoot.NewStreamResponse(resp_, call_.Cancel)
-    call_ = shoot.Call{}
-    {{else}}
-    responseBody_, err := io.ReadAll(resp_.Body)
-    closeErr_ := resp_.Body.Close()
-    {{- if $wrappedResponse}}
-    response_ := shoot.NewResponse(resp_, responseBody_)
-    {{- else}}
-    resp_.Body = io.NopCloser(bytes.NewReader(responseBody_))
-    response_ := resp_
-    {{- end}}
-    if err != nil {
-        {{- if not $result.Type}}
-        return response_, err
-        {{- else}}
-        return nil, response_, err
-        {{- end}}
-    }
-    if closeErr_ != nil {
-        {{- if not $result.Type}}
-        return response_, closeErr_
-        {{- else}}
-        return nil, response_, closeErr_
-        {{- end}}
-    }
-    {{- end}}
-
-    {{if not $result.Type}}
-    return response_, nil
-    {{else}}
-    var r_ {{$result.Type}}
-    err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
-    if err == io.EOF {
-        err = nil //ignore EOF errors caused by empty response body
-    }
-    if err != nil {
-        return nil, response_, err
-    }
-    return {{$ptr}}r_, response_, nil
-    {{- end -}}
+	{{- /* result */}}
+	{{- if not $result.Type}}
+	return response_, nil
+	{{- else}}
+	var r_ {{$result.Type}}
+	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
+	if err == io.EOF {
+		err = nil //ignore EOF errors caused by empty response body
+	}
+	if err != nil {
+		return nil, response_, err
+	}
+	return {{$ptr}}r_, response_, nil
+	{{- end}}
 }
 {{end}}
-
 // ConfigHTTPClient allows customization of the underlying http.Client.
 func (_c *{{camelCase .TypeName}}) ConfigHTTPClient(config func(*http.Client)) {{.TypeName}} {
 	config(_c.client)
-    return _c
+	return _c
 }
 
 // ShootRest exists solely to fulfill the RestShooter interface contract.
@@ -187,15 +196,15 @@ func (_c *{{camelCase .TypeName}}) ShootRest() { /*noop*/ }
 
 func init() {
 	shoot.Register(func(conf shoot.RestConf) {{.TypeName}} {
-        timeout, err := time.ParseDuration(conf.Timeout())
-        if err != nil {
-            panic(err)
-        }
+		timeout, err := time.ParseDuration(conf.Timeout())
+		if err != nil {
+			panic(err)
+		}
 		return &{{camelCase .TypeName}}{
 			conf:           &conf,
 			defaultTimeout: timeout,
 			client: &http.Client{
-                Transport: conf.BuildMiddleware(),
+				Transport: conf.BuildMiddleware(),
 			},
 		}
 	})
