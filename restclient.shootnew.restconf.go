@@ -3,13 +3,14 @@
 package shoot
 
 // NewRestConf constructs a new instance of type RestConf
-func NewRestConf(baseUrl string, timeout string, enableLogging bool, defaultHeaders map[string]string, retry RetryConfig) *RestConf {
+func NewRestConf(baseUrl string, timeout string, enableLogging bool, maxResponseSize string, defaultHeaders map[string]string, retry RetryConfig) *RestConf {
 	return &RestConf{
-		baseURL:        baseUrl,
-		timeout:        timeout,
-		enableLogging:  enableLogging,
-		defaultHeaders: defaultHeaders,
-		retry:          retry,
+		baseURL:         baseUrl,
+		timeout:         timeout,
+		enableLogging:   enableLogging,
+		maxResponseSize: maxResponseSize,
+		defaultHeaders:  defaultHeaders,
+		retry:           retry,
 	}
 }
 
@@ -43,6 +44,13 @@ func EnableLogging(enableLogging_ bool) Option[RestConf, *RestConf] {
 	}
 }
 
+// MaxResponseSize is a configuration for the filed maxResponseSize
+func MaxResponseSize(maxResponseSize_ string) Option[RestConf, *RestConf] {
+	return func(r *RestConf) {
+		r.maxResponseSize = maxResponseSize_
+	}
+}
+
 // DefaultHeaders is a configuration for the filed defaultHeaders
 func DefaultHeaders(defaultHeaders_ map[string]string) Option[RestConf, *RestConf] {
 	return func(r *RestConf) {
@@ -60,6 +68,7 @@ func Retry(retry_ RetryConfig) Option[RestConf, *RestConf] {
 // SetDefault sets the default values
 func (r *RestConf) SetDefault() {
 	r.timeout = "0"
+	r.maxResponseSize = "10m"
 }
 
 // BaseURL gets the value of field baseURL
@@ -75,6 +84,11 @@ func (r *RestConf) Timeout() string {
 // EnableLogging gets the value of field enableLogging
 func (r *RestConf) EnableLogging() bool {
 	return r.enableLogging
+}
+
+// MaxResponseSize gets the value of field maxResponseSize
+func (r *RestConf) MaxResponseSize() string {
+	return r.maxResponseSize
 }
 
 // DefaultHeaders gets the value of field defaultHeaders
@@ -102,6 +116,11 @@ func (r *RestConf) SetEnableLogging(enableLogging_ bool) {
 	r.enableLogging = enableLogging_
 }
 
+// SetMaxResponseSize sets the value of field maxResponseSize
+func (r *RestConf) SetMaxResponseSize(maxResponseSize_ string) {
+	r.maxResponseSize = maxResponseSize_
+}
+
 // SetDefaultHeaders sets the value of field defaultHeaders
 func (r *RestConf) SetDefaultHeaders(defaultHeaders_ map[string]string) {
 	r.defaultHeaders = defaultHeaders_
@@ -117,6 +136,7 @@ type RestConfGetter interface {
 	BaseURL() string
 	Timeout() string
 	EnableLogging() bool
+	MaxResponseSize() string
 	DefaultHeaders() map[string]string
 	Retry() RetryConfig
 }
@@ -126,6 +146,7 @@ type RestConfSetter interface {
 	SetBaseURL(string)
 	SetTimeout(string)
 	SetEnableLogging(bool)
+	SetMaxResponseSize(string)
 	SetDefaultHeaders(map[string]string)
 	SetRetry(RetryConfig)
 }

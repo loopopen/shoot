@@ -197,6 +197,12 @@ func TestTemplateDefaultHeaders(t *testing.T) {
 	if !strings.Contains(download, `req_.Header.Set("Content-Type", "application/zip")`) {
 		t.Fatalf("Download missing explicit Content-Type:\n%s", download)
 	}
+	if !strings.Contains(download, "middleware.SkipDefaultResponseLimit(req_.Context())") {
+		t.Fatalf("Download missing response-limit exemption:\n%s", download)
+	}
+	if strings.Contains(get, "SkipDefaultResponseLimit") || strings.Contains(set, "SkipDefaultResponseLimit") {
+		t.Fatalf("non-stream method exempts the response limit:\nget:\n%s\nset:\n%s", get, set)
+	}
 	assertNoBlankLinesInFunctions(t, src)
 }
 

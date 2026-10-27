@@ -16,6 +16,7 @@ import (
 	"github.com/loopopen/shoot"
 	"github.com/loopopen/shoot/cmd/test/restclient/alias"
 	"github.com/loopopen/shoot/cmd/test/restclient/dto"
+	"github.com/loopopen/shoot/middleware"
 )
 
 type client struct {
@@ -668,6 +669,7 @@ func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
+	req_ = req_.WithContext(middleware.SkipDefaultResponseLimit(req_.Context()))
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err

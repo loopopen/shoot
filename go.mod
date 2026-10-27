@@ -3,6 +3,7 @@ module github.com/loopopen/shoot
 go 1.24.0
 
 require (
+	github.com/docker/go-units v0.5.0
 	github.com/sebdah/goldie/v2 v2.7.1
 	golang.org/x/tools v0.41.0
 )
