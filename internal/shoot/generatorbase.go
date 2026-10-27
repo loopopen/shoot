@@ -272,7 +272,18 @@ func (g *GeneratorBase) TestFile(file *ast.File) bool {
 }
 
 func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Package, error) {
-	pkgs, err := packages.Load(cfg, patterns...)
+	loadCfg := *cfg
+	dir := loadCfg.Dir
+	if dir == "" {
+		dir = dot
+	}
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, fmt.Errorf("resolve package load directory %q: %w", dir, err)
+	}
+	loadCfg.Dir = absDir
+
+	pkgs, err := packages.Load(&loadCfg, patterns...)
 	if err != nil {
 		return nil, err
 	}
@@ -291,9 +302,12 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 				break
 			}
 
-			isPath := strings.HasPrefix(pat, ".") || strings.HasPrefix(pat, "/")
+			isPath := strings.HasPrefix(pat, ".") || filepath.IsAbs(pat)
 			if isPath {
-				absPat, _ := filepath.Abs(filepath.Join(cfg.Dir, pat))
+				absPat := filepath.Join(loadCfg.Dir, pat)
+				if filepath.IsAbs(pat) {
+					absPat = filepath.Clean(pat)
+				}
 				if pkg.Dir == absPat {
 					_, ok := result[pat]
 					if ok {
