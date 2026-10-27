@@ -327,6 +327,17 @@ func TestParseByteSize(t *testing.T) {
 	}
 }
 
+func TestCloneDefaultTransport(t *testing.T) {
+	a := cloneDefaultTransport()
+	b := cloneDefaultTransport()
+	if a == http.DefaultTransport || b == http.DefaultTransport {
+		t.Fatal("clone is the process-wide default transport")
+	}
+	if a == b {
+		t.Fatal("clones share one transport")
+	}
+}
+
 func TestMaxResponseSizeRejectsBadUnit(t *testing.T) {
 	defer func() {
 		if recover() == nil {
