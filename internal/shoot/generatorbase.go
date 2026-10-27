@@ -373,7 +373,9 @@ func (g *GeneratorBase) Generate(
 		}
 		if isStale && i < len(g.commonFlags.TypeNames)-1 {
 			// Reload so later types see this generated file.
-			g.overlay[filepath.Join(dir, filename)] = src
+			// Keep every other type in the merged file: the rest of the package
+			// still calls those constructors.
+			g.stageStaleSource(dir, filename, typName, src)
 			g.LoadPackage()
 		}
 
@@ -394,6 +396,37 @@ func (g *GeneratorBase) Generate(
 	}
 
 	return srcMap
+}
+
+// stageStaleSource shows the new source for one type during reload.
+// The per-type overlay repeats that type's declarations from the merged file,
+// so those declarations are removed and the other types are left in place.
+func (g *GeneratorBase) stageStaleSource(dir, perTypeName, typeName string, src []byte) {
+	g.overlay[filepath.Join(dir, perTypeName)] = src
+	if g.pkg == nil || g.pkg.Name == "" {
+		return
+	}
+	mergedName := g.fileName("", false)
+	if mergedName == perTypeName {
+		return
+	}
+	mergedPath := filepath.Join(dir, mergedName)
+	base, ok := g.overlay[mergedPath]
+	if !ok {
+		b, err := os.ReadFile(mergedPath)
+		if err != nil {
+			return
+		}
+		base = b
+	}
+	kept, err := withoutGeneratedType(base, typeName)
+	if err != nil {
+		logx.Fatalf("reload %s: %s", mergedName, err)
+	}
+	if len(bytes.TrimSpace(kept)) == 0 {
+		kept = []byte("package " + g.pkg.Name + "\n")
+	}
+	g.overlay[mergedPath] = kept
 }
 
 func (g *GeneratorBase) generateOne(data any) []byte {
