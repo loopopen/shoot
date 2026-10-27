@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/docker/go-units"
 	"github.com/loopopen/shoot/middleware"
@@ -25,10 +26,12 @@ type RestConf struct {
 	retry          RetryConfig
 }
 
-// BuildMiddleware constructs the middleware chain by wrapping the default HTTP transport.
-// The response-size limit is outermost so it applies to the body the caller reads.
+// BuildMiddleware constructs the middleware chain by wrapping a transport cloned
+// from http.DefaultTransport. Each client gets that transport's settings and
+// its own connection pool. The response-size limit is outermost so it applies
+// to the body the caller reads.
 func (r *RestConf) BuildMiddleware() http.RoundTripper {
-	t := http.DefaultTransport
+	t := cloneDefaultTransport()
 	for i := len(r._middlewares) - 1; i >= 0; i-- {
 		t = r._middlewares[i](t)
 	}
@@ -40,6 +43,17 @@ func (r *RestConf) BuildMiddleware() http.RoundTripper {
 		panic(err)
 	}
 	return middleware.ResponseLimitMiddleware(limit)(t)
+}
+
+// cloneDefaultTransport copies http.DefaultTransport so clients do not share
+// its process-wide connection pool. A replaced DefaultTransport that is not
+// *http.Transport is returned as-is.
+func cloneDefaultTransport() http.RoundTripper {
+	t, ok := http.DefaultTransport.(*http.Transport)
+	if !ok || t == nil {
+		return http.DefaultTransport
+	}
+	return t.Clone()
 }
 
 // parseByteSize parses a byte size such as "20m" or "1g" with units.RAMInBytes.
@@ -76,8 +90,9 @@ type RestClient[T any] interface {
 // The constructor must accept a RestConf and return a concrete type that satisfies RestClient.
 func Register[T RestClient[T]](ctor func(RestConf) T) {
 	typ := reflect.TypeOf((*T)(nil))
-	_, ok := ctorRegistry[typ]
-	if ok {
+	ctorMu.Lock()
+	defer ctorMu.Unlock()
+	if _, ok := ctorRegistry[typ]; ok {
 		panic(fmt.Errorf("ctor of interface %s should not be registered multiple times", typ.Elem()))
 	}
 	ctorRegistry[typ] = ctor
@@ -87,7 +102,9 @@ func Register[T RestClient[T]](ctor func(RestConf) T) {
 func NewRest[T RestClient[T]](opts ...Option[RestConf, *RestConf]) T {
 	typ := reflect.TypeOf((*T)(nil))
 	conf := NewWith(opts...)
+	ctorMu.RLock()
 	ctor, ok := ctorRegistry[typ]
+	ctorMu.RUnlock()
 	if !ok {
 		panic(fmt.Errorf("ctor of interface %s is not regstered", typ.Elem()))
 	}
@@ -95,8 +112,10 @@ func NewRest[T RestClient[T]](opts ...Option[RestConf, *RestConf]) T {
 	if !ok {
 		panic(fmt.Errorf("registered ctor of interface %s has invalid type %T", typ.Elem(), ctor))
 	}
-	t := typedCtor(*conf)
-	return t
+	return typedCtor(*conf)
 }
 
-var ctorRegistry = map[reflect.Type]any{}
+var (
+	ctorMu       sync.RWMutex
+	ctorRegistry = map[reflect.Type]any{}
+)
