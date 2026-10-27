@@ -8,7 +8,6 @@ import (
 	"go/ast"
 	"go/types"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -278,13 +277,15 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 		return nil, err
 	}
 
+	for _, pkg := range pkgs {
+		if err := packageProblems(pkg); err != nil {
+			return nil, err
+		}
+	}
+
 	result := make(map[string]*packages.Package, len(patterns))
 	for _, pat := range patterns {
 		for _, pkg := range pkgs {
-			if hasMultiPkgs(pkg) {
-				logx.Fatalf("multiple packages found in %s", pkg.Dir)
-			}
-
 			if pkg.PkgPath == pat {
 				result[pat] = pkg
 				break
@@ -371,8 +372,8 @@ func (g *GeneratorBase) Generate(
 			dir = filepath.Dir(g.pkg.GoFiles[0])
 		}
 		if isStale && i < len(g.commonFlags.TypeNames)-1 {
-			//reload pkg
-			g.overlay[path.Join(dir, filename)] = src
+			// Reload so later types see this generated file.
+			g.overlay[filepath.Join(dir, filename)] = src
 			g.LoadPackage()
 		}
 
@@ -422,13 +423,49 @@ func (g *GeneratorBase) generateOne(data any) []byte {
 	return src
 }
 
-func hasMultiPkgs(pkg *packages.Package) bool {
-	for _, e := range pkg.Errors {
-		if strings.Contains(e.Msg, "found packages") {
-			return true
+// packageProblems reports load, parse, and type-check errors.
+// "found packages" stays a distinct error so generation does not continue
+// with an ambiguous package.
+func packageProblems(pkg *packages.Package) error {
+	if pkg == nil {
+		return nil
+	}
+
+	seen := map[*packages.Package]bool{}
+	var msgs []string
+	var multi string
+	var walk func(*packages.Package)
+	walk = func(p *packages.Package) {
+		if p == nil || seen[p] {
+			return
+		}
+		seen[p] = true
+		for _, e := range p.Errors {
+			if strings.Contains(e.Msg, "found packages") {
+				multi = fmt.Sprintf("multiple packages found in %s", p.Dir)
+				continue
+			}
+			msgs = append(msgs, e.Error())
+		}
+		for _, imp := range p.Imports {
+			walk(imp)
 		}
 	}
-	return false
+	walk(pkg)
+	if multi != "" {
+		return fmt.Errorf("%s", multi)
+	}
+	if len(msgs) > 0 {
+		return fmt.Errorf("%s", strings.Join(msgs, "\n"))
+	}
+	if pkg.IllTyped {
+		name := pkg.PkgPath
+		if name == "" {
+			name = pkg.Dir
+		}
+		return fmt.Errorf("package %s has type errors", name)
+	}
+	return nil
 }
 
 func findCmdLine(doc string, cmdline string) bool {
