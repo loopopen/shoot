@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/printer"
+	"go/token"
 	"go/types"
 	"regexp"
 	"strings"
@@ -73,9 +75,7 @@ func (g *Generator) parseFields(typeName string) types.Type {
 						names = append(names, n.Name)
 					}
 					typeParamsMap[i] = strings.Join(names, ", ")
-					if ident, ok := p.Type.(*ast.Ident); ok {
-						typeParams = append(typeParams, ident.Name)
-					}
+					typeParams = append(typeParams, exprString(g.Pkg().Fset, p.Type))
 				}
 			}
 
@@ -94,6 +94,17 @@ func (g *Generator) parseFields(typeName string) types.Type {
 	g.fields = fields
 	g.data.Imports = imports
 	return typ
+}
+
+func exprString(fset *token.FileSet, expr ast.Expr) string {
+	if fset == nil {
+		fset = token.NewFileSet()
+	}
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, fset, expr); err != nil {
+		logx.Fatalf("print type param constraint: %s", err)
+	}
+	return buf.String()
 }
 
 func buildImports(imports []*ast.ImportSpec) string {
