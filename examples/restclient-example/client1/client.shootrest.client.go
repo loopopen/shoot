@@ -26,38 +26,30 @@ type client struct {
 func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, pageIdx *int) (*User, *shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(userID)), 1)
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	query_ := req_.URL.Query()
 	query_.Set("size", fmt.Sprintf("%v", pageSize))
 	if pageIdx != nil {
 		query_.Set("page_idx", fmt.Sprintf("%v", *pageIdx))
 	}
 	req_.URL.RawQuery = query_.Encode()
-
 	req_.Header.Set("Accept", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Tenant-Id", "123")
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, nil, err
@@ -71,7 +63,6 @@ func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, page
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
 	}
-
 	var r_ User
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -85,37 +76,29 @@ func (_c *client) GetUser(ctx context.Context, userID string, pageSize int, page
 
 func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.QueryUsersResp, *shoot.Response, error) {
 	path_ := "/users"
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	bodyJson_, err := json.Marshal(req)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "POST", url_, bytes.NewReader(bodyJson_))
 	if err != nil {
 		return nil, nil, err
 	}
-
 	req_.Header.Set("Accept", "application/json")
 	req_.Header.Set("Content-Type", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Tenant-Id", "123")
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, nil, err
@@ -129,7 +112,6 @@ func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.Q
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
 	}
-
 	var r_ dto.QueryUsersResp
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -143,38 +125,35 @@ func (_c *client) QueryUsers(ctx context.Context, req dto.QueryUsersReq) (*dto.Q
 
 func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.QueryBooksResp, *shoot.Response, error) {
 	path_ := "/books"
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	query_ := req_.URL.Query()
 	query_.Set("name", fmt.Sprintf("%v", req.Name()))
-	query_.Set("lang", fmt.Sprintf("%v", req.Language()))
+	if err := shoot.SetQuery(query_, "lang", req.Language(), shoot.QueryOpt{OmitEmpty: true}); err != nil {
+		return nil, nil, err
+	}
 	query_.Set("page_size", fmt.Sprintf("%v", req.PageSize))
 	query_.Set("pageIndex", fmt.Sprintf("%v", req.PageIndex))
+	if err := shoot.SetQuery(query_, "pubDate", req.PubDate, shoot.QueryOpt{DateFormat: "2006-01-02"}); err != nil {
+		return nil, nil, err
+	}
 	req_.URL.RawQuery = query_.Encode()
-
 	req_.Header.Set("Accept", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Tenant-Id", "123")
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, nil, err
@@ -188,7 +167,6 @@ func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.Q
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
 	}
-
 	var r_ dto.QueryBooksResp
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -202,42 +180,39 @@ func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.Q
 
 func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.QueryBooksResp, *shoot.Response, error) {
 	path_ := "/books"
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	query_ := req_.URL.Query()
 	if req.Name() != nil {
 		query_.Set("name", fmt.Sprintf("%v", *req.Name()))
 	}
-	query_.Set("lang", fmt.Sprintf("%v", req.Language()))
+	if err := shoot.SetQuery(query_, "lang", req.Language(), shoot.QueryOpt{OmitEmpty: true}); err != nil {
+		return nil, nil, err
+	}
 	query_.Set("page_size", fmt.Sprintf("%v", req.PageSize))
 	if req.PageIndex != nil {
 		query_.Set("pageIndex", fmt.Sprintf("%v", *req.PageIndex))
 	}
+	if err := shoot.SetQuery(query_, "pub_date", req.PubDate, shoot.QueryOpt{DateFormat: "2006-01-02"}); err != nil {
+		return nil, nil, err
+	}
 	req_.URL.RawQuery = query_.Encode()
-
 	req_.Header.Set("Accept", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Tenant-Id", "123")
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, nil, err
@@ -251,7 +226,6 @@ func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.Quer
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
 	}
-
 	var r_ dto.QueryBooksResp
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -266,37 +240,29 @@ func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.Quer
 func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[string]interface{}) (*dto.Book, *shoot.Response, error) {
 	path_ := "/groups/{id}/books"
 	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(groupID)), 1)
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	query_ := req_.URL.Query()
 	for k, v := range params {
 		query_.Set(k, fmt.Sprintf("%v", v))
 	}
 	req_.URL.RawQuery = query_.Encode()
-
 	req_.Header.Set("Accept", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Tenant-Id", "123")
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, nil, err
@@ -310,7 +276,6 @@ func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[strin
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
 	}
-
 	var r_ dto.Book
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -325,37 +290,28 @@ func (_c *client) QueryBooks2(ctx context.Context, groupID int, params map[strin
 func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(id)), 1)
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
-
 	bodyJson_, err := json.Marshal(user)
 	if err != nil {
 		return nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "PUT", url_, bytes.NewReader(bodyJson_))
 	if err != nil {
 		return nil, err
 	}
-
-	req_.Header.Set("Accept", "application/json")
 	req_.Header.Set("Content-Type", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Tenant-Id", "123")
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
@@ -369,7 +325,6 @@ func (_c *client) UpdateUser(ctx context.Context, id int, user User) (*shoot.Res
 	if closeErr_ != nil {
 		return response_, closeErr_
 	}
-
 	return response_, nil
 }
 

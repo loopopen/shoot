@@ -2,8 +2,8 @@ TAG ?=
 
 .PHONY: tidy tidy-modules gen-modules test-modules test golden-up tag check-tag release push
 
-# Keep module operations aligned with the Go workspace source of truth.
-MODULES := $(shell go work edit -json | awk -F'"' '/"DiskPath":/ { print $$4 }')
+# Directories that contain a go.mod. go.work is local and is not consulted.
+MODULES := $(patsubst %/go.mod,%,$(shell find . -name go.mod -not -path '*/vendor/*' | sort))
 
 define run-in-modules
 	@set -e; \

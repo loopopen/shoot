@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/loopopen/shoot"
+	"github.com/loopopen/shoot/middleware"
 )
 
 type client struct {
@@ -23,36 +24,27 @@ type client struct {
 
 func (_c *client) Get(ctx context.Context, key string, opts ...shoot.RequestOption) (*KV, *shoot.Response, error) {
 	path_ := "/get"
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	query_ := req_.URL.Query()
 	query_.Set("key", fmt.Sprintf("%v", key))
 	req_.URL.RawQuery = query_.Encode()
-
 	req_.Header.Set("Accept", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
-
 	if err != nil {
 		return nil, nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, nil, err
@@ -66,7 +58,6 @@ func (_c *client) Get(ctx context.Context, key string, opts ...shoot.RequestOpti
 	if closeErr_ != nil {
 		return nil, response_, closeErr_
 	}
-
 	var r_ KV
 	err = json.NewDecoder(bytes.NewReader(responseBody_)).Decode(&r_)
 	if err == io.EOF {
@@ -80,38 +71,28 @@ func (_c *client) Get(ctx context.Context, key string, opts ...shoot.RequestOpti
 
 func (_c *client) Set(ctx context.Context, kv *KV, opts ...shoot.RequestOption) (*shoot.Response, error) {
 	path_ := "/set"
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
-
 	bodyJson_, err := json.Marshal(kv)
 	if err != nil {
 		return nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "POST", url_, bytes.NewReader(bodyJson_))
 	if err != nil {
 		return nil, err
 	}
-
-	req_.Header.Set("Accept", "application/json")
 	req_.Header.Set("Content-Type", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout, opts...)
-
 	if err != nil {
 		return nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
@@ -125,46 +106,36 @@ func (_c *client) Set(ctx context.Context, kv *KV, opts ...shoot.RequestOption) 
 	if closeErr_ != nil {
 		return response_, closeErr_
 	}
-
 	return response_, nil
 }
 
 func (_c *client) Download(ctx context.Context) (*shoot.StreamResponse, error) {
 	path_ := "/download"
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "GET", url_, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req_.Header.Set("Accept", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	req_.Header.Set("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
-
 	req_.Header.Set("Content-Type", "application/zip")
-
+	req_ = req_.WithContext(middleware.SkipDefaultResponseLimit(req_.Context()))
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
 	}
 	response_ := shoot.NewStreamResponse(resp_, call_.Cancel)
 	call_ = shoot.Call{}
-
 	return response_, nil
 }
 

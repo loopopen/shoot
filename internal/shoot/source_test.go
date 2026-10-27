@@ -2,8 +2,34 @@ package shoot
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
+
+func TestWithoutGeneratedType(t *testing.T) {
+	src := []byte(`package p
+
+import "encoding/json"
+
+func NewUser(id string) *User { return &User{id: id} }
+func (u *User) Id() string { return u.id }
+type UserGetter interface{ Id() string }
+func NewOrder(id string) *Order { return &Order{id: id} }
+func (o *Order) Id() string { return o.id }
+func (o Order) MarshalJSON() ([]byte, error) { return json.Marshal(o.Id()) }
+`)
+	got, err := withoutGeneratedType(src, "User")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(got)
+	if strings.Contains(text, "NewUser") || strings.Contains(text, "UserGetter") {
+		t.Fatalf("user decls still present:\n%s", text)
+	}
+	if !strings.Contains(text, "NewOrder") || !strings.Contains(text, "json.Marshal") {
+		t.Fatalf("order decls missing:\n%s", text)
+	}
+}
 
 func Test_noopFix(t *testing.T) {
 	type args struct {

@@ -8,7 +8,6 @@ import (
 	"go/ast"
 	"go/types"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -191,6 +190,9 @@ func (g *GeneratorBase) fileName(typeName string, pkgScope bool) string {
 	}
 
 	gofile := strings.TrimSuffix(fileName, ".go")
+	if gofile == "" {
+		panic("cannot find source file name")
+	}
 	if typeName == "" {
 		return fmt.Sprintf("%s.%s.%s", gofile, cmd, postfix)
 	}
@@ -249,6 +251,9 @@ func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Pac
 				}
 			}
 		}
+		if g.allInOneFile == "" {
+			panic(fmt.Sprintf("cannot find source file name for %q", cf.CmdLine))
+		}
 	}
 
 	g.SetPkg(primaryPkg)
@@ -272,13 +277,15 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 		return nil, err
 	}
 
+	for _, pkg := range pkgs {
+		if err := packageProblems(pkg); err != nil {
+			return nil, err
+		}
+	}
+
 	result := make(map[string]*packages.Package, len(patterns))
 	for _, pat := range patterns {
 		for _, pkg := range pkgs {
-			if hasMultiPkgs(pkg) {
-				logx.Fatalf("multiple packages found in %s", pkg.Dir)
-			}
-
 			if pkg.PkgPath == pat {
 				result[pat] = pkg
 				break
@@ -365,8 +372,10 @@ func (g *GeneratorBase) Generate(
 			dir = filepath.Dir(g.pkg.GoFiles[0])
 		}
 		if isStale && i < len(g.commonFlags.TypeNames)-1 {
-			//reload pkg
-			g.overlay[path.Join(dir, filename)] = src
+			// Reload so later types see this generated file.
+			// Keep every other type in the merged file: the rest of the package
+			// still calls those constructors.
+			g.stageStaleSource(dir, filename, typName, src)
 			g.LoadPackage()
 		}
 
@@ -387,6 +396,37 @@ func (g *GeneratorBase) Generate(
 	}
 
 	return srcMap
+}
+
+// stageStaleSource shows the new source for one type during reload.
+// The per-type overlay repeats that type's declarations from the merged file,
+// so those declarations are removed and the other types are left in place.
+func (g *GeneratorBase) stageStaleSource(dir, perTypeName, typeName string, src []byte) {
+	g.overlay[filepath.Join(dir, perTypeName)] = src
+	if g.pkg == nil || g.pkg.Name == "" {
+		return
+	}
+	mergedName := g.fileName("", false)
+	if mergedName == perTypeName {
+		return
+	}
+	mergedPath := filepath.Join(dir, mergedName)
+	base, ok := g.overlay[mergedPath]
+	if !ok {
+		b, err := os.ReadFile(mergedPath)
+		if err != nil {
+			return
+		}
+		base = b
+	}
+	kept, err := withoutGeneratedType(base, typeName)
+	if err != nil {
+		logx.Fatalf("reload %s: %s", mergedName, err)
+	}
+	if len(bytes.TrimSpace(kept)) == 0 {
+		kept = []byte("package " + g.pkg.Name + "\n")
+	}
+	g.overlay[mergedPath] = kept
 }
 
 func (g *GeneratorBase) generateOne(data any) []byte {
@@ -416,13 +456,49 @@ func (g *GeneratorBase) generateOne(data any) []byte {
 	return src
 }
 
-func hasMultiPkgs(pkg *packages.Package) bool {
-	for _, e := range pkg.Errors {
-		if strings.Contains(e.Msg, "found packages") {
-			return true
+// packageProblems reports load, parse, and type-check errors.
+// "found packages" stays a distinct error so generation does not continue
+// with an ambiguous package.
+func packageProblems(pkg *packages.Package) error {
+	if pkg == nil {
+		return nil
+	}
+
+	seen := map[*packages.Package]bool{}
+	var msgs []string
+	var multi string
+	var walk func(*packages.Package)
+	walk = func(p *packages.Package) {
+		if p == nil || seen[p] {
+			return
+		}
+		seen[p] = true
+		for _, e := range p.Errors {
+			if strings.Contains(e.Msg, "found packages") {
+				multi = fmt.Sprintf("multiple packages found in %s", p.Dir)
+				continue
+			}
+			msgs = append(msgs, e.Error())
+		}
+		for _, imp := range p.Imports {
+			walk(imp)
 		}
 	}
-	return false
+	walk(pkg)
+	if multi != "" {
+		return fmt.Errorf("%s", multi)
+	}
+	if len(msgs) > 0 {
+		return fmt.Errorf("%s", strings.Join(msgs, "\n"))
+	}
+	if pkg.IllTyped {
+		name := pkg.PkgPath
+		if name == "" {
+			name = pkg.Dir
+		}
+		return fmt.Errorf("package %s has type errors", name)
+	}
+	return nil
 }
 
 func findCmdLine(doc string, cmdline string) bool {
@@ -439,7 +515,7 @@ func (g *GeneratorBase) Clean() error {
 		return nil
 	}
 
-	genfile := g.fileName("", false)
+	genfile := filepath.Join(g.commonFlags.Dir, g.fileName("", false))
 	pattern := fmt.Sprintf("*.%s%s*.go", Shoot, g.subCmd)
 	glob := filepath.Join(g.commonFlags.Dir, pattern)
 	matches, err := filepath.Glob(glob)
@@ -447,7 +523,7 @@ func (g *GeneratorBase) Clean() error {
 		return err
 	}
 	for _, file := range matches {
-		if file == genfile {
+		if filepath.Clean(file) == filepath.Clean(genfile) {
 			continue
 		}
 		isAIO, err := isAllInOneFile(file)

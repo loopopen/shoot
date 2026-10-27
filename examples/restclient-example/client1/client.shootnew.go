@@ -2,7 +2,10 @@
 
 package client1
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // NewUser constructs a new instance of type User
 func NewUser(id string, name string, age int, gender Gender) *User {
@@ -105,12 +108,14 @@ type UserSetter interface {
 func (u User) ShootNew() { /*noop*/ }
 
 // NewQueryBooksReq constructs a new instance of type QueryBooksReq
-func NewQueryBooksReq(name *string, language string, pageSize int, pageIndex *int) *QueryBooksReq {
+func NewQueryBooksReq(name *string, language string, pageSize int, pageIndex *int, ignore string, pubDate time.Time) *QueryBooksReq {
 	return &QueryBooksReq{
 		name:      name,
 		language:  language,
 		PageSize:  pageSize,
 		PageIndex: pageIndex,
+		Ignore:    ignore,
+		PubDate:   pubDate,
 	}
 }
 
@@ -135,10 +140,12 @@ func (q *QueryBooksReq) SetLanguage(language_ string) {
 }
 
 type _json_QueryBooksReq struct {
-	Name      *string `json:"name"`
-	Language  string  `json:"language"`
-	PageSize  int     `json:"pageSize"`
-	PageIndex *int    `json:"pageIndex"`
+	Name      *string   `json:"name"`
+	Language  string    `json:"language"`
+	PageSize  int       `json:"pageSize"`
+	PageIndex *int      `json:"pageIndex"`
+	Ignore    string    `json:"ignore"`
+	PubDate   time.Time `json:"pubDate"`
 }
 
 // MarshalJSON serializes type QueryBooksReq to json bytes
@@ -148,6 +155,8 @@ func (q QueryBooksReq) MarshalJSON() ([]byte, error) {
 		Language:  q.Language(),
 		PageSize:  q.PageSize,
 		PageIndex: q.PageIndex,
+		Ignore:    q.Ignore,
+		PubDate:   q.PubDate,
 	}
 	return json.Marshal(data)
 }
@@ -162,6 +171,8 @@ func (q *QueryBooksReq) UnmarshalJSON(data []byte) error {
 	q.SetLanguage(queryBooksReq_.Language)
 	q.PageSize = queryBooksReq_.PageSize
 	q.PageIndex = queryBooksReq_.PageIndex
+	q.Ignore = queryBooksReq_.Ignore
+	q.PubDate = queryBooksReq_.PubDate
 	return nil
 }
 

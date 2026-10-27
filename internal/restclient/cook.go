@@ -6,9 +6,11 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
+	"go/types"
 	"net/http"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/loopopen/shoot/internal/tools/logx"
@@ -21,6 +23,7 @@ func (g *Generator) cookClient(typeName string) {
 	g.data.AliasMap = make(map[string]map[string]string)
 	g.data.PathParamsMap = make(map[string][]string)
 	g.data.QueryParamsMap = make(map[string][]string)
+	g.data.QueryOptMap = make(map[string]map[string]string)
 	g.data.IsParamPtrMap = make(map[string]map[string]bool)
 	g.data.BodyParamMap = make(map[string]string)
 	g.data.QueryDictMap = make(map[string]string)
@@ -35,24 +38,7 @@ func (g *Generator) cookClient(typeName string) {
 	g.data.StreamResponseMap = make(map[string]bool)
 	g.data.StaticHeaders = make(map[string]string)
 	g.data.MethodHeadersMap = make(map[string]map[string]string)
-	g.data.DefaultHeaders = map[string]map[string]string{
-		http.MethodGet: {
-			"Accept": "application/json",
-		},
-		http.MethodPost: {
-			"Accept":       "application/json",
-			"Content-Type": "application/json",
-		},
-		http.MethodPut: {
-			"Accept":       "application/json",
-			"Content-Type": "application/json",
-		},
-		http.MethodPatch: {
-			"Accept":       "application/json",
-			"Content-Type": "application/json",
-		},
-		http.MethodDelete: {},
-	}
+	g.data.DefaultHeaders = map[string]map[string]string{}
 	g.data.BodyHTTPMethods = []string{http.MethodPost, http.MethodPut, http.MethodPatch}
 
 	for _, f := range g.Pkg().Syntax {
@@ -185,6 +171,10 @@ func (g *Generator) cookClient(typeName string) {
 						}
 					}
 					g.data.ErrReturnMap[methodName] = strings.Repeat("nil, ", n-1) + "err"
+					g.data.DefaultHeaders[methodName] = methodDefaultHeaders(
+						g.data.ReturnResultMap[methodName].Type != "",
+						g.data.BodyParamMap[methodName] != "",
+					)
 
 					//todo: check alias={a:alias}, a exists?
 				}
@@ -235,6 +225,22 @@ func formatFieldList(fl *ast.FieldList) string {
 		}
 	}
 	return strings.Join(parts, ", ")
+}
+
+// methodDefaultHeaders sets Accept only when the response is decoded as JSON,
+// and Content-Type only when the method sends a JSON body.
+func methodDefaultHeaders(jsonResult, jsonBody bool) map[string]string {
+	headers := make(map[string]string)
+	if jsonResult {
+		headers["Accept"] = "application/json"
+	}
+	if jsonBody {
+		headers["Content-Type"] = "application/json"
+	}
+	if len(headers) == 0 {
+		return nil
+	}
+	return headers
 }
 
 func parseHeaders(doc, sign string) map[string]string {
@@ -325,6 +331,22 @@ type fieldInfo struct {
 	Alias      string
 	IsExported bool
 	IsPtr      bool
+	Ignored    bool
+	GoType     types.Type
+	Rest       restTag
+}
+
+// restTag is the parsed rest struct tag. "-" ignores the field.
+// The other options encode a query value; they do not validate it.
+type restTag struct {
+	Alias      string
+	Ignored    bool
+	OmitEmpty  bool
+	DateFormat string
+	Unix       bool
+	UnixMilli  bool
+	UTC        bool
+	CSV        bool
 }
 
 // func extractStructFields(pkgPath, typeName string) ([]fieldInfo, error) {
@@ -402,11 +424,125 @@ type fieldInfo struct {
 // }
 
 func parseFieldAlias(tag string) string {
-	t := reflect.StructTag(strings.Trim(tag, "`"))
-	aliasReg := regexp.MustCompile(`alias=(\w+)`)
-	ms := aliasReg.FindStringSubmatch(t.Get("shoot"))
-	if len(ms) == 0 {
+	parsed, err := parseRestTag(tag)
+	if err != nil {
 		return ""
 	}
-	return ms[1]
+	return parsed.Alias
+}
+
+// parseRestTag reads a rest struct tag.
+// `rest:"-"` ignores the field and cannot be combined with other options.
+// Options are comma-separated. A bare word is a flag; key=value carries a value.
+func parseRestTag(tag string) (restTag, error) {
+	t := reflect.StructTag(strings.Trim(tag, "`"))
+	value := t.Get("rest")
+	if value == "" {
+		return restTag{}, nil
+	}
+	if value == "-" {
+		return restTag{Ignored: true}, nil
+	}
+
+	var parsed restTag
+	timeModes := 0
+	for _, part := range strings.Split(value, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if part == "-" {
+			return restTag{}, fmt.Errorf("rest:%q cannot be combined with other options", "-")
+		}
+		key, val, hasValue := strings.Cut(part, "=")
+		key = strings.TrimSpace(key)
+		switch key {
+		case "alias":
+			if !hasValue || val == "" {
+				return restTag{}, fmt.Errorf("rest option %q requires a value", key)
+			}
+			parsed.Alias = val
+		case "dateformat":
+			if !hasValue || val == "" {
+				return restTag{}, fmt.Errorf("rest option %q requires a value", key)
+			}
+			parsed.DateFormat = val
+			timeModes++
+		case "omitempty":
+			if err := rejectRestFlagValue(key, hasValue); err != nil {
+				return restTag{}, err
+			}
+			parsed.OmitEmpty = true
+		case "unix":
+			if err := rejectRestFlagValue(key, hasValue); err != nil {
+				return restTag{}, err
+			}
+			parsed.Unix = true
+			timeModes++
+		case "unixmilli":
+			if err := rejectRestFlagValue(key, hasValue); err != nil {
+				return restTag{}, err
+			}
+			parsed.UnixMilli = true
+			timeModes++
+		case "utc":
+			if err := rejectRestFlagValue(key, hasValue); err != nil {
+				return restTag{}, err
+			}
+			parsed.UTC = true
+		case "csv":
+			if err := rejectRestFlagValue(key, hasValue); err != nil {
+				return restTag{}, err
+			}
+			parsed.CSV = true
+		default:
+			return restTag{}, fmt.Errorf("unknown rest option %q", key)
+		}
+	}
+	if timeModes > 1 {
+		return restTag{}, fmt.Errorf("dateformat, unix, and unixmilli cannot be combined")
+	}
+	if parsed.UTC && timeModes == 0 {
+		return restTag{}, fmt.Errorf("utc requires dateformat, unix, or unixmilli")
+	}
+	return parsed, nil
+}
+
+func rejectRestFlagValue(key string, hasValue bool) error {
+	if hasValue {
+		return fmt.Errorf("rest option %q does not take a value", key)
+	}
+	return nil
+}
+
+// queryOptLiteral is the Go expression for shoot.QueryOpt, or "" when the
+// field keeps the plain query_.Set encoding. Slices and arrays always use
+// SetQuery so elements are repeated instead of printed as one value.
+func (t restTag) queryOptLiteral(list bool) string {
+	if !t.OmitEmpty && t.DateFormat == "" && !t.Unix && !t.UnixMilli && !t.UTC && !t.CSV && !list {
+		return ""
+	}
+	var parts []string
+	if t.DateFormat != "" {
+		parts = append(parts, "DateFormat: "+strconv.Quote(t.DateFormat))
+	}
+	if t.Unix {
+		parts = append(parts, "Unix: true")
+	}
+	if t.UnixMilli {
+		parts = append(parts, "UnixMilli: true")
+	}
+	if t.UTC {
+		parts = append(parts, "UTC: true")
+	}
+	if t.CSV {
+		parts = append(parts, "CSV: true")
+	}
+	if t.OmitEmpty {
+		parts = append(parts, "OmitEmpty: true")
+	}
+	if len(parts) == 0 {
+		return "shoot.QueryOpt{}"
+	}
+	return "shoot.QueryOpt{" + strings.Join(parts, ", ") + "}"
 }

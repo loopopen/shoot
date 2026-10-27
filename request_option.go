@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/loopopen/shoot/middleware"
 )
 
 // RequestOption customizes a single outgoing HTTP request.
@@ -280,6 +282,29 @@ func WithRetryStrategy(strategy RetryDelayStrategy) RequestOption {
 		}
 		options.retryStrategy = strategy
 		return nil
+	})
+}
+
+// WithMaxResponseBytes sets the response body limit for one call.
+// Zero or negative removes the limit, including a client-level default.
+// The value is stored on the request context and read by the client transport.
+func WithMaxResponseBytes(n int64) RequestOption {
+	return requestOptionFunc(func(options *requestOptions) error {
+		ctx := middleware.ContextWithMaxResponseBytes(options.request.Context(), n)
+		*options.request = *options.request.WithContext(ctx)
+		return nil
+	})
+}
+
+// WithMaxResponseSize sets the response body limit for one call using a size
+// string such as "20m" or "1g". "0" or an empty string removes the limit.
+func WithMaxResponseSize(size string) RequestOption {
+	return requestOptionFunc(func(options *requestOptions) error {
+		n, err := parseByteSize(size)
+		if err != nil {
+			return err
+		}
+		return WithMaxResponseBytes(n).apply(options)
 	})
 }
 

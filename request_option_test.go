@@ -2,10 +2,16 @@ package shoot
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/loopopen/shoot/middleware"
 )
 
 func newRequest(t *testing.T) *http.Request {
@@ -218,4 +224,126 @@ func TestWithRequestModifierError(t *testing.T) {
 	if req.Context().Err() != nil {
 		t.Fatalf("context error = %v, want nil", req.Context().Err())
 	}
+}
+
+func TestDefaultMaxResponseSize(t *testing.T) {
+	conf := NewWith[RestConf, *RestConf]()
+	if conf.MaxResponseSize() != "10m" {
+		t.Fatalf("MaxResponseSize() = %q", conf.MaxResponseSize())
+	}
+	n, err := parseByteSize(conf.MaxResponseSize())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 10<<20 {
+		t.Fatalf("default limit = %d", n)
+	}
+}
+
+func TestRestConfMaxResponseBytes(t *testing.T) {
+	body := strings.Repeat("x", 8)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, body)
+	}))
+	t.Cleanup(srv.Close)
+
+	conf := NewRestConf("", "0", false, "0", nil, RetryConfig{})
+	MaxResponseSize("4")(conf)
+	if conf.MaxResponseSize() != "4" {
+		t.Fatalf("MaxResponseSize() = %q", conf.MaxResponseSize())
+	}
+	client := &http.Client{Transport: conf.BuildMiddleware()}
+	resp, err := client.Get(srv.URL)
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
+	}
+	var limitErr *middleware.MaxResponseBytesError
+	if !errors.As(err, &limitErr) || limitErr.Limit != 4 {
+		t.Fatalf("Get error = %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ApplyRequestOptions(req, 0, WithMaxResponseSize("8"), WithDeadline(time.Now().Add(time.Hour))); err != nil {
+		t.Fatal(err)
+	}
+	resp, err = client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != body {
+		t.Fatalf("body = %q", got)
+	}
+}
+
+func TestWithMaxResponseSizeRejectsBadUnit(t *testing.T) {
+	req := newRequest(t)
+	if _, err := ApplyRequestOptions(req, 0, WithMaxResponseSize("20x")); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestParseByteSize(t *testing.T) {
+	tests := []struct {
+		in      string
+		want    int64
+		wantErr bool
+	}{
+		{in: "0", want: 0},
+		{in: "", want: 0},
+		{in: "4", want: 4},
+		{in: "4b", want: 4},
+		{in: "20m", want: 20 << 20},
+		{in: "1g", want: 1 << 30},
+		{in: "1G", want: 1 << 30},
+		{in: "1.5k", want: 1536},
+		{in: "2kb", want: 2048},
+		{in: "20x", wantErr: true},
+		{in: "-1", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			got, err := parseByteSize(tt.in)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("parseByteSize(%q) = %d", tt.in, got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tt.want {
+				t.Fatalf("parseByteSize(%q) = %d, want %d", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCloneDefaultTransport(t *testing.T) {
+	a := cloneDefaultTransport()
+	b := cloneDefaultTransport()
+	if a == http.DefaultTransport || b == http.DefaultTransport {
+		t.Fatal("clone is the process-wide default transport")
+	}
+	if a == b {
+		t.Fatal("clones share one transport")
+	}
+}
+
+func TestMaxResponseSizeRejectsBadUnit(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("expected panic")
+		}
+	}()
+	conf := NewRestConf("", "0", false, "20x", nil, RetryConfig{})
+	conf.BuildMiddleware()
 }

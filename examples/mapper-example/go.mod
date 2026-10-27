@@ -11,6 +11,7 @@ require (
 )
 
 require (
+	github.com/docker/go-units v0.5.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	golang.org/x/mod v0.32.0 // indirect
