@@ -26,35 +26,27 @@ type client struct {
 func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(id)), 1)
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
-
 	bodyJson_, err := json.Marshal(user)
 	if err != nil {
 		return nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "PUT", url_, bytes.NewReader(bodyJson_))
 	if err != nil {
 		return nil, err
 	}
-
-	req_.Header.Set("Accept", "application/json")
 	req_.Header.Set("Content-Type", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
@@ -68,42 +60,33 @@ func (_c *client) UpdateUser1(ctx context.Context, id int, user User) (*shoot.Re
 	if closeErr_ != nil {
 		return response_, closeErr_
 	}
-
 	return response_, nil
 }
 
 func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*shoot.Response, error) {
 	path_ := "/users/{id}"
 	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(id)), 1)
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
-
 	bodyJson_, err := json.Marshal(user)
 	if err != nil {
 		return nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "PUT", url_, bytes.NewReader(bodyJson_))
 	if err != nil {
 		return nil, err
 	}
-
-	req_.Header.Set("Accept", "application/json")
 	req_.Header.Set("Content-Type", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
@@ -117,36 +100,27 @@ func (_c *client) UpdateUser2(ctx context.Context, id int, user dto.User) (*shoo
 	if closeErr_ != nil {
 		return response_, closeErr_
 	}
-
 	return response_, nil
 }
 
 func (_c *client) PostNoBody() (*shoot.Response, error) {
 	path_ := "/ping"
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
-
 	req_, err := http.NewRequest("POST", url_, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req_.Header.Set("Accept", "application/json")
-	req_.Header.Set("Content-Type", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
@@ -160,41 +134,32 @@ func (_c *client) PostNoBody() (*shoot.Response, error) {
 	if closeErr_ != nil {
 		return response_, closeErr_
 	}
-
 	return response_, nil
 }
 
 func (_c *client) SetEnabled(ctx context.Context, enabled bool) (*shoot.Response, error) {
 	path_ := "/enabled"
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
-
 	bodyJson_, err := json.Marshal(enabled)
 	if err != nil {
 		return nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "POST", url_, bytes.NewReader(bodyJson_))
 	if err != nil {
 		return nil, err
 	}
-
-	req_.Header.Set("Accept", "application/json")
 	req_.Header.Set("Content-Type", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
@@ -208,42 +173,33 @@ func (_c *client) SetEnabled(ctx context.Context, enabled bool) (*shoot.Response
 	if closeErr_ != nil {
 		return response_, closeErr_
 	}
-
 	return response_, nil
 }
 
 func (_c *client) ReplaceLabels(ctx context.Context, id int, labels map[string]string) (*shoot.Response, error) {
 	path_ := "/users/{id}/labels"
 	path_ = strings.Replace(path_, "{id}", url.PathEscape(fmt.Sprint(id)), 1)
-
 	url_, err := url.JoinPath(_c.conf.BaseURL(), path_)
 	if err != nil {
 		return nil, err
 	}
-
 	bodyJson_, err := json.Marshal(labels)
 	if err != nil {
 		return nil, err
 	}
-
 	req_, err := http.NewRequestWithContext(ctx, "PATCH", url_, bytes.NewReader(bodyJson_))
 	if err != nil {
 		return nil, err
 	}
-
-	req_.Header.Set("Accept", "application/json")
 	req_.Header.Set("Content-Type", "application/json")
-
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
 		req_.Header.Set(headerName_, headerValue_)
 	}
-
 	call_, err := shoot.ApplyRequestOptions(req_, _c.defaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 	defer call_.Cancel()
-
 	resp_, err := shoot.Do(_c.client, req_, _c.conf.Retry(), call_)
 	if err != nil {
 		return nil, err
@@ -257,7 +213,6 @@ func (_c *client) ReplaceLabels(ctx context.Context, id int, labels map[string]s
 	if closeErr_ != nil {
 		return response_, closeErr_
 	}
-
 	return response_, nil
 }
 

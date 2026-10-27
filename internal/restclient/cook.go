@@ -35,24 +35,7 @@ func (g *Generator) cookClient(typeName string) {
 	g.data.StreamResponseMap = make(map[string]bool)
 	g.data.StaticHeaders = make(map[string]string)
 	g.data.MethodHeadersMap = make(map[string]map[string]string)
-	g.data.DefaultHeaders = map[string]map[string]string{
-		http.MethodGet: {
-			"Accept": "application/json",
-		},
-		http.MethodPost: {
-			"Accept":       "application/json",
-			"Content-Type": "application/json",
-		},
-		http.MethodPut: {
-			"Accept":       "application/json",
-			"Content-Type": "application/json",
-		},
-		http.MethodPatch: {
-			"Accept":       "application/json",
-			"Content-Type": "application/json",
-		},
-		http.MethodDelete: {},
-	}
+	g.data.DefaultHeaders = map[string]map[string]string{}
 	g.data.BodyHTTPMethods = []string{http.MethodPost, http.MethodPut, http.MethodPatch}
 
 	for _, f := range g.Pkg().Syntax {
@@ -185,6 +168,10 @@ func (g *Generator) cookClient(typeName string) {
 						}
 					}
 					g.data.ErrReturnMap[methodName] = strings.Repeat("nil, ", n-1) + "err"
+					g.data.DefaultHeaders[methodName] = methodDefaultHeaders(
+						g.data.ReturnResultMap[methodName].Type != "",
+						g.data.BodyParamMap[methodName] != "",
+					)
 
 					//todo: check alias={a:alias}, a exists?
 				}
@@ -235,6 +222,22 @@ func formatFieldList(fl *ast.FieldList) string {
 		}
 	}
 	return strings.Join(parts, ", ")
+}
+
+// methodDefaultHeaders sets Accept only when the response is decoded as JSON,
+// and Content-Type only when the method sends a JSON body.
+func methodDefaultHeaders(jsonResult, jsonBody bool) map[string]string {
+	headers := make(map[string]string)
+	if jsonResult {
+		headers["Accept"] = "application/json"
+	}
+	if jsonBody {
+		headers["Content-Type"] = "application/json"
+	}
+	if len(headers) == 0 {
+		return nil
+	}
+	return headers
 }
 
 func parseHeaders(doc, sign string) map[string]string {
