@@ -3,7 +3,6 @@ package mapper
 import (
 	"go/ast"
 	"go/types"
-	"path/filepath"
 	"strings"
 
 	"github.com/loopopen/shoot/internal/shoot"
@@ -54,7 +53,7 @@ func (g *Generator) loadTypeMapperPkg(typeName string) string {
 				if !isMapperCandidate(sel.Sel, g.Pkg().TypesInfo) {
 					continue
 				}
-				imp := findImportForSelector(f, sel)
+				imp := findImportForSelector(f, sel, g.Pkg().TypesInfo)
 				if imp == nil {
 					continue
 				}
@@ -268,24 +267,20 @@ func (g *Generator) makeSubListMap(f1, f2 *Field) {
 	g.makeSubMap(f1, f2, s1.Elem(), s2.Elem(), true)
 }
 
-func findImportForSelector(file *ast.File, sel *ast.SelectorExpr) *ast.ImportSpec {
+func findImportForSelector(file *ast.File, sel *ast.SelectorExpr, info *types.Info) *ast.ImportSpec {
 	ident, ok := sel.X.(*ast.Ident)
-	if !ok {
+	if !ok || info == nil {
 		return nil
 	}
-
-	name := ident.Name
+	pkgName, ok := info.Uses[ident].(*types.PkgName)
+	if !ok || pkgName.Imported() == nil {
+		return nil
+	}
+	want := pkgName.Imported().Path()
 	for _, imp := range file.Imports {
-		if imp.Name != nil {
-			if imp.Name.Name == name {
-				return imp
-			}
-		} else {
-			path := strings.Trim(imp.Path.Value, `"`)
-			base := filepath.Base(path)
-			if base == name {
-				return imp
-			}
+		path := strings.Trim(imp.Path.Value, `"`)
+		if path == want {
+			return imp
 		}
 	}
 	return nil
