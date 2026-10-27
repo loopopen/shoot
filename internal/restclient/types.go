@@ -13,6 +13,7 @@ type TmplData struct {
 	AliasMap        map[string]map[string]string
 	PathParamsMap   map[string][]string
 	QueryParamsMap  map[string][]string
+	QueryOptMap     map[string]map[string]string
 	IsParamPtrMap   map[string]map[string]bool
 	ReturnResultMap map[string]struct {
 		Type  string

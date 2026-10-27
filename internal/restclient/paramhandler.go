@@ -59,9 +59,7 @@ func (g *Generator) handleSelectorExpr(paramType *ast.SelectorExpr, name *ast.Id
 	typ := g.Pkg().TypesInfo.Types[paramType].Type
 	switch underlying := typ.Underlying().(type) {
 	case *types.Struct:
-		st := underlying
-		g.handleStruct(st, name, methodName)
-		return nil
+		return g.handleStruct(underlying, name, methodName)
 	case *types.Map:
 		return g.handleQueryMapType(underlying, name, methodName)
 	}
@@ -69,7 +67,7 @@ func (g *Generator) handleSelectorExpr(paramType *ast.SelectorExpr, name *ast.Id
 	return nil
 }
 
-func extractFieldsFromTypes(st *types.Struct) []fieldInfo {
+func extractFieldsFromTypes(st *types.Struct) ([]fieldInfo, error) {
 	var fields []fieldInfo
 
 	for i := 0; i < st.NumFields(); i++ {
@@ -77,30 +75,49 @@ func extractFieldsFromTypes(st *types.Struct) []fieldInfo {
 		tag := st.Tag(i)
 
 		_, isPtr := f.Type().(*types.Pointer)
+		parsed, err := parseRestTag(tag)
+		if err != nil {
+			return nil, fmt.Errorf("field %s: %w", f.Name(), err)
+		}
 
 		fields = append(fields, fieldInfo{
 			Name:       f.Name(),
 			Type:       f.Type().String(),
 			Tag:        tag,
-			Alias:      parseFieldAlias(tag),
+			Alias:      parsed.Alias,
 			IsExported: f.Exported(),
 			IsPtr:      isPtr,
+			Ignored:    parsed.Ignored,
+			GoType:     f.Type(),
+			Rest:       parsed,
 		})
 	}
-	return fields
+	return fields, nil
 }
 
-func (g *Generator) handleStruct(st *types.Struct, name *ast.Ident, methodName string) {
+func (g *Generator) handleStruct(st *types.Struct, name *ast.Ident, methodName string) error {
 	if g.data.IsParamPtrMap[methodName] == nil {
 		g.data.IsParamPtrMap[methodName] = make(map[string]bool)
 	}
 	if g.data.AliasMap[methodName] == nil {
 		g.data.AliasMap[methodName] = make(map[string]string)
 	}
+	if g.data.QueryOptMap[methodName] == nil {
+		g.data.QueryOptMap[methodName] = make(map[string]string)
+	}
 
-	fields := extractFieldsFromTypes(st)
+	fields, err := extractFieldsFromTypes(st)
+	if err != nil {
+		return err
+	}
 
 	for _, f := range fields {
+		if f.Ignored {
+			continue
+		}
+		if err := checkRestEncoding(f.Name, f.GoType, f.Rest); err != nil {
+			return err
+		}
 		var key, value string
 		if f.IsExported {
 			key = transfer.ToCamelCase(f.Name)
@@ -119,15 +136,68 @@ func (g *Generator) handleStruct(st *types.Struct, name *ast.Ident, methodName s
 		} else {
 			g.data.AliasMap[methodName][value] = key
 		}
+		if lit := f.Rest.queryOptLiteral(isQueryList(f.GoType)); lit != "" {
+			g.data.QueryOptMap[methodName][value] = lit
+		}
 	}
+	return nil
+}
+
+func checkRestEncoding(field string, typ types.Type, tag restTag) error {
+	elem, list := queryShape(typ)
+	if tag.CSV && !list {
+		return fmt.Errorf("field %s: csv requires a slice or array", field)
+	}
+	if tag.timeEncoded() && !isTime(elem) {
+		return fmt.Errorf("field %s: dateformat, unix, unixmilli, and utc require time.Time", field)
+	}
+	return nil
+}
+
+func (t restTag) timeEncoded() bool {
+	return t.DateFormat != "" || t.Unix || t.UnixMilli || t.UTC
+}
+
+func isQueryList(typ types.Type) bool {
+	_, list := queryShape(typ)
+	return list
+}
+
+func queryShape(typ types.Type) (elem types.Type, list bool) {
+	typ = derefType(typ)
+	switch u := typ.Underlying().(type) {
+	case *types.Slice:
+		return derefType(u.Elem()), true
+	case *types.Array:
+		return derefType(u.Elem()), true
+	default:
+		return typ, false
+	}
+}
+
+func derefType(typ types.Type) types.Type {
+	for {
+		ptr, ok := typ.Underlying().(*types.Pointer)
+		if !ok {
+			return typ
+		}
+		typ = ptr.Elem()
+	}
+}
+
+func isTime(typ types.Type) bool {
+	named, ok := types.Unalias(typ).(*types.Named)
+	if !ok || named.Obj() == nil || named.Obj().Pkg() == nil {
+		return false
+	}
+	return named.Obj().Pkg().Path() == "time" && named.Obj().Name() == "Time"
 }
 
 func (g *Generator) handleIdent(paramType *ast.Ident, name *ast.Ident, methodName string) error {
 	typ := g.Pkg().TypesInfo.Types[paramType].Type
 	switch underlying := typ.Underlying().(type) {
 	case *types.Struct:
-		st := underlying
-		g.handleStruct(st, name, methodName)
+		return g.handleStruct(underlying, name, methodName)
 	case *types.Map:
 		return g.handleQueryMapType(underlying, name, methodName)
 	default:

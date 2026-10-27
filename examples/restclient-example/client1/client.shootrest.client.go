@@ -135,9 +135,14 @@ func (_c *client) QueryBooks(ctx context.Context, req dto.QueryBooksReq) (*dto.Q
 	}
 	query_ := req_.URL.Query()
 	query_.Set("name", fmt.Sprintf("%v", req.Name()))
-	query_.Set("lang", fmt.Sprintf("%v", req.Language()))
+	if err := shoot.SetQuery(query_, "lang", req.Language(), shoot.QueryOpt{OmitEmpty: true}); err != nil {
+		return nil, nil, err
+	}
 	query_.Set("page_size", fmt.Sprintf("%v", req.PageSize))
 	query_.Set("pageIndex", fmt.Sprintf("%v", req.PageIndex))
+	if err := shoot.SetQuery(query_, "pubDate", req.PubDate, shoot.QueryOpt{DateFormat: "2006-01-02"}); err != nil {
+		return nil, nil, err
+	}
 	req_.URL.RawQuery = query_.Encode()
 	req_.Header.Set("Accept", "application/json")
 	for headerName_, headerValue_ := range _c.conf.DefaultHeaders() {
@@ -187,10 +192,15 @@ func (_c *client) QueryBooks0(ctx context.Context, req QueryBooksReq) (*dto.Quer
 	if req.Name() != nil {
 		query_.Set("name", fmt.Sprintf("%v", *req.Name()))
 	}
-	query_.Set("lang", fmt.Sprintf("%v", req.Language()))
+	if err := shoot.SetQuery(query_, "lang", req.Language(), shoot.QueryOpt{OmitEmpty: true}); err != nil {
+		return nil, nil, err
+	}
 	query_.Set("page_size", fmt.Sprintf("%v", req.PageSize))
 	if req.PageIndex != nil {
 		query_.Set("pageIndex", fmt.Sprintf("%v", *req.PageIndex))
+	}
+	if err := shoot.SetQuery(query_, "pub_date", req.PubDate, shoot.QueryOpt{DateFormat: "2006-01-02"}); err != nil {
+		return nil, nil, err
 	}
 	req_.URL.RawQuery = query_.Encode()
 	req_.Header.Set("Accept", "application/json")

@@ -14,9 +14,10 @@ type User struct {
 }
 
 type QueryUsersReq struct {
-	Name     string `shoot:"alias=name"`
-	PageSize int    `shoot:"alias=size"`
-	PageIdx  int    `shoot:"alias=page_idx"`
+	Name     string `rest:"alias=name"`
+	PageSize int    `rest:"alias=size"`
+	PageIdx  int    `rest:"alias=page_idx"`
+	Ignore   string `rest:"-"`
 }
 
 type QueryUsersResp struct{}

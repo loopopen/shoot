@@ -81,7 +81,12 @@ func (_c *{{camelCase $.TypeName}}) {{index $.SigMap .}} {
 	{{- if not $alias}}
 	{{- $alias = $key}}
 	{{- end}}
-	{{- if index $isPtrMap $key}}
+	{{- $opt := index (index $.QueryOptMap $item) $key}}
+	{{- if $opt}}
+	if err := shoot.SetQuery(query_, "{{$alias}}", {{$key}}, {{$opt}}); err != nil {
+		return {{$errret}}
+	}
+	{{- else if index $isPtrMap $key}}
 	if {{$key}} != nil {
 		query_.Set("{{$alias}}", fmt.Sprintf("%v", *{{$key}}))
 	}

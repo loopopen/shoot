@@ -1,5 +1,7 @@
 package dto
 
+import "time"
+
 //go:generate go tool shoot new -getset -json -file=$GOFILE
 
 type User struct {
@@ -24,11 +26,11 @@ type Book struct {
 
 type QueryBooksReq struct {
 	name      string
-	language  string `shoot:"alias=lang,omitempty"`
-	PageSize  int    `shoot:"alias=page_size"`
+	language  string `rest:"alias=lang,omitempty"`
+	PageSize  int    `rest:"alias=page_size"`
 	PageIndex int
-	// PubDate   time.Time `shoot:"dateformat=2006-01-02"` //todo: support this
-	// Ignore    string    `shoot:"-"`                     //todo: support this
+	Ignore    string    `rest:"-"`
+	PubDate   time.Time `rest:"dateformat=2006-01-02"`
 }
 
 type QueryBooksResp struct {
