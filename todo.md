@@ -26,10 +26,10 @@
 - 现有实现绑在 `*http.Client` 上：`RestClient.ConfigHTTPClient`、生成结构体里的 `client` 字段、`retry.Do`，以及 `RestConf.BuildMiddleware` 返回的 `http.RoundTripper`。resty 能包一层 `*http.Client` 并复用同一个 `RoundTripper`，这条路径有机会兼容。
 - 如果要换成 resty 自己的重试、中间件或响应类型，公开接口对不上，就不要放进 v1.1，改到 v2 做。
 
-## [ ] map 复制目标字段注释
+## [x] map 复制目标字段注释
 
 `map` 时可以把目标字段的注释复制到对应的源字段，用一个选项控制，取值为 `on`、`off`、`force`。
 
 - `on`：复制。源字段已经有注释时保留原注释。默认值。
 - `off`：不复制。
-- `force`：强制覆盖，用目标字段的注释替换源字段上已有的注释。
+- `force`：强制覆盖，用目标字段的注释替换源字段上已有的注释。目标字段存在但没有注释时，清除匹配源字段的注释。

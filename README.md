@@ -13,10 +13,10 @@ A pack of tools for "go generate".
 ```zsh
 Usage: shoot <subcommand> [options]
 These are all the sub commands supported as of now:
-new [-opt] [-getset] [-json] [-exp] [-tagcase=<case>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
+new [-opt] [-getset] [-json] [-exp] [-tagcase=<pascal|camel|lower|upper>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
 enum [-bit] [-json] [-text] [-sql] [-gorm] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
 rest [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
-map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<way>] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]
+map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<toonly|->|fromonly|<-|both|<->>] [-comment=<on|off|force>] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]
 ```
 
 `new` and `rest` instructions use `@` by default, for example `//@new` and

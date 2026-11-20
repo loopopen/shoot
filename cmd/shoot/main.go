@@ -17,10 +17,10 @@ import (
 )
 
 var subCmdMap = map[string]string{
-	constructor.SubCmd: "[-opt] [-getset] [-json] [-exp] [-tagcase=<case>] [-type=<Type> | -file=<GoFile>] [dir] [-s] [-v]",
-	enumer.SubCmd:      "[-json] [-text] -[bit] [-json] [-type=<Type> | -file=<GoFile>] [dir] [-s] [-v]",
-	restclient.SubCmd:  "[-type=<Type> | -file=<GoFile>] [dir] [-s] [-v]",
-	mapper.SubCmd:      "[-path=<path>] [-alias=<alias>] [-to=<DestType>] [-type=<SrcType> | -file=<GoFile>] [dir] [-s] [-v]",
+	constructor.SubCmd: "[-opt] [-getset] [-json] [-exp] [-tagcase=<pascal|camel|lower|upper>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]",
+	enumer.SubCmd:      "[-bit] [-json] [-text] [-sql] [-gorm] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]",
+	restclient.SubCmd:  "[-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]",
+	mapper.SubCmd:      "[-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<->|<-|<->>] [-comment=<on|off|force>] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]",
 }
 
 func main() {

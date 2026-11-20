@@ -36,6 +36,38 @@ func (v *Way) String() string {
 	return string(*v)
 }
 
+type Comment string
+
+const (
+	CommentOn    Comment = "on"
+	CommentOff   Comment = "off"
+	CommentForce Comment = "force"
+)
+
+func (c *Comment) Set(value string) error {
+	switch Comment(value) {
+	case CommentOn, CommentOff, CommentForce:
+		*c = Comment(value)
+		return nil
+	default:
+		return fmt.Errorf("invalid comment mode: %s", value)
+	}
+}
+
+func (c *Comment) String() string {
+	if c == nil || *c == "" {
+		return string(CommentOn)
+	}
+	return string(*c)
+}
+
+func (c Comment) mode() Comment {
+	if c == "" {
+		return CommentOn
+	}
+	return c
+}
+
 type TmplData struct {
 	*shoot.TmplDataBase
 	SrcCtorParams         []*Field
@@ -81,6 +113,7 @@ type Flags struct {
 	way        Way
 	mark       bool
 	ignoreCase bool
+	comment    Comment
 }
 
 type Field struct {

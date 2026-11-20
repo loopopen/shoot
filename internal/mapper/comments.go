@@ -5,46 +5,109 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
+	"go/token"
 	"os"
 	"sort"
 	"strings"
 )
 
-// collectCommentUpdates copies field documentation from the package named by
-// -path to the corresponding field in the package being generated for.  The
-// destination field is deliberately never overwritten when it already has a
-// comment of its own.
-func (g *Generator) collectCommentUpdates() {
-	if g.commentUpdates == nil {
-		g.commentUpdates = make(map[string]map[int]string)
-	}
+// commentEdit is one source-field comment update. text is the comment to
+// write. remove deletes existing documentation before that write. When
+// replace is set, text replaces the trailing comment instead of being
+// appended to the field line.
+type commentEdit struct {
+	text    string
+	remove  []commentSpan
+	replace bool
+	from    int
+	to      int
+}
 
-	for _, target := range g.exportedFields {
-		if target.node == nil || hasComment(target.node) {
+type commentSpan struct {
+	start int
+	end   int
+}
+
+// collectCommentUpdates copies field documentation from destination fields
+// (-path) onto the corresponding source fields. -comment selects the mode:
+// on copies only onto fields that have no comment, off copies nothing, and
+// force replaces a source field's existing comment, and clears it when the
+// matching destination field has none.
+func (g *Generator) collectCommentUpdates() {
+	if g.flags.comment.mode() == CommentOff {
+		return
+	}
+	if g.commentUpdates == nil {
+		g.commentUpdates = make(map[string]map[int]commentEdit)
+	}
+	force := g.flags.comment.mode() == CommentForce
+
+	for _, srcField := range g.exportedFields {
+		if srcField.node == nil {
+			continue
+		}
+		if !force && hasComment(srcField.node) {
 			continue
 		}
 
-		for _, source := range g.destExportedFields {
-			if source.node == nil || !canNameMatch(target, source, g.srcTagMap, g.flags.ignoreCase) {
+		for _, destField := range g.destExportedFields {
+			if destField.node == nil || !canNameMatch(srcField, destField, g.srcTagMap, g.flags.ignoreCase) {
 				continue
 			}
 
-			comment := commentText(source.node)
-			if comment == "" {
+			comment := commentText(destField.node)
+			if comment == "" && (!force || !hasComment(srcField.node)) {
+				if force {
+					break
+				}
 				continue
 			}
 
-			position := g.Pkg().Fset.Position(target.node.Pos())
+			position := g.Pkg().Fset.Position(srcField.node.Pos())
 			if position.Filename == "" || position.Offset < 0 {
 				continue
 			}
-			if g.commentUpdates[position.Filename] == nil {
-				g.commentUpdates[position.Filename] = make(map[int]string)
+			edit := commentEdit{text: comment}
+			if force {
+				edit.remove, edit.replace, edit.from, edit.to = commentReplacement(g.Pkg().Fset, srcField.node)
 			}
-			g.commentUpdates[position.Filename][position.Offset] = comment
+			if g.commentUpdates[position.Filename] == nil {
+				g.commentUpdates[position.Filename] = make(map[int]commentEdit)
+			}
+			g.commentUpdates[position.Filename][position.Offset] = edit
 			break
 		}
 	}
+}
+
+// commentReplacement describes how to clear comments already attached to
+// field. Doc comments are removed with their lines. A trailing comment is
+// replaced in place.
+func commentReplacement(fset *token.FileSet, field *ast.Field) (remove []commentSpan, replace bool, from, to int) {
+	if field.Doc != nil {
+		remove = append(remove, docSpan(fset, field.Doc))
+	}
+	if field.Comment != nil {
+		replace = true
+		from = fset.Position(field.Comment.Pos()).Offset
+		to = fset.Position(field.Comment.End()).Offset
+	}
+	return remove, replace, from, to
+}
+
+func docSpan(fset *token.FileSet, group *ast.CommentGroup) commentSpan {
+	file := fset.File(group.Pos())
+	startLine := file.Line(group.Pos())
+	endLine := file.Line(group.End())
+	if endLine > startLine && file.Offset(group.End()) == file.Offset(file.LineStart(endLine)) {
+		endLine--
+	}
+	start := file.Offset(file.LineStart(startLine))
+	end := file.Size()
+	if endLine < file.LineCount() {
+		end = file.Offset(file.LineStart(endLine + 1))
+	}
+	return commentSpan{start: start, end: end}
 }
 
 func hasComment(field *ast.Field) bool {
@@ -81,7 +144,13 @@ func (g *Generator) ApplySourceChanges() error {
 	return nil
 }
 
-func applyCommentUpdates(filename string, updates map[int]string) error {
+type sourceEdit struct {
+	start int
+	end   int
+	text  string
+}
+
+func applyCommentUpdates(filename string, updates map[int]commentEdit) error {
 	if len(updates) == 0 {
 		return nil
 	}
@@ -91,13 +160,8 @@ func applyCommentUpdates(filename string, updates map[int]string) error {
 		return fmt.Errorf("read source for comment update: %w", err)
 	}
 
-	offsets := make([]int, 0, len(updates))
-	for offset := range updates {
-		offsets = append(offsets, offset)
-	}
-	sort.Sort(sort.Reverse(sort.IntSlice(offsets)))
-
-	for _, offset := range offsets {
+	edits := make([]sourceEdit, 0, len(updates))
+	for offset, update := range updates {
 		if offset < 0 || offset > len(src) {
 			return fmt.Errorf("comment update offset %d is outside %s", offset, filename)
 		}
@@ -107,13 +171,40 @@ func applyCommentUpdates(filename string, updates map[int]string) error {
 			return fmt.Errorf("comment update offset %d does not start a field in %s", offset, filename)
 		}
 
+		for _, span := range update.remove {
+			if span.start < 0 || span.end > len(src) || span.start > span.end {
+				return fmt.Errorf("comment removal [%d,%d) is outside %s", span.start, span.end, filename)
+			}
+			edits = append(edits, sourceEdit{start: span.start, end: span.end})
+		}
+		if update.replace {
+			if update.from < 0 || update.to > len(src) || update.from > update.to {
+				return fmt.Errorf("comment replacement [%d,%d) is outside %s", update.from, update.to, filename)
+			}
+			edits = append(edits, sourceEdit{start: update.from, end: update.to, text: update.text})
+			continue
+		}
+		if update.text == "" {
+			continue
+		}
+
 		lineEnd := bytes.IndexByte(src[offset:], '\n')
 		if lineEnd < 0 {
 			lineEnd = len(src)
 		} else {
 			lineEnd += offset
 		}
-		src = append(src[:lineEnd], append([]byte(" "+updates[offset]), src[lineEnd:]...)...)
+		edits = append(edits, sourceEdit{start: lineEnd, end: lineEnd, text: " " + update.text})
+	}
+
+	sort.Slice(edits, func(i, j int) bool {
+		if edits[i].start != edits[j].start {
+			return edits[i].start > edits[j].start
+		}
+		return edits[i].end > edits[j].end
+	})
+	for _, edit := range edits {
+		src = append(src[:edit.start], append([]byte(edit.text), src[edit.end:]...)...)
 	}
 
 	formatted, err := format.Source(src)
