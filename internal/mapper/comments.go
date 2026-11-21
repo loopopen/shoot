@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -21,6 +22,7 @@ type commentEdit struct {
 	replace bool
 	from    int
 	to      int
+	tag     *sourceEdit
 }
 
 type commentSpan struct {
@@ -32,7 +34,8 @@ type commentSpan struct {
 // (-path) onto the corresponding source fields. -comment selects the mode:
 // on copies only onto fields that have no comment, off copies nothing, and
 // force replaces a source field's existing comment, and clears it when the
-// matching destination field has none.
+// matching destination field has none. With -gorm, the same documentation is
+// also copied into the comment setting of the source field's gorm tag.
 func (g *Generator) collectCommentUpdates() {
 	if g.flags.comment.mode() == CommentOff {
 		return
@@ -46,9 +49,6 @@ func (g *Generator) collectCommentUpdates() {
 		if srcField.node == nil {
 			continue
 		}
-		if !force && hasComment(srcField.node) {
-			continue
-		}
 
 		for _, destField := range g.destExportedFields {
 			if destField.node == nil || !canNameMatch(srcField, destField, g.srcTagMap, g.flags.ignoreCase) {
@@ -56,20 +56,36 @@ func (g *Generator) collectCommentUpdates() {
 			}
 
 			comment := commentText(destField.node)
-			if comment == "" && (!force || !hasComment(srcField.node)) {
-				if force {
-					break
+			edit := commentEdit{}
+			changed := false
+			if force && (comment != "" || hasComment(srcField.node)) {
+				edit.text = comment
+				edit.remove, edit.replace, edit.from, edit.to = commentReplacement(g.Pkg().Fset, srcField.node)
+				changed = true
+			} else if !force && comment != "" && !hasComment(srcField.node) {
+				edit.text = comment
+				changed = true
+			}
+
+			if g.flags.gorm {
+				gormEdit, ok := gormCommentEdit(
+					g.Pkg().Fset,
+					srcField.node,
+					strings.TrimPrefix(comment, "// "),
+					force,
+				)
+				if ok {
+					edit.tag = &gormEdit
+					changed = true
 				}
-				continue
+			}
+			if !changed {
+				break
 			}
 
 			position := g.Pkg().Fset.Position(srcField.node.Pos())
 			if position.Filename == "" || position.Offset < 0 {
 				continue
-			}
-			edit := commentEdit{text: comment}
-			if force {
-				edit.remove, edit.replace, edit.from, edit.to = commentReplacement(g.Pkg().Fset, srcField.node)
 			}
 			if g.commentUpdates[position.Filename] == nil {
 				g.commentUpdates[position.Filename] = make(map[int]commentEdit)
@@ -78,6 +94,151 @@ func (g *Generator) collectCommentUpdates() {
 			break
 		}
 	}
+}
+
+// gormCommentEdit returns a source edit that adds, replaces, or removes the
+// comment setting in field's gorm tag. Existing comments are left untouched
+// unless force is enabled.
+func gormCommentEdit(fset *token.FileSet, field *ast.Field, comment string, force bool) (sourceEdit, bool) {
+	raw := ""
+	if field.Tag != nil {
+		raw = field.Tag.Value
+	}
+	updated, changed := updateGormTag(raw, comment, force)
+	if !changed {
+		return sourceEdit{}, false
+	}
+
+	if field.Tag != nil {
+		return sourceEdit{
+			start: fset.Position(field.Tag.Pos()).Offset,
+			end:   fset.Position(field.Tag.End()).Offset,
+			text:  updated,
+			order: 1,
+		}, true
+	}
+	offset := fset.Position(field.Type.End()).Offset
+	return sourceEdit{start: offset, end: offset, text: " " + updated, order: 1}, true
+}
+
+func updateGormTag(raw, comment string, force bool) (string, bool) {
+	if raw == "" {
+		if comment == "" {
+			return "", false
+		}
+		return quoteStructTag(`gorm:` + strconv.Quote("comment:"+comment)), true
+	}
+
+	tag, err := strconv.Unquote(raw)
+	if err != nil {
+		return raw, false
+	}
+	start, end, value, found := structTagValue(tag, "gorm")
+	if !found {
+		if comment == "" {
+			return raw, false
+		}
+		if tag != "" && !strings.HasSuffix(tag, " ") {
+			tag += " "
+		}
+		tag += `gorm:` + strconv.Quote("comment:"+comment)
+		return quoteStructTag(tag), true
+	}
+	if strings.TrimSpace(value) == "-" {
+		return raw, false
+	}
+
+	updated, changed := updateGormComment(value, comment, force)
+	if !changed {
+		return raw, false
+	}
+	quoted := strconv.Quote(updated)
+	tag = tag[:start] + quoted[1:len(quoted)-1] + tag[end:]
+	return quoteStructTag(tag), true
+}
+
+// structTagValue returns the encoded value range and decoded value for key.
+// The range excludes the surrounding double quotes.
+func structTagValue(tag, key string) (start, end int, value string, found bool) {
+	for i := 0; i < len(tag); {
+		for i < len(tag) && tag[i] == ' ' {
+			i++
+		}
+		nameStart := i
+		for i < len(tag) && tag[i] > ' ' && tag[i] != ':' && tag[i] != '"' && tag[i] != '\\' {
+			i++
+		}
+		if nameStart == i || i+1 >= len(tag) || tag[i] != ':' || tag[i+1] != '"' {
+			return 0, 0, "", false
+		}
+		name := tag[nameStart:i]
+		i += 2
+		valueStart := i
+		for i < len(tag) && tag[i] != '"' {
+			if tag[i] == '\\' {
+				i++
+				if i >= len(tag) {
+					return 0, 0, "", false
+				}
+			}
+			i++
+		}
+		if i >= len(tag) {
+			return 0, 0, "", false
+		}
+		if name == key {
+			decoded, err := strconv.Unquote(`"` + tag[valueStart:i] + `"`)
+			if err != nil {
+				return 0, 0, "", false
+			}
+			return valueStart, i, decoded, true
+		}
+		i++
+	}
+	return 0, 0, "", false
+}
+
+func updateGormComment(value, comment string, force bool) (string, bool) {
+	parts := strings.Split(value, ";")
+	found := false
+	for _, part := range parts {
+		key, _, ok := strings.Cut(strings.TrimSpace(part), ":")
+		if ok && strings.EqualFold(strings.TrimSpace(key), "comment") {
+			found = true
+			break
+		}
+	}
+	if found && !force {
+		return value, false
+	}
+	if found {
+		kept := parts[:0]
+		for _, part := range parts {
+			key, _, ok := strings.Cut(strings.TrimSpace(part), ":")
+			if ok && strings.EqualFold(strings.TrimSpace(key), "comment") {
+				continue
+			}
+			kept = append(kept, part)
+		}
+		value = strings.Join(kept, ";")
+		if comment == "" {
+			return value, true
+		}
+	}
+	if comment == "" {
+		return value, false
+	}
+	if value != "" && !strings.HasSuffix(value, ";") {
+		value += ";"
+	}
+	return value + "comment:" + comment, true
+}
+
+func quoteStructTag(tag string) string {
+	if !strings.ContainsRune(tag, '`') {
+		return "`" + tag + "`"
+	}
+	return strconv.Quote(tag)
 }
 
 // commentReplacement describes how to clear comments already attached to
@@ -148,6 +309,7 @@ type sourceEdit struct {
 	start int
 	end   int
 	text  string
+	order int
 }
 
 func applyCommentUpdates(filename string, updates map[int]commentEdit) error {
@@ -177,6 +339,12 @@ func applyCommentUpdates(filename string, updates map[int]commentEdit) error {
 			}
 			edits = append(edits, sourceEdit{start: span.start, end: span.end})
 		}
+		if update.tag != nil {
+			if update.tag.start < 0 || update.tag.end > len(src) || update.tag.start > update.tag.end {
+				return fmt.Errorf("gorm tag update [%d,%d) is outside %s", update.tag.start, update.tag.end, filename)
+			}
+			edits = append(edits, *update.tag)
+		}
 		if update.replace {
 			if update.from < 0 || update.to > len(src) || update.from > update.to {
 				return fmt.Errorf("comment replacement [%d,%d) is outside %s", update.from, update.to, filename)
@@ -201,7 +369,10 @@ func applyCommentUpdates(filename string, updates map[int]commentEdit) error {
 		if edits[i].start != edits[j].start {
 			return edits[i].start > edits[j].start
 		}
-		return edits[i].end > edits[j].end
+		if edits[i].end != edits[j].end {
+			return edits[i].end > edits[j].end
+		}
+		return edits[i].order < edits[j].order
 	})
 	for _, edit := range edits {
 		src = append(src[:edit.start], append([]byte(edit.text), src[edit.end:]...)...)

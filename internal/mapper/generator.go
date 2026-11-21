@@ -93,6 +93,7 @@ func (g *Generator) ParseFlags() {
 	ic := sub.Bool("i", false, "enables case-insensitive field name matching")
 	var comment Comment
 	sub.Var(&comment, "comment", "copy destination field comments to source fields (on, off, force)")
+	gorm := sub.Bool("gorm", false, "copy destination field comments to source gorm tags")
 
 	g.ParseCommonFlags(sub)
 
@@ -101,6 +102,9 @@ func (g *Generator) ParseFlags() {
 	}
 	if comment == "" {
 		comment = CommentOn
+	}
+	if *gorm && comment == CommentOff {
+		logx.Fatal("-gorm only works when -comment is enabled")
 	}
 
 	typNames := g.CommonFlags().TypeNames
@@ -139,6 +143,7 @@ func (g *Generator) ParseFlags() {
 		mark:       *mark,
 		ignoreCase: *ic,
 		comment:    comment,
+		gorm:       *gorm,
 	}
 }
 

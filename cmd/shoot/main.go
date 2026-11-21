@@ -20,7 +20,7 @@ var subCmdMap = map[string]string{
 	constructor.SubCmd: "[-opt] [-getset] [-json] [-exp] [-tagcase=<pascal|camel|snake|lower|upper>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]",
 	enumer.SubCmd:      "[-bit] [-json] [-text] [-sql] [-gorm] [-case=<pascal|camel|snake|lower|upper>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]",
 	restclient.SubCmd:  "[-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]",
-	mapper.SubCmd:      "[-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<->|<-|<->>] [-comment=<on|off|force>] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]",
+	mapper.SubCmd:      "[-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<->|<-|<->>] [-comment=<on|off|force>] [-gorm] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]",
 }
 
 func main() {

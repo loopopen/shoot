@@ -114,6 +114,7 @@ type Flags struct {
 	mark       bool
 	ignoreCase bool
 	comment    Comment
+	gorm       bool
 }
 
 type Field struct {

@@ -128,6 +128,88 @@ type Destination struct {
 	}
 }
 
+func TestCollectGormCommentWhenSourceAlreadyHasComment(t *testing.T) {
+	targetSrc := []byte("package target\n\n" +
+		"type Target struct {\n" +
+		"\tOrderNo string `gorm:\"size:64\"` // keep source comment\n" +
+		"}\n")
+	sourceSrc := []byte(`package source
+
+type Source struct {
+	OrderNo string // sales order number
+}
+`)
+
+	targetFset, targetFile := parseCommentTestFile(t, targetSrc)
+	_, sourceFile := parseCommentTestFile(t, sourceSrc)
+	targetOrderNo := structField(t, targetFile, `Target`, `OrderNo`)
+	g := &Generator{
+		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		flags:         &Flags{gorm: true},
+		exportedFields: []*Field{
+			{Name: `OrderNo`, node: targetOrderNo},
+		},
+		destExportedFields: []*Field{
+			{Name: `OrderNo`, node: structField(t, sourceFile, `Source`, `OrderNo`)},
+		},
+	}
+	g.SetPkg(&packages.Package{Fset: targetFset})
+	g.collectCommentUpdates()
+
+	filename := targetFset.Position(targetOrderNo.Pos()).Filename
+	update, ok := g.commentUpdates[filename][targetFset.Position(targetOrderNo.Pos()).Offset]
+	if !ok || update.tag == nil {
+		t.Fatal(`gorm comment update was not collected`)
+	}
+	if update.text != `` {
+		t.Fatalf(`source comment update = %q, want no update`, update.text)
+	}
+	if got, want := update.tag.text, "`gorm:\"size:64;comment:sales order number\"`"; got != want {
+		t.Fatalf(`gorm tag = %q, want %q`, got, want)
+	}
+}
+
+func TestCollectCommentDoesNotChangeDisabledGormTag(t *testing.T) {
+	targetSrc := []byte("package target\n\n" +
+		"type Target struct {\n" +
+		"\tOrderNo string `gorm:\"-\"`\n" +
+		"}\n")
+	sourceSrc := []byte(`package source
+
+type Source struct {
+	OrderNo string // sales order number
+}
+`)
+
+	targetFset, targetFile := parseCommentTestFile(t, targetSrc)
+	_, sourceFile := parseCommentTestFile(t, sourceSrc)
+	targetOrderNo := structField(t, targetFile, `Target`, `OrderNo`)
+	g := &Generator{
+		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		flags:         &Flags{gorm: true},
+		exportedFields: []*Field{
+			{Name: `OrderNo`, node: targetOrderNo},
+		},
+		destExportedFields: []*Field{
+			{Name: `OrderNo`, node: structField(t, sourceFile, `Source`, `OrderNo`)},
+		},
+	}
+	g.SetPkg(&packages.Package{Fset: targetFset})
+	g.collectCommentUpdates()
+
+	filename := targetFset.Position(targetOrderNo.Pos()).Filename
+	update, ok := g.commentUpdates[filename][targetFset.Position(targetOrderNo.Pos()).Offset]
+	if !ok {
+		t.Fatal(`field comment update was not collected`)
+	}
+	if got, want := update.text, `// sales order number`; got != want {
+		t.Fatalf(`source comment = %q, want %q`, got, want)
+	}
+	if update.tag != nil {
+		t.Fatalf(`gorm tag edit = %+v, want no edit`, *update.tag)
+	}
+}
+
 func TestCollectCommentUpdatesOff(t *testing.T) {
 	g := commentFixture(t)
 	g.flags.comment = CommentOff
@@ -347,6 +429,132 @@ type Target struct {
 	ID    string
 	Name  string
 	Plain string
+}
+`
+	if string(got) != want {
+		t.Fatalf(`updated source =
+%s
+want:
+%s`, got, want)
+	}
+}
+
+func TestUpdateGormTag(t *testing.T) {
+	tests := []struct {
+		name    string
+		raw     string
+		comment string
+		force   bool
+		want    string
+		changed bool
+	}{
+		{
+			name:    `create tag`,
+			comment: `sales order number`,
+			want:    "`gorm:\"comment:sales order number\"`",
+			changed: true,
+		},
+		{
+			name:    `preserve other tags`,
+			raw:     "`json:\"orderNo\"`",
+			comment: `sales order number`,
+			want:    "`json:\"orderNo\" gorm:\"comment:sales order number\"`",
+			changed: true,
+		},
+		{
+			name:    `append comment setting`,
+			raw:     "`gorm:\"size:64\"`",
+			comment: `sales order number`,
+			want:    "`gorm:\"size:64;comment:sales order number\"`",
+			changed: true,
+		},
+		{
+			name:    `keep existing comment`,
+			raw:     "`gorm:\"size:64;comment:old\"`",
+			comment: `sales order number`,
+			want:    "`gorm:\"size:64;comment:old\"`",
+		},
+		{
+			name:    `ignore disabled gorm field`,
+			raw:     "`json:\"orderNo\" gorm:\"-\"`",
+			comment: `sales order number`,
+			want:    "`json:\"orderNo\" gorm:\"-\"`",
+		},
+		{
+			name:    `ignore disabled gorm field with force`,
+			raw:     "`gorm:\"-\"`",
+			comment: `sales order number`,
+			force:   true,
+			want:    "`gorm:\"-\"`",
+		},
+		{
+			name:    `replace existing comment with force`,
+			raw:     "`gorm:\"size:64;comment:old\"`",
+			comment: `sales order number`,
+			force:   true,
+			want:    "`gorm:\"size:64;comment:sales order number\"`",
+			changed: true,
+		},
+		{
+			name:    `clear existing comment with force`,
+			raw:     "`json:\"orderNo\" gorm:\"size:64;COMMENT:old\"`",
+			force:   true,
+			want:    "`json:\"orderNo\" gorm:\"size:64\"`",
+			changed: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, changed := updateGormTag(tt.raw, tt.comment, tt.force)
+			if got != tt.want || changed != tt.changed {
+				t.Fatalf(`updateGormTag() = (%q, %v), want (%q, %v)`, got, changed, tt.want, tt.changed)
+			}
+		})
+	}
+}
+
+func TestApplyCommentAndGormTagUpdates(t *testing.T) {
+	dir := t.TempDir()
+	filename := filepath.Join(dir, `target.go`)
+	src := []byte(`package target
+
+type Target struct {
+	OrderNo string
+}
+`)
+	if err := os.WriteFile(filename, src, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, filename, src, parser.ParseComments)
+	if err != nil {
+		t.Fatal(err)
+	}
+	field := structField(t, file, `Target`, `OrderNo`)
+	tag, ok := gormCommentEdit(fset, field, `sales order number`, false)
+	if !ok {
+		t.Fatal(`gorm comment edit was not created`)
+	}
+	updates := map[int]commentEdit{
+		fset.Position(field.Pos()).Offset: {
+			text: `// sales order number`,
+			tag:  &tag,
+		},
+	}
+	if err := applyCommentUpdates(filename, updates); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `package target
+
+type Target struct {
+	OrderNo string ` + "`gorm:\"comment:sales order number\"`" + ` // sales order number
 }
 `
 	if string(got) != want {

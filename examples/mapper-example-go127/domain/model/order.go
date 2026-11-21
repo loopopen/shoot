@@ -11,4 +11,5 @@ type Order struct {
 // @getter
 type Order2 struct {
 	orderNo string // 销售订单号
+	X       string // X
 }
