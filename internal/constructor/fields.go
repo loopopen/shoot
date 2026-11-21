@@ -244,46 +244,6 @@ func newParamsList(fields []*Field, nameMap map[string]string) string {
 	return lst
 }
 
-func newBody(fields []*Field, nameMap map[string]string) string {
-	if len(fields) == 0 {
-		return ""
-	}
-	var buf bytes.Buffer
-	newBodyRec(&buf, fields, 0, -1, nameMap)
-	return buf.String()
-}
-
-func newBodyRec(buf *bytes.Buffer, fields []*Field, pointer int, depth int32, nameMap map[string]string) int {
-	if len(fields) == 0 {
-		return 0
-	}
-	var i = pointer
-	for i < len(fields) {
-		f := fields[i]
-		if f.depth <= depth {
-			break
-		}
-		if f.isEmbeded {
-			ref := ""
-			if f.isPtr {
-				ref = "&"
-			}
-			buf.WriteString(fmt.Sprintf("%s: %s%s{\n", f.name, ref, f.qualifiedType))
-			i = newBodyRec(buf, fields, i+1, f.depth, nameMap)
-			buf.WriteString("},\n")
-		} else {
-			name, ok := nameMap[f.name]
-			if ok && !f.isShadowed {
-				buf.WriteString(fmt.Sprintf("%s: %s,\n", f.name, name))
-			} else if f.defValue != "" {
-				buf.WriteString(fmt.Sprintf("%s: %s,\n", f.name, f.defValue))
-			}
-			i++
-		}
-	}
-	return i
-}
-
 func expandIfStruct(pkg *packages.Package, qf types.Qualifier, depth int32, t types.Type, isNew bool, fields *[]*Field) {
 	var stru *types.Struct
 	switch tt := t.(type) {
