@@ -13,7 +13,6 @@ type Order struct {
 	Status       enums.OrderStatus `json:"status"`                       // 订单状态
 	OrderingTime string            `json:"orderingTime" map:"OrderTime"` // 下单时间
 	Address      *OrderAddress     `json:"address"`
-	X            string            `json:"x"` // X
 }
 
 func (o *Order) writeDomain(dest *model.Order) {

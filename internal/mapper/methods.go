@@ -116,14 +116,16 @@ func parseGetSetMethods(pkg *packages.Package, stTyp types.Type, unexportedField
 	}
 }
 
-func compatlize(fields *[]*Field, methods []shoot.Func) {
+func compatlize(fields *[]*Field, methods []shoot.Func, unexportedFields []*Field) {
 	for _, m := range methods {
 		if m.Param != nil { //set
+			backingName := trimLeftOnce(m.Name, set)
 			*fields = append(*fields, &Field{
 				Name:        m.Name,
 				Path:        m.Path,
 				typ:         m.Param,
-				backingName: trimLeftOnce(m.Name, set),
+				backingName: backingName,
+				node:        backingFieldNode(backingName, unexportedFields),
 				IsSet:       true,
 			})
 		} else if m.Result != nil { //get
@@ -132,10 +134,25 @@ func compatlize(fields *[]*Field, methods []shoot.Func) {
 				Path:        m.Path,
 				typ:         m.Result,
 				backingName: m.Name,
+				node:        backingFieldNode(m.Name, unexportedFields),
 				IsGet:       true,
 			})
 		}
 	}
+}
+
+func backingFieldNode(name string, fields []*Field) *ast.Field {
+	for _, field := range fields {
+		if field.Name == name || transfer.ToPascalCase(field.Name) == name {
+			return field.node
+		}
+	}
+	for _, field := range fields {
+		if smartMatch(name, field.Name) {
+			return field.node
+		}
+	}
+	return nil
 }
 
 func (g *Generator) makeCompatible() {
@@ -143,8 +160,8 @@ func (g *Generator) makeCompatible() {
 	g.RegisterTransfer("assign", transfer.ID)
 	g.RegisterTransfer("evaluate", transfer.ID)
 
-	compatlize(&g.exportedFields, g.getsetMethods)
-	compatlize(&g.destExportedFields, g.destGetSetMethods)
+	compatlize(&g.exportedFields, g.getsetMethods, g.unexportedFields)
+	compatlize(&g.destExportedFields, g.destGetSetMethods, g.destUnexportedFields)
 	g.data.SrcFieldList = g.exportedFields
 	g.data.DestFieldList = g.destExportedFields
 

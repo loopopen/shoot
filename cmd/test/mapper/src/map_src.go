@@ -6,9 +6,7 @@ import (
 	"github.com/loopopen/shoot/cmd/test/mapper/dest"
 )
 
-type Mapper struct {
-	//shoot: mapper
-}
+type Mapper struct{}
 
 func (Mapper) StringToDecimal(s string) dest.Decimal {
 	return dest.Decimal{}

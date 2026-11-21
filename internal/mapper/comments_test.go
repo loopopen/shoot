@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"testing"
@@ -74,6 +75,56 @@ type Source struct {
 	}
 	if _, ok := updates[targetFset.Position(targetKeep.Pos()).Offset]; ok {
 		t.Fatal(`field with a comment was overwritten`)
+	}
+}
+
+func TestCollectCommentUpdatesFromAccessorBackingField(t *testing.T) {
+	sourceSrc := []byte(`package source
+
+type Source struct {
+	OrderNo string
+}
+`)
+	destinationSrc := []byte(`package destination
+
+type Destination struct {
+	orderNo string // sales order number
+}
+`)
+
+	sourceFset, sourceFile := parseCommentTestFile(t, sourceSrc)
+	_, destinationFile := parseCommentTestFile(t, destinationSrc)
+	sourceOrderNo := structField(t, sourceFile, `Source`, `OrderNo`)
+	destinationOrderNo := structField(t, destinationFile, `Destination`, `orderNo`)
+
+	destinationFields := []*Field{}
+	compatlize(
+		&destinationFields,
+		[]shoot.Func{{Name: `OrderNo`, Path: `OrderNo`, Result: types.Typ[types.String]}},
+		[]*Field{{Name: `orderNo`, node: destinationOrderNo}},
+	)
+	if len(destinationFields) != 1 || destinationFields[0].node != destinationOrderNo {
+		t.Fatal(`getter field was not linked to its backing field`)
+	}
+
+	g := &Generator{
+		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		flags:         &Flags{},
+		exportedFields: []*Field{
+			{Name: `OrderNo`, node: sourceOrderNo},
+		},
+		destExportedFields: destinationFields,
+	}
+	g.SetPkg(&packages.Package{Fset: sourceFset})
+	g.collectCommentUpdates()
+
+	filename := sourceFset.Position(sourceOrderNo.Pos()).Filename
+	update, ok := g.commentUpdates[filename][sourceFset.Position(sourceOrderNo.Pos()).Offset]
+	if !ok {
+		t.Fatal(`backing field comment was not copied`)
+	}
+	if got, want := update.text, `// sales order number`; got != want {
+		t.Fatalf(`comment = %q, want %q`, got, want)
 	}
 }
 
