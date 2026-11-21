@@ -3,7 +3,7 @@
 package src
 
 import (
-	model "mapperexample4/dest"
+	model "examples/mapperexample4/dest"
 	"time"
 )
 

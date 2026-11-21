@@ -6,10 +6,11 @@ import (
 )
 
 type Func struct {
-	Name   string
-	Path   string
-	Param  types.Type
-	Result types.Type
+	Name      string
+	Path      string
+	Param     types.Type
+	Result    types.Type
+	Signature *types.Signature
 }
 
 func (f *Func) IsGetter() bool {

@@ -2,7 +2,7 @@
 
 package po
 
-import domain "mapperexample/domain/model"
+import domain "examples/mapperexample/domain/model"
 
 // ToDomain converts receiver to type domain.Order
 func (o *Order) ToDomain() *domain.Order {

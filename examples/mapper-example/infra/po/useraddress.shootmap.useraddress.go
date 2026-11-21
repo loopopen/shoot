@@ -3,7 +3,7 @@
 package po
 
 import (
-	domain "mapperexample/domain/model"
+	domain "examples/mapperexample/domain/model"
 
 	"gorm.io/gorm"
 )

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"mapperexample/domain/enums"
+	"examples/mapperexample/domain/enums"
 	"time"
 
 	"github.com/shopspring/decimal"

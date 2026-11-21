@@ -2,7 +2,7 @@
 
 package src
 
-import "mapperexample4/dest"
+import "examples/mapperexample4/dest"
 
 // ToDest converts receiver to type dest.Record
 func (r *Record) ToDest() *dest.Record {

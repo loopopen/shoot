@@ -3,7 +3,7 @@ package client1
 import (
 	"context"
 	"fmt"
-	"restclientexample/client1/dto"
+	"examples/restclientexample/client1/dto"
 	"time"
 
 	"github.com/loopopen/shoot"

@@ -6,11 +6,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"examples/restclientexample/client2/dto"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"restclientexample/client2/dto"
 	"strings"
 	"time"
 

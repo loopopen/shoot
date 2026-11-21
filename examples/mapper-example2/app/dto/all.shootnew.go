@@ -4,7 +4,7 @@ package dto
 
 import (
 	"encoding/json"
-	"mapperexample2/infra/mapper"
+	"examples/mapperexample2/infra/mapper"
 )
 
 // NewOrder constructs a new instance of type Order

@@ -1,6 +1,6 @@
 package src
 
-import "mapperexample3/iface"
+import "examples/mapperexample3/iface"
 
 //go:generate go tool shoot map -path=../dest -type=Data
 

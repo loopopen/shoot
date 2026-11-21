@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"mapperexample/domain/model"
-	"mapperexample/infra/mapper"
+	"examples/mapperexample/domain/model"
+	"examples/mapperexample/infra/mapper"
 	"strings"
 )
 

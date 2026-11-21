@@ -214,11 +214,7 @@ func (g *GeneratorBase) LoadPackage(patterns ...string) map[string]*packages.Pac
 	}
 
 	cfg := &packages.Config{
-		Mode: packages.NeedName |
-			packages.NeedFiles |
-			packages.NeedSyntax |
-			packages.NeedTypes |
-			packages.NeedTypesInfo,
+		Mode:    packageLoadMode(),
 		Tests:   false,
 		Dir:     g.commonFlags.Dir,
 		Overlay: g.overlay,

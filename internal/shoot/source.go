@@ -112,7 +112,7 @@ func printDeclWithOwnComments(buf *bytes.Buffer, fset *token.FileSet, file *ast.
 	reg := regexp.MustCompile("(?m)^package " + pkgName + "$")
 	src := bf.Bytes()
 	if !reg.Match(src) {
-		logx.Fatal("cannot merge fiels with different packages")
+		logx.Fatal("cannot merge fields with different packages")
 	}
 	src = reg.ReplaceAll(src, nil)
 	buf.Write(src)

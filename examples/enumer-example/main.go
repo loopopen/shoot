@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"enumerexample/enums"
+	"examples/enumerexample/enums"
 	"fmt"
 
 	"github.com/loopopen/shoot"

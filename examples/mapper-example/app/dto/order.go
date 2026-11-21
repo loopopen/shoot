@@ -1,9 +1,9 @@
 package dto
 
 import (
-	"mapperexample/domain/enums"
-	"mapperexample/domain/model"
-	"mapperexample/infra/mapper"
+	"examples/mapperexample/domain/enums"
+	"examples/mapperexample/domain/model"
+	"examples/mapperexample/infra/mapper"
 )
 
 type Order struct {

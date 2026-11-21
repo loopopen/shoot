@@ -1,6 +1,6 @@
 package dto
 
-import "mapperexample2/domain/model"
+import "examples/mapperexample2/domain/model"
 
 type OrderAddress struct {
 	city    string

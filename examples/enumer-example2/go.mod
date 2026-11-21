@@ -1,4 +1,4 @@
-module enumerexample2
+module examples/enumerexample2
 
 go 1.24.0
 

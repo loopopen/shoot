@@ -1,4 +1,4 @@
-module constructorexample2
+module examples/constructorexample2
 
 go 1.24.0
 

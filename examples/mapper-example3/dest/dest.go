@@ -1,7 +1,7 @@
 package dest
 
 import (
-	"mapperexample3/iface"
+	"examples/mapperexample3/iface"
 )
 
 type Result[T any] struct {

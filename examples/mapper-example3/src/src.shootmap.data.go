@@ -3,8 +3,8 @@
 package src
 
 import (
-	"mapperexample3/dest"
-	"mapperexample3/iface"
+	"examples/mapperexample3/dest"
+	"examples/mapperexample3/iface"
 )
 
 // ToDest converts receiver to type dest.Data

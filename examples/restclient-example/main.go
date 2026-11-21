@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"restclientexample/myclient"
+	"examples/restclientexample/myclient"
 	"time"
 
 	"github.com/loopopen/shoot"

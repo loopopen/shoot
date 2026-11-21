@@ -128,7 +128,7 @@ func makeCtorMatch(g *Generator, expFields []*Field, ctorParams []*Field, tagMap
 			}
 
 			for _, fn := range g.mappingFuncList {
-				if shoot.TypeEquals(fn.Param, f.typ) && shoot.TypeEquals(fn.Result, p.typ) {
+				if mapperFuncMatches(fn, f.typ, p.typ) {
 					p.Target = f
 					p.Func = fn.Name
 					writeSet.Adds(p.Name)

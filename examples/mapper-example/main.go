@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"mapperexample/app/dto"
-	"mapperexample/domain/model"
+	"examples/mapperexample/app/dto"
+	"examples/mapperexample/domain/model"
 )
 
 func main() {
