@@ -172,3 +172,52 @@ func TestToPascalCase(t *testing.T) {
 		})
 	}
 }
+
+func TestToSnakeCase(t *testing.T) {
+	tests := map[string]string{
+		"":                 "",
+		"camelCase":        "camel_case",
+		"PascalCase":       "pascal_case",
+		"HTTPServerError":  "http_server_error",
+		"already_snake":    "already_snake",
+		"words-with-space": "words_with_space",
+	}
+	for input, want := range tests {
+		t.Run(input, func(t *testing.T) {
+			if got := transfer.ToSnakeCase(input); got != want {
+				t.Fatalf("ToSnakeCase(%q) = %q, want %q", input, got, want)
+			}
+		})
+	}
+}
+
+func TestCaseApply(t *testing.T) {
+	tests := map[transfer.Case]string{
+		"":                  "HTTPServerError",
+		transfer.CasePascal: "HTTPServerError",
+		transfer.CaseCamel:  "httpServerError",
+		transfer.CaseSnake:  "http_server_error",
+		transfer.CaseLower:  "httpservererror",
+		transfer.CaseUpper:  "HTTPSERVERERROR",
+	}
+	for enumCase, want := range tests {
+		t.Run(enumCase.String(), func(t *testing.T) {
+			if got := enumCase.Apply("HTTPServerError"); got != want {
+				t.Fatalf("Case(%q).Apply() = %q, want %q", enumCase, got, want)
+			}
+		})
+	}
+}
+
+func TestCaseSet(t *testing.T) {
+	var enumCase transfer.Case
+	if err := enumCase.Set("snake"); err != nil {
+		t.Fatal(err)
+	}
+	if enumCase != transfer.CaseSnake {
+		t.Fatalf("case = %q, want %q", enumCase, transfer.CaseSnake)
+	}
+	if err := enumCase.Set("unknown"); err == nil {
+		t.Fatal("expected invalid case error")
+	}
+}

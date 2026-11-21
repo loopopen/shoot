@@ -71,6 +71,12 @@ var goldens_enum = []Golden{
 			"enum_json.shootenum.color.go",
 		},
 	},
+	{
+		cmd: "shoot enum -json -text -sql -case=snake -type=HTTPStatus",
+		names: []string{
+			"enum_case.shootenum.httpstatus.go",
+		},
+	},
 }
 
 var goldens_rest = []Golden{

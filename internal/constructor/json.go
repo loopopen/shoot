@@ -2,7 +2,6 @@ package constructor
 
 import (
 	"go/ast"
-	"strings"
 
 	"github.com/loopopen/shoot/internal/shoot"
 	"github.com/loopopen/shoot/internal/transfer"
@@ -15,17 +14,7 @@ func (g *Generator) makeJson() {
 
 	needJSON := false
 
-	trans := transfer.ID
-	switch g.flags.tagcase {
-	case TagCasePascal:
-		trans = transfer.ToPascalCase
-	case TagCaseCamel:
-		trans = transfer.ToCamelCase
-	case TagCaseLower:
-		trans = strings.ToLower
-	case TagCaseUpper:
-		trans = strings.ToUpper
-	}
+	trans := g.flags.tagcase.Transform()
 
 	allGetSet := shoot.MakeSet[string]()
 	allSetSet := shoot.MakeSet[string]()

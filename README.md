@@ -13,8 +13,8 @@ A pack of tools for "go generate".
 ```zsh
 Usage: shoot <subcommand> [options]
 These are all the sub commands supported as of now:
-new [-opt] [-getset] [-json] [-exp] [-tagcase=<pascal|camel|lower|upper>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
-enum [-bit] [-json] [-text] [-sql] [-gorm] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
+new [-opt] [-getset] [-json] [-exp] [-tagcase=<pascal|camel|snake|lower|upper>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
+enum [-bit] [-json] [-text] [-sql] [-gorm] [-case=<pascal|camel|snake|lower|upper>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
 rest [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
 map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<toonly|->|fromonly|<-|both|<->>] [-comment=<on|off|force>] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]
 ```
@@ -22,6 +22,10 @@ map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<toonly|->|fromonly|<
 `new` and `rest` instructions use `@` by default, for example `//@new` and
 `//@Get("/users/{id}")`. Use `-sign=<prefix>` to select another instruction
 prefix; `-sign='shoot:'` keeps compatibility with the former `//shoot:` form.
+
+`enum -case` transforms enum strings after removing the type-name prefix. It
+supports `pascal`, `camel`, `snake`, `lower`, and `upper`; omitting it preserves
+the original casing.
 
 ## using go1.24+ (SUGGESTED)
 
@@ -39,7 +43,7 @@ go get -tool github.com/loopopen/shoot/cmd/shoot@latest
 
 //go:generate go tool shoot new -getset -json -file=$GOFILE
 
-//go:generate go tool shoot enum -json -type=YourEnum
+//go:generate go tool shoot enum -json -case=snake -type=YourEnum
 
 //go:generate go tool shoot rest -type=YourClient
 
