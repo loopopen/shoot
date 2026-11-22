@@ -4,6 +4,30 @@ import (
 	"testing"
 )
 
+func promotedFieldFixture() ([]*Field, map[string]string) {
+	return []*Field{
+		{
+			name:          "Base",
+			qualifiedType: "Base[uint]",
+			depth:         0,
+			isEmbeded:     true,
+		},
+		{
+			name:          "id",
+			qualifiedType: "uint",
+			depth:         1,
+		},
+		{
+			name:          "payNo",
+			qualifiedType: "string",
+			depth:         0,
+		},
+	}, map[string]string{
+		"id":    "id",
+		"payNo": "payNo",
+	}
+}
+
 func Test_newBody(t *testing.T) {
 	type args struct {
 		fields  []*Field
@@ -77,7 +101,7 @@ func Test_newBody(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := newBody(tt.args.fields, tt.args.nameMap); got != tt.want {
+			if got := newBody(tt.args.fields, tt.args.nameMap, false); got != tt.want {
 				t.Errorf("newBody() = %v, want %v", got, tt.want)
 			}
 		})

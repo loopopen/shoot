@@ -54,6 +54,36 @@ func TestSignedEnumSortsNegativesFirst(t *testing.T) {
 	}
 }
 
+func TestEnumCaseUsesOneStringRepresentation(t *testing.T) {
+	const filename = "enum_case.shootenum.httpstatus.go"
+	srcMap := generate(Golden{
+		cmd: "shoot enum -json -text -sql -case=snake -type=HTTPStatus",
+		names: []string{
+			filename,
+		},
+	}, enumer.New(), "./test/enumer")
+	generated, ok := srcMap[filename]
+	if !ok {
+		t.Fatalf("generated files: %v", srcMap)
+	}
+
+	source := string(generated)
+	for _, want := range []string{
+		`[]string{"ok", "not_found", "http_server_error"}`,
+		`"not_found":`,
+		`return json.Marshal(h.String())`,
+		`return []byte(h.String()), nil`,
+		`return h.String(), nil`,
+	} {
+		if !strings.Contains(source, want) {
+			t.Errorf("generated enum missing %q:\n%s", want, source)
+		}
+	}
+	if got := strings.Count(source, "shoot.ParseEnum[HTTPStatus]"); got != 3 {
+		t.Errorf("JSON, Text, and SQL should all parse the same enum strings; ParseEnum calls = %d, want 3", got)
+	}
+}
+
 func typecheckEnumer(originName string, origin []byte, generatedName string, generated []byte) error {
 	fset := token.NewFileSet()
 	var files []*ast.File

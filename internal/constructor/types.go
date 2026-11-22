@@ -1,34 +1,21 @@
 package constructor
 
 import (
-	"fmt"
 	"go/types"
 
 	"github.com/loopopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/transfer"
 )
 
-type TagCase string
+type TagCase = transfer.Case
 
 const (
-	TagCasePascal TagCase = "pascal"
-	TagCaseCamel  TagCase = "camel"
-	TagCaseLower  TagCase = "lower"
-	TagCaseUpper  TagCase = "upper"
+	TagCasePascal = transfer.CasePascal
+	TagCaseCamel  = transfer.CaseCamel
+	TagCaseSnake  = transfer.CaseSnake
+	TagCaseLower  = transfer.CaseLower
+	TagCaseUpper  = transfer.CaseUpper
 )
-
-func (v *TagCase) Set(value string) error {
-	switch TagCase(value) {
-	case TagCasePascal, TagCaseCamel, TagCaseLower, TagCaseUpper:
-		*v = TagCase(value)
-		return nil
-	default:
-		return fmt.Errorf("invalid tag case: %s", value)
-	}
-}
-
-func (v *TagCase) String() string {
-	return string(*v)
-}
 
 type TmplData struct {
 	*shoot.TmplDataBase

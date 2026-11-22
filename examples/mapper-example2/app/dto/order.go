@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"mapperexample2/domain/model"
-	"mapperexample2/infra/mapper"
+	"examples/mapperexample2/domain/model"
+	"examples/mapperexample2/infra/mapper"
 )
 
 type Order struct {

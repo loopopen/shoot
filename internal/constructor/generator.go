@@ -53,7 +53,7 @@ func (g *Generator) ParseFlags() {
 	getset := sub.Bool("getset", false, "generate Get/Set method for the type")
 	json := sub.Bool("json", false, "generate MarshalJSON/UnmarshalJSON method for the type")
 	var tagcase TagCase
-	sub.Var(&tagcase, "tagcase", "specify the case style for struct tags (pascal, camel, lower, upper)")
+	sub.Var(&tagcase, "tagcase", "specify the case style for struct tags (pascal, camel, snake, lower, upper)")
 	option := sub.Bool("option", false, "generate functional option pattern constructor")
 	opt := sub.Bool("opt", false, "generate functional option pattern constructor (alias for -option)")
 	exported := sub.Bool("exported", false, "“constructor parameters include exported fields")

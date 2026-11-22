@@ -12,15 +12,18 @@
 ```zsh
 Usage: shoot <subcommand> [options]
 These are all the sub commands supported as of now:
-new [-opt] [-getset] [-json] [-exp] [-tagcase=<case>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
-enum [-bit] [-json] [-text] [-sql] [-gorm] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
+new [-opt] [-getset] [-json] [-exp] [-tagcase=<pascal|camel|snake|lower|upper>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
+enum [-bit] [-json] [-text] [-sql] [-gorm] [-case=<pascal|camel|snake|lower|upper>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
 rest [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
-map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<way>] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]
+map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<toonly|->|fromonly|<-|both|<->>] [-comment=<on|off|force>] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]
 ```
 
 `new` 和 `rest` 指令默认以 `@` 开头，例如 `//@new` 和
 `//@Get("/users/{id}")`。可以通过 `-sign=<prefix>` 使用其他指令前缀；
 `-sign='shoot:'` 可兼容原来的 `//shoot:` 写法。
+
+`enum -case` 会在去掉类型名前缀后转换枚举字符串，支持 `pascal`、
+`camel`、`snake`、`lower` 和 `upper`；不指定时保留原有大小写。
 
 ## 使用 go1.24+ （推荐）
 
@@ -38,7 +41,7 @@ go get -tool github.com/loopopen/shoot/cmd/shoot@latest
 
 //go:generate go tool shoot new -getset -json -file=$GOFILE
 
-//go:generate go tool shoot enum -json -type=YourEnum
+//go:generate go tool shoot enum -json -case=snake -type=YourEnum
 
 //go:generate go tool shoot rest -type=YourClient
 

@@ -5,6 +5,7 @@ import (
 	"go/types"
 
 	"github.com/loopopen/shoot/internal/shoot"
+	"github.com/loopopen/shoot/internal/transfer"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -27,11 +28,12 @@ func NewTmplData(cmdline, version string) *TmplData {
 }
 
 type Flags struct {
-	bitwise bool
-	json    bool
-	text    bool
-	sql     bool
-	gorm    bool
+	bitwise   bool
+	json      bool
+	text      bool
+	sql       bool
+	gorm      bool
+	caseStyle transfer.Case
 }
 
 // Value represents a declared constant.

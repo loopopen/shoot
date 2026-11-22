@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"constructorexample2/model"
+	"examples/constructorexample2/model"
 )
 
 // Test case only, not the recommended way to run shoot.

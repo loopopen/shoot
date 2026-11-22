@@ -1,9 +1,9 @@
 package po
 
 import (
-	"mapperexample/domain/enums"
-	"mapperexample/domain/model"
-	"mapperexample/infra/mapper"
+	"examples/mapperexample/domain/enums"
+	"examples/mapperexample/domain/model"
+	"examples/mapperexample/infra/mapper"
 	"time"
 
 	"github.com/shopspring/decimal"

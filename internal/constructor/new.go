@@ -52,7 +52,7 @@ func (g *Generator) makeNew() {
 
 	newlst := newParamsList(g.fields, nameMap)
 	g.data.NewParamsList = newlst
-	body := newBody(g.fields, nameMap)
+	body := newBody(g.fields, nameMap, supportsPromotedFieldLiterals(g.Pkg()))
 	g.data.NewBody = body
 	g.data.TypeMap = typeMap
 	g.data.AllList = allList

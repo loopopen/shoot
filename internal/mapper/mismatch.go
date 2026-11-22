@@ -97,57 +97,48 @@ func (g *Generator) parseMapper(mapperTypeName string) {
 
 	var expFuncList []shoot.Func
 	for _, f := range g.mapperpkg.Syntax {
-		ast.Inspect(f, func(n ast.Node) bool {
-			if !g.testNode(mapperTypeName, n) {
-				return true
+		for _, decl := range f.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv == nil || len(fn.Recv.List) == 0 {
+				continue
+			}
+			if mapperReceiverName(fn.Recv.List[0].Type) != mapperTypeName {
+				continue
 			}
 
-			//todo: optimize
-			for _, decl := range f.Decls {
-				if fn, ok := decl.(*ast.FuncDecl); ok && fn.Recv != nil {
-					if len(fn.Recv.List) == 0 {
-						continue
-					}
-
-					r := fn.Recv.List[0]
-					switch expr := r.Type.(type) {
-					case *ast.Ident:
-						if expr.Name != mapperTypeName {
-							continue
-						}
-					case *ast.StarExpr:
-						if ident, ok := expr.X.(*ast.Ident); ok && ident.Name != mapperTypeName {
-							continue
-						}
-					}
-
-					if fn.Type.Params == nil {
-						continue
-					}
-					params := fn.Type.Params.List
-					if len(params) != 1 {
-						continue
-					}
-					if fn.Type.Results == nil {
-						continue
-					}
-					results := fn.Type.Results.List
-					if len(results) != 1 {
-						continue
-					}
-
-					expFuncList = append(expFuncList, shoot.Func{
-						Name:   fn.Name.Name,
-						Param:  g.mapperpkg.TypesInfo.TypeOf(params[0].Type),
-						Result: g.mapperpkg.TypesInfo.TypeOf(results[0].Type),
-					})
-				}
+			obj, _ := g.mapperpkg.TypesInfo.Defs[fn.Name].(*types.Func)
+			if obj == nil {
+				continue
+			}
+			signature, _ := obj.Type().(*types.Signature)
+			if signature == nil || signature.Params().Len() != 1 || signature.Results().Len() != 1 {
+				continue
 			}
 
-			return false
-		})
+			expFuncList = append(expFuncList, shoot.Func{
+				Name:      fn.Name.Name,
+				Param:     signature.Params().At(0).Type(),
+				Result:    signature.Results().At(0).Type(),
+				Signature: signature,
+			})
+		}
 	}
 	g.mappingFuncList = expFuncList
+}
+
+func mapperReceiverName(expr ast.Expr) string {
+	switch x := expr.(type) {
+	case *ast.Ident:
+		return x.Name
+	case *ast.StarExpr:
+		return mapperReceiverName(x.X)
+	case *ast.IndexExpr:
+		return mapperReceiverName(x.X)
+	case *ast.IndexListExpr:
+		return mapperReceiverName(x.X)
+	default:
+		return ""
+	}
 }
 
 func (g *Generator) makeTypeMismatch() {
@@ -171,7 +162,7 @@ func (g *Generator) makeFuncMap(f1, f2 *Field) {
 	for _, fn := range g.mappingFuncList {
 		if !g.writeDestSet.Has(f2.Name) && !f2.IsGet {
 			//in ToXxx, mapping func's param type is src field type
-			if shoot.TypeEquals(fn.Param, f1.typ) && shoot.TypeEquals(fn.Result, f2.typ) {
+			if mapperFuncMatches(fn, f1.typ, f2.typ) {
 				f1.Target = f2
 				f2.Func = fn.Name
 				g.writeDestSet.Adds(f2.Name)
@@ -181,7 +172,7 @@ func (g *Generator) makeFuncMap(f1, f2 *Field) {
 
 		if !g.writeSrcSet.Has(f1.Name) && !f1.IsGet {
 			//in FromXxx, mapping func's param type is dest field type
-			if shoot.TypeEquals(fn.Param, f2.typ) && shoot.TypeEquals(fn.Result, f1.typ) {
+			if mapperFuncMatches(fn, f2.typ, f1.typ) {
 				f2.Target = f1
 				f1.Func = fn.Name
 				g.writeSrcSet.Adds(f1.Name)

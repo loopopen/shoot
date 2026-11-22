@@ -3,7 +3,7 @@ package shoot
 const (
 	Shoot = "shoot"
 
-	Version     = "v1.0.0"
+	Version     = "v1.1.0-beta.3"
 	SelfPkgPath = "github.com/loopopen/shoot"
 )
 

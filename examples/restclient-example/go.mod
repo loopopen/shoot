@@ -1,4 +1,4 @@
-module restclientexample
+module examples/restclientexample
 
 go 1.24.0
 

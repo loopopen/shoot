@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"testing"
@@ -66,11 +67,224 @@ type Source struct {
 	if len(updates) != 2 {
 		t.Fatalf(`comment updates = %d, want 2`, len(updates))
 	}
-	if got, want := updates[targetFset.Position(targetID.Pos()).Offset], `// source identifier`; got != want {
+	if got, want := updates[targetFset.Position(targetID.Pos()).Offset].text, `// source identifier`; got != want {
 		t.Fatalf(`comment = %q, want %q`, got, want)
 	}
-	if got, want := updates[targetFset.Position(targetOrderingTime.Pos()).Offset], `// order time`; got != want {
+	if got, want := updates[targetFset.Position(targetOrderingTime.Pos()).Offset].text, `// order time`; got != want {
 		t.Fatalf(`tag-matched comment = %q, want %q`, got, want)
+	}
+	if _, ok := updates[targetFset.Position(targetKeep.Pos()).Offset]; ok {
+		t.Fatal(`field with a comment was overwritten`)
+	}
+}
+
+func TestCollectCommentUpdatesFromAccessorBackingField(t *testing.T) {
+	sourceSrc := []byte(`package source
+
+type Source struct {
+	OrderNo string
+}
+`)
+	destinationSrc := []byte(`package destination
+
+type Destination struct {
+	orderNo string // sales order number
+}
+`)
+
+	sourceFset, sourceFile := parseCommentTestFile(t, sourceSrc)
+	_, destinationFile := parseCommentTestFile(t, destinationSrc)
+	sourceOrderNo := structField(t, sourceFile, `Source`, `OrderNo`)
+	destinationOrderNo := structField(t, destinationFile, `Destination`, `orderNo`)
+
+	destinationFields := []*Field{}
+	compatlize(
+		&destinationFields,
+		[]shoot.Func{{Name: `OrderNo`, Path: `OrderNo`, Result: types.Typ[types.String]}},
+		[]*Field{{Name: `orderNo`, node: destinationOrderNo}},
+	)
+	if len(destinationFields) != 1 || destinationFields[0].node != destinationOrderNo {
+		t.Fatal(`getter field was not linked to its backing field`)
+	}
+
+	g := &Generator{
+		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		flags:         &Flags{},
+		exportedFields: []*Field{
+			{Name: `OrderNo`, node: sourceOrderNo},
+		},
+		destExportedFields: destinationFields,
+	}
+	g.SetPkg(&packages.Package{Fset: sourceFset})
+	g.collectCommentUpdates()
+
+	filename := sourceFset.Position(sourceOrderNo.Pos()).Filename
+	update, ok := g.commentUpdates[filename][sourceFset.Position(sourceOrderNo.Pos()).Offset]
+	if !ok {
+		t.Fatal(`backing field comment was not copied`)
+	}
+	if got, want := update.text, `// sales order number`; got != want {
+		t.Fatalf(`comment = %q, want %q`, got, want)
+	}
+}
+
+func TestCollectGormCommentWhenSourceAlreadyHasComment(t *testing.T) {
+	targetSrc := []byte("package target\n\n" +
+		"type Target struct {\n" +
+		"\tOrderNo string `gorm:\"size:64\"` // keep source comment\n" +
+		"}\n")
+	sourceSrc := []byte(`package source
+
+type Source struct {
+	OrderNo string // sales order number
+}
+`)
+
+	targetFset, targetFile := parseCommentTestFile(t, targetSrc)
+	_, sourceFile := parseCommentTestFile(t, sourceSrc)
+	targetOrderNo := structField(t, targetFile, `Target`, `OrderNo`)
+	g := &Generator{
+		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		flags:         &Flags{gorm: true},
+		exportedFields: []*Field{
+			{Name: `OrderNo`, node: targetOrderNo},
+		},
+		destExportedFields: []*Field{
+			{Name: `OrderNo`, node: structField(t, sourceFile, `Source`, `OrderNo`)},
+		},
+	}
+	g.SetPkg(&packages.Package{Fset: targetFset})
+	g.collectCommentUpdates()
+
+	filename := targetFset.Position(targetOrderNo.Pos()).Filename
+	update, ok := g.commentUpdates[filename][targetFset.Position(targetOrderNo.Pos()).Offset]
+	if !ok || update.tag == nil {
+		t.Fatal(`gorm comment update was not collected`)
+	}
+	if update.text != `` {
+		t.Fatalf(`source comment update = %q, want no update`, update.text)
+	}
+	if got, want := update.tag.text, "`gorm:\"size:64;comment:sales order number\"`"; got != want {
+		t.Fatalf(`gorm tag = %q, want %q`, got, want)
+	}
+}
+
+func TestCollectCommentDoesNotChangeDisabledGormTag(t *testing.T) {
+	targetSrc := []byte("package target\n\n" +
+		"type Target struct {\n" +
+		"\tOrderNo string `gorm:\"-\"`\n" +
+		"}\n")
+	sourceSrc := []byte(`package source
+
+type Source struct {
+	OrderNo string // sales order number
+}
+`)
+
+	targetFset, targetFile := parseCommentTestFile(t, targetSrc)
+	_, sourceFile := parseCommentTestFile(t, sourceSrc)
+	targetOrderNo := structField(t, targetFile, `Target`, `OrderNo`)
+	g := &Generator{
+		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		flags:         &Flags{gorm: true},
+		exportedFields: []*Field{
+			{Name: `OrderNo`, node: targetOrderNo},
+		},
+		destExportedFields: []*Field{
+			{Name: `OrderNo`, node: structField(t, sourceFile, `Source`, `OrderNo`)},
+		},
+	}
+	g.SetPkg(&packages.Package{Fset: targetFset})
+	g.collectCommentUpdates()
+
+	filename := targetFset.Position(targetOrderNo.Pos()).Filename
+	update, ok := g.commentUpdates[filename][targetFset.Position(targetOrderNo.Pos()).Offset]
+	if !ok {
+		t.Fatal(`field comment update was not collected`)
+	}
+	if got, want := update.text, `// sales order number`; got != want {
+		t.Fatalf(`source comment = %q, want %q`, got, want)
+	}
+	if update.tag != nil {
+		t.Fatalf(`gorm tag edit = %+v, want no edit`, *update.tag)
+	}
+}
+
+func TestCollectCommentUpdatesOff(t *testing.T) {
+	g := commentFixture(t)
+	g.flags.comment = CommentOff
+	g.collectCommentUpdates()
+	if len(g.commentUpdates) != 0 {
+		t.Fatalf(`comment updates = %d, want 0`, len(g.commentUpdates))
+	}
+}
+
+func TestCollectCommentUpdatesForce(t *testing.T) {
+	g := commentFixture(t)
+	g.flags.comment = CommentForce
+	g.collectCommentUpdates()
+
+	targetKeep := g.exportedFields[2].node
+	filename := g.Pkg().Fset.Position(g.exportedFields[0].node.Pos()).Filename
+	updates := g.commentUpdates[filename]
+	if len(updates) != 3 {
+		t.Fatalf(`comment updates = %d, want 3`, len(updates))
+	}
+	keep := updates[g.Pkg().Fset.Position(targetKeep.Pos()).Offset]
+	if keep.text != `// source documentation` {
+		t.Fatalf(`comment = %q, want %q`, keep.text, `// source documentation`)
+	}
+	if !keep.replace {
+		t.Fatal(`existing line comment was not replaced`)
+	}
+	from := g.Pkg().Fset.Position(targetKeep.Comment.Pos()).Offset
+	to := g.Pkg().Fset.Position(targetKeep.Comment.End()).Offset
+	if keep.from != from || keep.to != to {
+		t.Fatalf(`replacement = [%d,%d), want [%d,%d)`, keep.from, keep.to, from, to)
+	}
+}
+
+func TestCollectCommentUpdatesForceClearsEmpty(t *testing.T) {
+	targetSrc := []byte(`package target
+
+type Target struct {
+	Noted string // keep me
+	Plain string
+}
+`)
+	sourceSrc := []byte(`package source
+
+type Source struct {
+	Noted string
+	Plain string
+}
+`)
+	targetFset, targetFile := parseCommentTestFile(t, targetSrc)
+	_, sourceFile := parseCommentTestFile(t, sourceSrc)
+	noted := structField(t, targetFile, `Target`, `Noted`)
+	g := &Generator{
+		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		flags:         &Flags{comment: CommentForce},
+		exportedFields: []*Field{
+			{Name: `Noted`, node: noted},
+			{Name: `Plain`, node: structField(t, targetFile, `Target`, `Plain`)},
+		},
+		destExportedFields: []*Field{
+			{Name: `Noted`, node: structField(t, sourceFile, `Source`, `Noted`)},
+			{Name: `Plain`, node: structField(t, sourceFile, `Source`, `Plain`)},
+		},
+	}
+	g.SetPkg(&packages.Package{Fset: targetFset})
+	g.collectCommentUpdates()
+
+	filename := targetFset.Position(noted.Pos()).Filename
+	updates := g.commentUpdates[filename]
+	if len(updates) != 1 {
+		t.Fatalf(`comment updates = %d, want 1`, len(updates))
+	}
+	edit := updates[targetFset.Position(noted.Pos()).Offset]
+	if edit.text != `` || !edit.replace {
+		t.Fatalf(`clear edit = %+v, want an empty replacement`, edit)
 	}
 }
 
@@ -91,9 +305,9 @@ type Target struct {
 	fset, file := parseCommentTestFile(t, src)
 	id := structField(t, file, `Target`, `ID`)
 	name := structField(t, file, `Target`, `Name`)
-	updates := map[int]string{
-		fset.Position(id.Pos()).Offset:   `// identifier`,
-		fset.Position(name.Pos()).Offset: `// display name`,
+	updates := map[int]commentEdit{
+		fset.Position(id.Pos()).Offset:   {text: `// identifier`},
+		fset.Position(name.Pos()).Offset: {text: `// display name`},
 	}
 	if err := applyCommentUpdates(filename, updates); err != nil {
 		t.Fatal(err)
@@ -116,6 +330,298 @@ type Target struct {
 want:
 %s`, got, want)
 	}
+}
+
+func TestApplyCommentUpdatesForce(t *testing.T) {
+	dir := t.TempDir()
+	filename := filepath.Join(dir, `target.go`)
+	src := []byte(`package target
+
+type Target struct {
+	// old identifier
+	ID string
+	Name string // old name
+}
+`)
+	if err := os.WriteFile(filename, src, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	fset, file := parseCommentTestFile(t, src)
+	id := structField(t, file, `Target`, `ID`)
+	name := structField(t, file, `Target`, `Name`)
+	idRemove, _, _, _ := commentReplacement(fset, id)
+	_, nameReplace, nameFrom, nameTo := commentReplacement(fset, name)
+	if len(idRemove) != 1 || !nameReplace {
+		t.Fatalf(`replacement spans = doc %d, line %v`, len(idRemove), nameReplace)
+	}
+	updates := map[int]commentEdit{
+		fset.Position(id.Pos()).Offset: {
+			text:   `// identifier`,
+			remove: idRemove,
+		},
+		fset.Position(name.Pos()).Offset: {
+			text:    `// display name`,
+			replace: true,
+			from:    nameFrom,
+			to:      nameTo,
+		},
+	}
+	if err := applyCommentUpdates(filename, updates); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `package target
+
+type Target struct {
+	ID   string // identifier
+	Name string // display name
+}
+`
+	if string(got) != want {
+		t.Fatalf(`updated source =
+%s
+want:
+%s`, got, want)
+	}
+}
+
+func TestApplyCommentUpdatesForceClears(t *testing.T) {
+	dir := t.TempDir()
+	filename := filepath.Join(dir, `target.go`)
+	src := []byte(`package target
+
+type Target struct {
+	// old identifier
+	ID string
+	Name string // old name
+	Plain string
+}
+`)
+	if err := os.WriteFile(filename, src, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	fset, file := parseCommentTestFile(t, src)
+	id := structField(t, file, `Target`, `ID`)
+	name := structField(t, file, `Target`, `Name`)
+	idRemove, _, _, _ := commentReplacement(fset, id)
+	_, nameReplace, nameFrom, nameTo := commentReplacement(fset, name)
+	updates := map[int]commentEdit{
+		fset.Position(id.Pos()).Offset:   {remove: idRemove},
+		fset.Position(name.Pos()).Offset: {replace: nameReplace, from: nameFrom, to: nameTo},
+	}
+	if err := applyCommentUpdates(filename, updates); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `package target
+
+type Target struct {
+	ID    string
+	Name  string
+	Plain string
+}
+`
+	if string(got) != want {
+		t.Fatalf(`updated source =
+%s
+want:
+%s`, got, want)
+	}
+}
+
+func TestUpdateGormTag(t *testing.T) {
+	tests := []struct {
+		name    string
+		raw     string
+		comment string
+		force   bool
+		want    string
+		changed bool
+	}{
+		{
+			name:    `create tag`,
+			comment: `sales order number`,
+			want:    "`gorm:\"comment:sales order number\"`",
+			changed: true,
+		},
+		{
+			name:    `preserve other tags`,
+			raw:     "`json:\"orderNo\"`",
+			comment: `sales order number`,
+			want:    "`json:\"orderNo\" gorm:\"comment:sales order number\"`",
+			changed: true,
+		},
+		{
+			name:    `append comment setting`,
+			raw:     "`gorm:\"size:64\"`",
+			comment: `sales order number`,
+			want:    "`gorm:\"size:64;comment:sales order number\"`",
+			changed: true,
+		},
+		{
+			name:    `keep existing comment`,
+			raw:     "`gorm:\"size:64;comment:old\"`",
+			comment: `sales order number`,
+			want:    "`gorm:\"size:64;comment:old\"`",
+		},
+		{
+			name:    `ignore disabled gorm field`,
+			raw:     "`json:\"orderNo\" gorm:\"-\"`",
+			comment: `sales order number`,
+			want:    "`json:\"orderNo\" gorm:\"-\"`",
+		},
+		{
+			name:    `ignore disabled gorm field with force`,
+			raw:     "`gorm:\"-\"`",
+			comment: `sales order number`,
+			force:   true,
+			want:    "`gorm:\"-\"`",
+		},
+		{
+			name:    `replace existing comment with force`,
+			raw:     "`gorm:\"size:64;comment:old\"`",
+			comment: `sales order number`,
+			force:   true,
+			want:    "`gorm:\"size:64;comment:sales order number\"`",
+			changed: true,
+		},
+		{
+			name:    `clear existing comment with force`,
+			raw:     "`json:\"orderNo\" gorm:\"size:64;COMMENT:old\"`",
+			force:   true,
+			want:    "`json:\"orderNo\" gorm:\"size:64\"`",
+			changed: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, changed := updateGormTag(tt.raw, tt.comment, tt.force)
+			if got != tt.want || changed != tt.changed {
+				t.Fatalf(`updateGormTag() = (%q, %v), want (%q, %v)`, got, changed, tt.want, tt.changed)
+			}
+		})
+	}
+}
+
+func TestApplyCommentAndGormTagUpdates(t *testing.T) {
+	dir := t.TempDir()
+	filename := filepath.Join(dir, `target.go`)
+	src := []byte(`package target
+
+type Target struct {
+	OrderNo string
+}
+`)
+	if err := os.WriteFile(filename, src, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, filename, src, parser.ParseComments)
+	if err != nil {
+		t.Fatal(err)
+	}
+	field := structField(t, file, `Target`, `OrderNo`)
+	tag, ok := gormCommentEdit(fset, field, `sales order number`, false)
+	if !ok {
+		t.Fatal(`gorm comment edit was not created`)
+	}
+	updates := map[int]commentEdit{
+		fset.Position(field.Pos()).Offset: {
+			text: `// sales order number`,
+			tag:  &tag,
+		},
+	}
+	if err := applyCommentUpdates(filename, updates); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `package target
+
+type Target struct {
+	OrderNo string ` + "`gorm:\"comment:sales order number\"`" + ` // sales order number
+}
+`
+	if string(got) != want {
+		t.Fatalf(`updated source =
+%s
+want:
+%s`, got, want)
+	}
+}
+
+func TestCommentMode(t *testing.T) {
+	var comment Comment
+	if comment.String() != `on` {
+		t.Fatalf(`default = %q, want on`, comment.String())
+	}
+	if err := comment.Set(`force`); err != nil {
+		t.Fatal(err)
+	}
+	if comment != CommentForce {
+		t.Fatalf(`comment = %q, want force`, comment)
+	}
+	if err := comment.Set(`sideways`); err == nil {
+		t.Fatal(`invalid comment mode was accepted`)
+	}
+}
+
+func commentFixture(t *testing.T) *Generator {
+	t.Helper()
+	targetSrc := []byte(`package target
+
+type Target struct {
+	ID           string
+	OrderingTime string
+	Keep         string // target documentation
+}
+`)
+	sourceSrc := []byte(`package source
+
+type Source struct {
+	// source identifier
+	ID string
+	// order time
+	OrderTime string
+	// source documentation
+	Keep string
+}
+`)
+
+	targetFset, targetFile := parseCommentTestFile(t, targetSrc)
+	_, sourceFile := parseCommentTestFile(t, sourceSrc)
+	g := &Generator{
+		GeneratorBase: shoot.NewGeneratorBase(SubCmd, tmplTxt),
+		flags:         &Flags{},
+		exportedFields: []*Field{
+			{Name: `ID`, node: structField(t, targetFile, `Target`, `ID`)},
+			{Name: `OrderingTime`, node: structField(t, targetFile, `Target`, `OrderingTime`)},
+			{Name: `Keep`, node: structField(t, targetFile, `Target`, `Keep`)},
+		},
+		destExportedFields: []*Field{
+			{Name: `ID`, node: structField(t, sourceFile, `Source`, `ID`)},
+			{Name: `OrderTime`, node: structField(t, sourceFile, `Source`, `OrderTime`)},
+			{Name: `Keep`, node: structField(t, sourceFile, `Source`, `Keep`)},
+		},
+		srcTagMap: map[string]string{`OrderingTime`: `OrderTime`},
+	}
+	g.SetPkg(&packages.Package{Fset: targetFset})
+	return g
 }
 
 func parseCommentTestFile(t *testing.T, src []byte) (*token.FileSet, *ast.File) {

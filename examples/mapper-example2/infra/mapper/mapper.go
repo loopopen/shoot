@@ -6,9 +6,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type Mapper struct {
-	//shoot: mapper
-}
+type Mapper struct{}
 
 func (Mapper) StringToDecimal(s string) decimal.Decimal {
 	return decimal.RequireFromString(s)

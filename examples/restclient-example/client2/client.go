@@ -2,7 +2,7 @@ package client2
 
 import (
 	"context"
-	"restclientexample/client2/dto"
+	"examples/restclientexample/client2/dto"
 
 	"github.com/loopopen/shoot"
 )

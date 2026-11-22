@@ -9,6 +9,7 @@ import (
 
 	"github.com/loopopen/shoot/internal/shoot"
 	"github.com/loopopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/transfer"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -39,6 +40,8 @@ func (g *Generator) ParseFlags() {
 	text := sub.Bool("text", false, "generate MarshaText/UnmarshalText method for the type")
 	sql := sub.Bool("sql", false, "generate Value/Scan method for the type")
 	gorm := sub.Bool("gorm", false, "generate GormDataType/GormDBDataType for the type")
+	var enumCase transfer.Case
+	sub.Var(&enumCase, "case", "specify the case style for enum strings (pascal, camel, snake, lower, upper)")
 
 	g.ParseCommonFlags(sub)
 
@@ -47,11 +50,12 @@ func (g *Generator) ParseFlags() {
 	}
 
 	g.flags = &Flags{
-		bitwise: *bitwise || *bit,
-		json:    *json,
-		text:    *text,
-		sql:     *sql,
-		gorm:    *gorm,
+		bitwise:   *bitwise || *bit,
+		json:      *json,
+		text:      *text,
+		sql:       *sql,
+		gorm:      *gorm,
+		caseStyle: enumCase,
 	}
 }
 

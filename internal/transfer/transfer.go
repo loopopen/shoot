@@ -99,6 +99,24 @@ func ToPascalCase(str string) string {
 	return strings.Join(tokens, "")
 }
 
+func ToSnakeCase(str string) string {
+	if len(str) == 0 {
+		return str
+	}
+
+	parts := strings.FieldsFunc(str, func(r rune) bool {
+		return r == '_' || r == '-' || r == ' ' || r == '\t'
+	})
+	var tokens []string
+	for _, part := range parts {
+		tokens = append(tokens, splitCamelTokensASCII(part)...)
+	}
+	for i := range tokens {
+		tokens[i] = strings.ToLower(tokens[i])
+	}
+	return strings.Join(tokens, "_")
+}
+
 func ToUpper(b byte) byte {
 	if IsLower(b) {
 		return b - 'a' + 'A'

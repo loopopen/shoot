@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/loopopen/shoot/internal/tools/logx"
+	"github.com/loopopen/shoot/internal/transfer"
 )
 
 func (g *Generator) makeStr(typeName string) {
@@ -131,7 +132,7 @@ func (g *Generator) makeStr(typeName string) {
 	for _, v := range values {
 		nameList = append(nameList, v.name)
 		valueMap[v.name] = v
-		shortName := strings.TrimPrefix(v.name, typeName)
+		shortName := enumString(typeName, v.name, g.flags.caseStyle)
 		strMap[v.name] = shortName
 		enums = append(enums, fmt.Sprintf("'%s'", shortName))
 	}
@@ -158,4 +159,8 @@ func (g *Generator) makeStr(typeName string) {
 	g.RegisterTransfer("strof", func(key string) interface{} {
 		return strMap[key]
 	})
+}
+
+func enumString(typeName, name string, enumCase transfer.Case) string {
+	return enumCase.Apply(strings.TrimPrefix(name, typeName))
 }

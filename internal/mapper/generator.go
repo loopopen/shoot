@@ -57,7 +57,7 @@ type Generator struct {
 
 	srcCtorParams  []*Field
 	destCtorParams []*Field
-	commentUpdates map[string]map[int]string
+	commentUpdates map[string]map[int]commentEdit
 }
 
 func New() *Generator {
@@ -90,12 +90,21 @@ func (g *Generator) ParseFlags() {
 	var way Way
 	sub.Var(&way, "way", "limit the mapping way(toonly/->, fromonly/<-, both/<->)")
 	mark := sub.Bool("mark", true, "generate mark function ShootNew to implement the NewShooter interface")
-	ic := sub.Bool("i", false, "enables case‑insensitive field name matching")
+	ic := sub.Bool("i", false, "enables case-insensitive field name matching")
+	var comment Comment
+	sub.Var(&comment, "comment", "copy destination field comments to source fields (on, off, force)")
+	gorm := sub.Bool("gorm", false, "copy destination field comments to source gorm tags")
 
 	g.ParseCommonFlags(sub)
 
 	if way == "" {
 		way = WayBoth
+	}
+	if comment == "" {
+		comment = CommentOn
+	}
+	if *gorm && comment == CommentOff {
+		logx.Fatal("-gorm only works when -comment is enabled")
 	}
 
 	typNames := g.CommonFlags().TypeNames
@@ -133,6 +142,8 @@ func (g *Generator) ParseFlags() {
 		way:        way,
 		mark:       *mark,
 		ignoreCase: *ic,
+		comment:    comment,
+		gorm:       *gorm,
 	}
 }
 

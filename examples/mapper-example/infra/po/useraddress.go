@@ -1,7 +1,7 @@
 package po
 
 import (
-	"mapperexample/domain/model"
+	"examples/mapperexample/domain/model"
 
 	"gorm.io/gorm"
 )

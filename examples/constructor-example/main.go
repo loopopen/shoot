@@ -1,8 +1,8 @@
 package main
 
 import (
-	"constructorexample/embed"
-	"constructorexample/model"
+	"examples/constructorexample/embed"
+	"examples/constructorexample/model"
 	"encoding/json"
 	"fmt"
 

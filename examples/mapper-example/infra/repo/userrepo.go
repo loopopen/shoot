@@ -2,9 +2,9 @@ package repo
 
 import (
 	"context"
-	"mapperexample/domain/model"
-	"mapperexample/domain/repo"
-	"mapperexample/infra/po"
+	"examples/mapperexample/domain/model"
+	"examples/mapperexample/domain/repo"
+	"examples/mapperexample/infra/po"
 
 	"gorm.io/gorm"
 )

@@ -1,4 +1,4 @@
-module mapperexample3
+module examples/mapperexample3
 
 go 1.24.0
 

@@ -9,9 +9,11 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Test
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+    env:
+      GOTOOLCHAIN: local
 
     steps:
       - name: Check out repository
@@ -20,7 +22,43 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version: "1.27.x"
+
+      - name: Run linters
+        run: make lint
+
+  test:
+    name: Test (Go ${{ matrix.go-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # mapper-example-go127 exercises Go 1.27 generic methods, so earlier
+        # toolchains test every module except that version-specific example.
+        include:
+          - go-version: "1.24.x"
+            skip-modules: ./examples/mapper-example-go127
+          - go-version: "1.25.x"
+            skip-modules: ./examples/mapper-example-go127
+          - go-version: "1.26.x"
+            skip-modules: ./examples/mapper-example-go127
+          - go-version: "1.27.x"
+            skip-modules: ""
+
+    env:
+      # Keep each matrix job on the selected toolchain instead of allowing
+      # Go's automatic toolchain switching to hide compatibility failures.
+      GOTOOLCHAIN: local
+      SKIP_MODULES: ${{ matrix.skip-modules }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
 
       - name: Verify modules, generated code, and tests
         run: make test
