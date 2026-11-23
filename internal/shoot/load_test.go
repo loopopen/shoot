@@ -48,6 +48,44 @@ func TestLoadPkgsStopsOnPackageErrors(t *testing.T) {
 	})
 }
 
+func TestLoadPkgsSkipsFilesThatDoNotCompile(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "go.mod"), "module example\n\ngo 1.24.0\n")
+	writeFile(t, filepath.Join(dir, "enums.go"), `package enums
+
+type Light int32
+
+const (
+	LightRed Light = iota
+	LightYello
+	LightGreen1
+)
+`)
+	writeFile(t, filepath.Join(dir, "enums.shootenum.go"), "package enums\n\nvar broken = LightGreen\n")
+	writeFile(t, filepath.Join(dir, "broken.go"), "package enums\n\nfunc (\n")
+
+	pkgs, err := loadDir(t, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pkg := pkgs["."]
+	if pkg == nil {
+		t.Fatalf("missing package: %v", pkgs)
+	}
+	if pkg.Types == nil || pkg.Types.Scope().Lookup("LightGreen1") == nil {
+		t.Fatal("LightGreen1 was not loaded")
+	}
+	for _, file := range pkg.GoFiles {
+		base := filepath.Base(file)
+		if base == "enums.shootenum.go" || base == "broken.go" {
+			t.Fatalf("file with errors was loaded: %v", pkg.GoFiles)
+		}
+	}
+	if len(pkg.Syntax) != 1 {
+		t.Fatalf("syntax files = %d, want the compiling file only", len(pkg.Syntax))
+	}
+}
+
 func writeModule(t *testing.T, src string) string {
 	t.Helper()
 	dir := t.TempDir()

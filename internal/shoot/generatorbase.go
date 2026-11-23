@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -267,6 +268,10 @@ func (g *GeneratorBase) TestFile(file *ast.File) bool {
 	return false
 }
 
+// loadPkgs loads the packages matching patterns.
+// A file that fails to parse or type-check is removed from the load and the
+// package is loaded again. A stale generated file can then be regenerated
+// from the files that still compile.
 func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Package, error) {
 	loadCfg := *cfg
 	dir := loadCfg.Dir
@@ -278,18 +283,224 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 		return nil, fmt.Errorf("resolve package load directory %q: %w", dir, err)
 	}
 	loadCfg.Dir = absDir
+	loadCfg.Overlay = cloneOverlay(loadCfg.Overlay)
 
-	pkgs, err := packages.Load(&loadCfg, patterns...)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, pkg := range pkgs {
-		if err := packageProblems(pkg); err != nil {
+	excluded := map[string]bool{}
+	var dropped []string
+	for {
+		pkgs, err := packages.Load(&loadCfg, patterns...)
+		if err != nil {
 			return nil, err
+		}
+		if err := ambiguousPackage(pkgs); err != nil {
+			return nil, err
+		}
+
+		broken := brokenGoFiles(pkgs, excluded)
+		if len(broken) == 0 {
+			for _, pkg := range pkgs {
+				if err := packageProblems(pkg); err != nil {
+					if len(dropped) > 0 && constraintsExcludeAll(pkgs) {
+						return nil, fmt.Errorf("%s", strings.Join(dropped, "\n"))
+					}
+					return nil, err
+				}
+			}
+			return packagesByPattern(pkgs, patterns, loadCfg.Dir), nil
+		}
+
+		for _, file := range broken {
+			excluded[file.path] = true
+			loadCfg.Overlay[file.path] = ignoredGoFile(file.pkgName)
+			dropped = append(dropped, file.path+": "+file.msg)
+			logx.Warnf("exclude %s: %s", file.path, file.msg)
+		}
+	}
+}
+
+func cloneOverlay(overlay map[string][]byte) map[string][]byte {
+	out := make(map[string][]byte, len(overlay))
+	for path, src := range overlay {
+		out[path] = src
+	}
+	return out
+}
+
+func ignoredGoFile(pkgName string) []byte {
+	if pkgName == "" {
+		pkgName = "ignored"
+	}
+	return []byte("//go:build ignore\n\npackage " + pkgName + "\n")
+}
+
+type brokenGoFile struct {
+	path    string
+	pkgName string
+	msg     string
+	kind    packages.ErrorKind
+}
+
+func brokenGoFiles(pkgs []*packages.Package, skip map[string]bool) []brokenGoFile {
+	found := map[string]brokenGoFile{}
+	for _, pkg := range pkgs {
+		if pkg == nil {
+			continue
+		}
+		for _, err := range pkg.Errors {
+			if strings.Contains(err.Msg, "found packages") {
+				continue
+			}
+			for _, path := range filesInError(pkg, err) {
+				if skip[path] {
+					continue
+				}
+				next := brokenGoFile{
+					path:    path,
+					pkgName: pkg.Name,
+					msg:     compactError(err.Msg),
+					kind:    err.Kind,
+				}
+				cur, ok := found[path]
+				if !ok || (cur.kind == packages.ListError && err.Kind != packages.ListError) {
+					found[path] = next
+				}
+			}
 		}
 	}
 
+	out := make([]brokenGoFile, 0, len(found))
+	for _, file := range found {
+		out = append(out, file)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].path < out[j].path })
+	return out
+}
+
+var goFilePos = regexp.MustCompile(`(?m)(?:^|\s)((?:\.[/\\]|[/\\]|[A-Za-z]:[/\\])[^\s:]+\.go):\d+`)
+
+func filesInError(pkg *packages.Package, err packages.Error) []string {
+	var names []string
+	if file := filenameFromPos(err.Pos); file != "" {
+		names = append(names, file)
+	}
+	for _, match := range goFilePos.FindAllStringSubmatch(err.Msg, -1) {
+		names = append(names, match[1])
+	}
+
+	var out []string
+	seen := map[string]bool{}
+	for _, name := range names {
+		path := packageGoFile(pkg, name)
+		if path == "" || seen[path] {
+			continue
+		}
+		seen[path] = true
+		out = append(out, path)
+	}
+	return out
+}
+
+func filenameFromPos(pos string) string {
+	if pos == "" || pos == "-" {
+		return ""
+	}
+	file := pos
+	for range 2 {
+		colon := strings.LastIndex(file, ":")
+		if colon <= 0 || !allDigits(file[colon+1:]) {
+			break
+		}
+		file = file[:colon]
+	}
+	if !strings.HasSuffix(file, ".go") {
+		return ""
+	}
+	return file
+}
+
+func allDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func packageGoFile(pkg *packages.Package, name string) string {
+	if name == "" || name == "-" || pkg == nil {
+		return ""
+	}
+	want := name
+	if !filepath.IsAbs(want) {
+		want = filepath.Join(pkg.Dir, want)
+	}
+	want = filepath.Clean(want)
+	for _, file := range append(append([]string{}, pkg.GoFiles...), pkg.CompiledGoFiles...) {
+		if filepath.Clean(file) == want {
+			return want
+		}
+	}
+	return ""
+}
+
+func compactError(msg string) string {
+	msg = strings.TrimSpace(msg)
+	if i := strings.LastIndex(msg, "\n"); i >= 0 {
+		msg = strings.TrimSpace(msg[i+1:])
+	}
+	if i := strings.Index(msg, ": "); i >= 0 && strings.Contains(msg[:i], ".go") {
+		msg = strings.TrimSpace(msg[i+2:])
+	}
+	return msg
+}
+
+func constraintsExcludeAll(pkgs []*packages.Package) bool {
+	saw := false
+	for _, pkg := range pkgs {
+		if pkg == nil {
+			continue
+		}
+		for _, err := range pkg.Errors {
+			saw = true
+			if !strings.Contains(err.Msg, "build constraints exclude all Go files") &&
+				!strings.Contains(err.Msg, "no Go files") {
+				return false
+			}
+		}
+	}
+	return saw
+}
+
+func ambiguousPackage(pkgs []*packages.Package) error {
+	seen := map[*packages.Package]bool{}
+	var found error
+	var walk func(*packages.Package)
+	walk = func(p *packages.Package) {
+		if p == nil || seen[p] || found != nil {
+			return
+		}
+		seen[p] = true
+		for _, err := range p.Errors {
+			if strings.Contains(err.Msg, "found packages") {
+				found = fmt.Errorf("multiple packages found in %s", p.Dir)
+				return
+			}
+		}
+		for _, imp := range p.Imports {
+			walk(imp)
+		}
+	}
+	for _, pkg := range pkgs {
+		walk(pkg)
+	}
+	return found
+}
+
+func packagesByPattern(pkgs []*packages.Package, patterns []string, dir string) map[string]*packages.Package {
 	result := make(map[string]*packages.Package, len(patterns))
 	for _, pat := range patterns {
 		for _, pkg := range pkgs {
@@ -300,7 +511,7 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 
 			isPath := strings.HasPrefix(pat, ".") || filepath.IsAbs(pat)
 			if isPath {
-				absPat := filepath.Join(loadCfg.Dir, pat)
+				absPat := filepath.Join(dir, pat)
 				if filepath.IsAbs(pat) {
 					absPat = filepath.Clean(pat)
 				}
@@ -314,8 +525,7 @@ func loadPkgs(cfg *packages.Config, patterns ...string) (map[string]*packages.Pa
 			}
 		}
 	}
-
-	return result, nil
+	return result
 }
 
 func getGoFile(pkg *packages.Package, typeName string) string {
