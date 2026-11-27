@@ -14,7 +14,7 @@ A pack of tools for "go generate".
 Usage: shoot <subcommand> [options]
 These are all the sub commands supported as of now:
 new [-opt] [-getset] [-json] [-exp] [-tagcase=<pascal|camel|snake|lower|upper>] [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
-enum [-bit] [-json] [-text] [-sql] [-gorm] [-case=<pascal|camel|snake|lower|upper>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
+enum [-bit] [-json] [-text] [-sql] [-gorm] [-gin] [-case=<pascal|camel|snake|lower|upper>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
 rest [-sign=<prefix>] [-type=<Type> | -file=<GoFile>] [dir] [-sep] [-v]
 map [-path=<path>] [-alias=<alias>] [-to=<DestType>] [-way=<toonly|->|fromonly|<-|both|<->>] [-comment=<on|off|force>] [-i] [-type=<SrcType> | -file=<GoFile>] [dir] [-sep] [-v]
 ```

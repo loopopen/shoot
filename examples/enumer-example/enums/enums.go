@@ -1,6 +1,6 @@
 package enums
 
-//go:generate go tool shoot enum -json -text -file=$GOFILE
+//go:generate go tool shoot enum -json -text -gin -file=$GOFILE
 
 type WillBeIgnored = int
 

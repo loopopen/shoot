@@ -54,6 +54,35 @@ func TestSignedEnumSortsNegativesFirst(t *testing.T) {
 	}
 }
 
+func TestGinEnumUnmarshalParam(t *testing.T) {
+	const filename = "enum_signed.shootenum.rank.go"
+	srcMap := generate(Golden{
+		cmd: "shoot enum -gin -type=Rank",
+		names: []string{
+			filename,
+		},
+	}, enumer.New(), "./test/enumer")
+	generated, ok := srcMap[filename]
+	if !ok {
+		t.Fatalf("generated files: %v", srcMap)
+	}
+
+	source := string(generated)
+	for _, want := range []string{
+		"func (r *Rank) UnmarshalParam(param string) error {",
+		"if param == \"\" {",
+		"var z_ Rank",
+		"*r = z_",
+		"return nil",
+		"v_, err := shoot.ParseEnum[Rank](param)",
+		"*r = v_",
+	} {
+		if !strings.Contains(source, want) {
+			t.Errorf("generated enum missing %q:\n%s", want, source)
+		}
+	}
+}
+
 func TestEnumCaseUsesOneStringRepresentation(t *testing.T) {
 	const filename = "enum_case.shootenum.httpstatus.go"
 	srcMap := generate(Golden{

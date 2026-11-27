@@ -19,6 +19,7 @@ type TmplData struct {
 	Text     bool
 	SQL      bool
 	Gorm     bool
+	Gin      bool
 }
 
 func NewTmplData(cmdline, version string) *TmplData {
@@ -33,6 +34,7 @@ type Flags struct {
 	text      bool
 	sql       bool
 	gorm      bool
+	gin       bool
 	caseStyle transfer.Case
 }
 

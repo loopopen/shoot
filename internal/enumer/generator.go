@@ -40,6 +40,7 @@ func (g *Generator) ParseFlags() {
 	text := sub.Bool("text", false, "generate MarshaText/UnmarshalText method for the type")
 	sql := sub.Bool("sql", false, "generate Value/Scan method for the type")
 	gorm := sub.Bool("gorm", false, "generate GormDataType/GormDBDataType for the type")
+	gin := sub.Bool("gin", false, "generate UnmarshalParam for gin binding")
 	var enumCase transfer.Case
 	sub.Var(&enumCase, "case", "specify the case style for enum strings (pascal, camel, snake, lower, upper)")
 
@@ -55,6 +56,7 @@ func (g *Generator) ParseFlags() {
 		text:      *text,
 		sql:       *sql,
 		gorm:      *gorm,
+		gin:       *gin,
 		caseStyle: enumCase,
 	}
 }
@@ -92,6 +94,7 @@ func (g *Generator) MakeData(typeName string) (any, bool) {
 	g.makeJson()
 	g.makeText()
 	g.makeSQL()
+	g.makeGin()
 
 	if len(g.data.NameList) == 0 {
 		return nil, false

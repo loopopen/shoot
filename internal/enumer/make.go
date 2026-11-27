@@ -29,3 +29,10 @@ func (g *Generator) makeSQL() {
 	g.data.SQL = true
 	g.data.Gorm = g.flags.gorm
 }
+
+func (g *Generator) makeGin() {
+	if !g.flags.gin {
+		return
+	}
+	g.data.Gin = true
+}

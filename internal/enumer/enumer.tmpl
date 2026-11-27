@@ -10,7 +10,7 @@ import "encoding/json" {{"\n"}}
 {{- if .SQL -}}
 import "database/sql/driver" {{"\n"}}
 {{- end -}}
-{{- if or .JSON .Text .SQL -}}
+{{- if or .JSON .Text .SQL .Gin -}}
 import "github.com/loopopen/shoot" {{"\n"}}
 {{- end -}}
 {{- if .Gorm -}}
@@ -129,6 +129,23 @@ func ({{$this}} *{{.TypeName}}) UnmarshalText(text []byte) error {
 	var v_ {{.TypeName}}
 	var err error
 	if v_, err = shoot.ParseEnum[{{.TypeName}}](string(text)); err != nil {
+		return err
+	}
+	*{{$this}} = v_
+	return nil
+}
+{{end}}
+
+{{if .Gin}}
+// UnmarshalParam implements the gin binding.Unmarshaler interface for {{.TypeName}}
+func ({{$this}} *{{.TypeName}}) UnmarshalParam(param string) error {
+	if param == "" {
+		var z_ {{.TypeName}}
+		*{{$this}} = z_
+		return nil
+	}
+	v_, err := shoot.ParseEnum[{{.TypeName}}](param)
+	if err != nil {
 		return err
 	}
 	*{{$this}} = v_
